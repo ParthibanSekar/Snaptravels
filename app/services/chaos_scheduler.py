@@ -504,22 +504,26 @@ def _register_job(w: dict, app, idx: int):
 # Daily schedule builder — auto-chaos mode
 # ──────────────────────────────────────────────────────────────────────────────
 
-def _build_auto_chaos_windows() -> list:
+def _build_auto_chaos_windows(excluded_types=None) -> list:
     """
     Build a CONTINUOUS 24-hour auto-chaos schedule in UTC.
 
     Rules:
-    • The 5 chaos categories cycle in a loop, filling the full 24h window.
-    • Each cycle shuffles the 5 types randomly.
-    • First event starts ~10 minutes from now (or from midnight on fresh build).
+    • The chaos categories (minus any excluded) cycle in a loop.
+    • Each cycle shuffles the types randomly.
+    • First event starts ~10 minutes from now.
     • Each event lasts 30 or 60 min (randomly chosen).
     • A 3-hour (MIN_GAP_MINUTES) cooling-off gap between events.
     • The loop continues until the schedule extends past midnight UTC.
     • All datetimes are UTC.
 
+    Args:
+        excluded_types: set of type_keys to skip (e.g. {'ab_test', 'component_chaos'})
+
     Returns a list of window dicts with:
         type, label, duration (int minutes), start_dt, end_dt (datetime UTC)
     """
+    excluded = set(excluded_types or [])
     now          = _utcnow()
     utc_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day   = utc_midnight + timedelta(hours=24)
@@ -527,13 +531,19 @@ def _build_auto_chaos_windows() -> list:
     # Start at least 10 minutes from now
     cursor = now + timedelta(minutes=10)
 
+    # Filter out excluded types
+    active_categories = [c for c in AUTO_CHAOS_CATEGORIES if c[0] not in excluded]
+    if not active_categories:
+        logger.warning("[auto-chaos] All chaos types are excluded — no schedule generated")
+        return []
+
     windows = []
     cycle_count = 0
-    max_cycles  = 10  # safety limit (5 types × 10 cycles = 50 events max)
+    max_cycles  = 10
 
     while cursor < end_of_day and cycle_count < max_cycles:
         # Shuffle categories for each cycle
-        sequence = list(AUTO_CHAOS_CATEGORIES)
+        sequence = list(active_categories)
         random.shuffle(sequence)
 
         for type_key, label, duration_choices in sequence:
@@ -607,10 +617,18 @@ def _schedule_auto_chaos_day(app):
 
     with app.app_context():
         from app.models import FailureMode
-        if not FailureMode.current().auto_chaos_mode:
+        state = FailureMode.current()
+        if not state.auto_chaos_mode:
             return
+        # Read excluded types
+        excluded = set()
+        if state.auto_chaos_excluded_json:
+            try:
+                excluded = set(json.loads(state.auto_chaos_excluded_json))
+            except Exception:
+                excluded = set()
 
-    windows = _build_auto_chaos_windows()
+    windows = _build_auto_chaos_windows(excluded_types=excluded)
 
     # Always persist the schedule so the UI can display the timeline
     with app.app_context():

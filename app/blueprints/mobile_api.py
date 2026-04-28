@@ -58,7 +58,7 @@ def mobile_auth_required(f):
     return decorated
 
 @mobile_api.route('/auth/register', methods=['POST'])
-@limiter.limit("5 per hour")
+@limiter.exempt
 def mobile_register():
     data = request.get_json()
 
@@ -88,7 +88,7 @@ def mobile_register():
         return jsonify({'error': result['error']}), 400
 
 @mobile_api.route('/auth/login', methods=['POST'])
-@limiter.limit("10 per minute; 30 per hour")
+@limiter.exempt
 def mobile_login():
     data = request.get_json()
 

@@ -81,8 +81,7 @@ def travelers():
 
 @user_bp.route('/travelers/add', methods=['GET', 'POST'])
 @login_required
-@limiter.limit("20 per hour", methods=["POST"],
-               error_message="Too many traveler profiles added. Please try again later.")
+@limiter.exempt
 def add_traveler():
     user = get_current_user()
     if request.method == 'POST':
@@ -226,8 +225,7 @@ def price_alerts():
 
 @user_bp.route('/price-alerts/add', methods=['POST'])
 @login_required
-@limiter.limit("30 per hour", methods=["POST"],
-               error_message="Too many price alerts created. Please try again later.")
+@limiter.exempt
 def add_price_alert():
     alert_type = request.form.get('alert_type', 'FLIGHT')
     target_price = request.form.get('target_price', type=float)

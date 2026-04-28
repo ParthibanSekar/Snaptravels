@@ -343,6 +343,39 @@ def toggle_auto_mode():
     return redirect(url_for('chaos_admin.dashboard'))
 
 
+@chaos_admin_bp.route('/update-excluded-types', methods=['POST'])
+@roles_required('admin')
+def update_excluded_types():
+    """Update which chaos types are excluded from auto chaos loop."""
+    import json as _json
+    from flask import current_app
+    from app.services.chaos_scheduler import reschedule_auto_chaos
+
+    state = FailureMode.current()
+    # Read which types are checked (included) — unchecked ones are excluded
+    all_types = ['named_outage', 'page_load', 'func_chaos', 'component_chaos', 'ab_test']
+    included = request.form.getlist('included_types')
+    excluded = [t for t in all_types if t not in included]
+
+    state.auto_chaos_excluded_json = _json.dumps(excluded) if excluded else None
+    user = get_current_user()
+    state.updated_by = user.email if user else 'admin'
+    db.session.commit()
+
+    log_audit('AUTO_CHAOS_EXCLUDED_UPDATE', target_type='CHAOS',
+              target_label='excluded_types', detail={'excluded': excluded, 'included': included})
+
+    # Rebuild schedule with new exclusions if auto mode is on
+    if state.auto_chaos_mode:
+        app = current_app._get_current_object()
+        reschedule_auto_chaos(app)
+        flash(f'Schedule rebuilt — {len(included)} chaos type(s) active, {len(excluded)} excluded.', 'success')
+    else:
+        flash(f'Exclusions saved — will apply when Auto Chaos is enabled.', 'success')
+
+    return redirect(url_for('chaos_admin.auto_chaos_dashboard'))
+
+
 @chaos_admin_bp.route('/auto', methods=['GET'])
 @roles_required('admin')
 def auto_chaos_dashboard():
@@ -402,8 +435,15 @@ def auto_chaos_dashboard():
         next_reshuffle_utc += timedelta(days=1)
 
     # ── Cycle info ──────────────────────────────────────────────────────────
-    # Count how many complete cycles (of 5 types) are in the schedule
-    total_cycles = (total_events + 4) // 5  # ceil division
+    active_count = 5
+    excluded_types = []
+    if state.auto_chaos_excluded_json:
+        try:
+            excluded_types = json.loads(state.auto_chaos_excluded_json)
+            active_count = 5 - len(excluded_types)
+        except Exception:
+            excluded_types = []
+    total_cycles = (total_events + max(active_count, 1) - 1) // max(active_count, 1)
 
     return render_template('admin_chaos_auto.html',
                            state=state,
@@ -415,6 +455,7 @@ def auto_chaos_dashboard():
                            running_event=running_event,
                            next_event=next_event,
                            total_cycles=total_cycles,
+                           excluded_types=excluded_types,
                            next_reshuffle_utc=next_reshuffle_utc.isoformat(),
                            user=user)
 

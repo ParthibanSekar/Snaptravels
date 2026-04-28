@@ -7,12 +7,22 @@ _apm_key = os.environ.get('S247_LICENSE_KEY')
 if _apm_key:
     try:
         from apminsight import initialize_agent
-        initialize_agent({
+        # Override the reported host so it matches the public URL used by the
+        # synthetic monitor (snaptravels.online). Required for APM <-> synthetic
+        # auto-correlation in Site24x7. Falls back to the system hostname.
+        _apm_host = os.environ.get('APM_HOST_NAME') or os.environ.get('HOSTNAME')
+        _apm_config = {
             'license_key': _apm_key,
             'appname': os.environ.get('APP_NAME', 'SnapTravels'),
             'exporter_status_port': os.environ.get('APM_EXPORTER_STATUS_PORT', '20021'),
             'exporter_data_port': os.environ.get('APM_EXPORTER_DATA_PORT', '20022'),
-        })
+        }
+        if _apm_host:
+            # Different agent versions use different keys; pass all common ones.
+            _apm_config['host_name'] = _apm_host
+            _apm_config['fqdn'] = _apm_host
+            _apm_config['host_type'] = _apm_host
+        initialize_agent(_apm_config)
         print('[Site24x7 APM] Agent initialised — appname=%s' %
               os.environ.get('APP_NAME', 'SnapTravels'))
     except ImportError:

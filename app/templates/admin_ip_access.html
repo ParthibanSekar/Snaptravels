@@ -1,0 +1,221 @@
+{% extends "layouts/base.html" %}
+{% block title %}IP Access Control — SnapTravels Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background:#080b10 !important; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif !important; }
+
+.ip-hero { background:#080b10; padding:24px 0 20px; border-bottom:1px solid #151c28; }
+.ip-breadcrumb { font-size:.72rem; color:#3d5070; font-weight:500; letter-spacing:.03em; margin-bottom:10px; }
+.ip-breadcrumb a { color:#3b82f6; text-decoration:none; }
+.ip-title { font-size:1.25rem; font-weight:700; color:#e2e8f0; letter-spacing:-.02em; margin:0; }
+.ip-subtitle { font-size:.78rem; color:#3d5070; margin-top:4px; }
+
+.ip-card { background:#0d1117; border:1px solid #151c28; border-radius:10px; overflow:hidden; margin-bottom:16px; }
+.ip-card-head { padding:14px 20px; border-bottom:1px solid #151c28; display:flex; align-items:center; gap:10px; }
+.ip-card-body { padding:20px; }
+.ip-badge { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.95rem; flex-shrink:0; }
+
+/* Mode selector */
+.mode-option {
+  display:flex; align-items:flex-start; gap:12px;
+  background:#080b10; border:2px solid #151c28; border-radius:10px;
+  padding:16px; cursor:pointer; transition:all .2s;
+}
+.mode-option:hover { border-color:#1e3a5f; }
+.mode-option.active-disabled { border-color:#6b7280; background:#0d1117; }
+.mode-option.active-whitelist { border-color:#16a34a; background:#0a1f0a; }
+.mode-option.active-blacklist { border-color:#dc2626; background:#1f0a0a; }
+.mode-radio { margin-top:3px; accent-color:#3b82f6; width:16px; height:16px; flex-shrink:0; }
+.mode-title { font-size:.85rem; font-weight:700; color:#e2e8f0; }
+.mode-desc { font-size:.72rem; color:#64748b; margin-top:2px; line-height:1.5; }
+
+/* IP textarea */
+.ip-textarea {
+  width:100%; min-height:140px; border-radius:8px;
+  background:#080b10; border:1px solid #1e2d40; color:#e2e8f0;
+  font-family:'SF Mono','Fira Code',monospace; font-size:.82rem;
+  padding:14px; line-height:1.7; resize:vertical;
+}
+.ip-textarea:focus { border-color:#3b82f6; outline:none; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+.ip-textarea::placeholder { color:#2d4060; }
+
+/* Current IP badge */
+.current-ip {
+  display:inline-flex; align-items:center; gap:6px;
+  background:#0a1624; border:1px solid #1e3a5f; border-radius:6px;
+  padding:6px 12px; font-family:'SF Mono','Fira Code',monospace;
+  font-size:.78rem; color:#60a5fa;
+}
+
+/* Save button */
+.btn-save {
+  display:inline-flex; align-items:center; gap:6px;
+  background:linear-gradient(135deg,#1d4ed8,#3b82f6);
+  color:#fff; border:1px solid #1e40af;
+  padding:10px 24px; border-radius:8px;
+  font-size:.82rem; font-weight:700;
+  cursor:pointer; transition:all .2s;
+}
+.btn-save:hover { filter:brightness(1.1); transform:translateY(-1px); }
+
+/* Status indicator */
+.status-pill {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:4px; font-size:.7rem; font-weight:700;
+  letter-spacing:.04em; text-transform:uppercase;
+}
+.status-disabled { background:rgba(107,114,128,.15); color:#6b7280; border:1px solid #374151; }
+.status-whitelist { background:rgba(22,163,74,.1); color:#4ade80; border:1px solid #14532d; }
+.status-blacklist { background:rgba(220,38,38,.1); color:#f87171; border:1px solid #7f1d1d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ip-hero">
+  <div class="container">
+    <div class="ip-breadcrumb">
+      <a href="{{ url_for('admin.dashboard') }}">Admin</a> / IP Access Control
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <h1 class="ip-title"><i class="bi bi-shield-lock me-2" style="color:#3b82f6"></i>IP Access Control</h1>
+      {% if mode == 'whitelist' %}
+      <span class="status-pill status-whitelist"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80"></span>WHITELIST ACTIVE</span>
+      {% elif mode == 'blacklist' %}
+      <span class="status-pill status-blacklist"><span style="width:6px;height:6px;border-radius:50%;background:#f87171;animation:blink-red 1.2s infinite"></span>BLACKLIST ACTIVE</span>
+      {% else %}
+      <span class="status-pill status-disabled">DISABLED</span>
+      {% endif %}
+    </div>
+    <div class="ip-subtitle">Control which IP addresses can access SnapTravels. Admin pages are always accessible.</div>
+  </div>
+</div>
+
+<div class="container py-4">
+<form method="POST" action="{{ url_for('admin.ip_access_update') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+  <!-- Your IP -->
+  <div class="ip-card" style="border-left:3px solid #3b82f6">
+    <div class="ip-card-body" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <i class="bi bi-pc-display" style="color:#3b82f6;font-size:1.1rem"></i>
+      <div>
+        <div style="font-size:.72rem;color:#3d5070;font-weight:600">Your Current IP Address</div>
+        <div class="current-ip mt-1"><i class="bi bi-globe2"></i>{{ current_ip }}</div>
+      </div>
+      <div style="flex:1"></div>
+      <button type="button" style="background:#0a1624;border:1px solid #1e3a5f;color:#60a5fa;padding:6px 14px;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer"
+              onclick="addMyIp()">
+        <i class="bi bi-plus-circle me-1"></i>Add My IP to List
+      </button>
+    </div>
+  </div>
+
+  <!-- Mode Selection -->
+  <div class="ip-card" style="border-left:3px solid #f59e0b">
+    <div class="ip-card-head">
+      <div class="ip-badge" style="background:#1c1305;color:#f59e0b"><i class="bi bi-toggles"></i></div>
+      <div>
+        <div style="font-weight:700;font-size:.88rem;color:#e2e8f0">Access Mode</div>
+        <div style="font-size:.7rem;color:#3d5070">Choose how IP filtering works</div>
+      </div>
+    </div>
+    <div class="ip-card-body">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+
+        <label class="mode-option {{ 'active-disabled' if mode=='disabled' else '' }}" id="mode-disabled">
+          <input type="radio" name="mode" value="disabled" class="mode-radio" {{ 'checked' if mode=='disabled' else '' }}
+                 onchange="updateModeUI()">
+          <div>
+            <div class="mode-title"><i class="bi bi-x-circle me-1" style="color:#6b7280"></i>Disabled</div>
+            <div class="mode-desc">No IP filtering. All visitors can access the site normally.</div>
+          </div>
+        </label>
+
+        <label class="mode-option {{ 'active-whitelist' if mode=='whitelist' else '' }}" id="mode-whitelist">
+          <input type="radio" name="mode" value="whitelist" class="mode-radio" {{ 'checked' if mode=='whitelist' else '' }}
+                 onchange="updateModeUI()">
+          <div>
+            <div class="mode-title"><i class="bi bi-check-circle me-1" style="color:#16a34a"></i>Whitelist</div>
+            <div class="mode-desc">Only listed IPs can access the site. Everyone else gets blocked (403).</div>
+          </div>
+        </label>
+
+        <label class="mode-option {{ 'active-blacklist' if mode=='blacklist' else '' }}" id="mode-blacklist">
+          <input type="radio" name="mode" value="blacklist" class="mode-radio" {{ 'checked' if mode=='blacklist' else '' }}
+                 onchange="updateModeUI()">
+          <div>
+            <div class="mode-title"><i class="bi bi-ban me-1" style="color:#dc2626"></i>Blacklist</div>
+            <div class="mode-desc">Listed IPs are blocked. Everyone else can access normally.</div>
+          </div>
+        </label>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- IP List -->
+  <div class="ip-card" style="border-left:3px solid #7c3aed">
+    <div class="ip-card-head">
+      <div class="ip-badge" style="background:#190f33;color:#a78bfa"><i class="bi bi-list-ul"></i></div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:.88rem;color:#e2e8f0">IP Address List</div>
+        <div style="font-size:.7rem;color:#3d5070">One IP per line, or comma-separated. Supports CIDR notation (e.g. 10.0.0.0/8)</div>
+      </div>
+      <span style="font-size:.72rem;color:#4a6080" id="ipCount">
+        {{ ip_list.split(',')|select|list|length if ip_list else 0 }} IP(s)
+      </span>
+    </div>
+    <div class="ip-card-body">
+      <textarea name="ip_list" class="ip-textarea" id="ipTextarea"
+                placeholder="Enter IP addresses, one per line or comma-separated:&#10;&#10;Example:&#10;192.168.1.100&#10;10.0.0.0/8&#10;203.0.113.50">{{ ip_list.replace(',', '\n') if ip_list else '' }}</textarea>
+
+      <div style="margin-top:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <button type="submit" class="btn-save">
+          <i class="bi bi-check2-circle"></i>Save Settings
+        </button>
+        <div style="font-size:.72rem;color:#4a6080;line-height:1.5">
+          <i class="bi bi-info-circle me-1" style="color:#3b82f6"></i>
+          Admin pages (<code style="color:#93c5fd;background:#0d1117;padding:1px 5px;border-radius:3px">/admin/*</code>),
+          login, static files, and health check are <strong style="color:#94a3b8">always accessible</strong> — you can't lock yourself out.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</form>
+
+<!-- Quick actions -->
+<div style="text-align:center;padding:12px">
+  <a href="{{ url_for('admin.dashboard') }}" style="font-size:.78rem;color:#3b82f6;text-decoration:none;font-weight:600">
+    <i class="bi bi-arrow-left me-1"></i>Back to Admin Dashboard
+  </a>
+</div>
+
+</div>
+
+<style>@keyframes blink-red { 0%,100%{opacity:1} 50%{opacity:.4} }</style>
+<script>
+function updateModeUI() {
+  ['disabled','whitelist','blacklist'].forEach(m => {
+    var el = document.getElementById('mode-' + m);
+    el.classList.remove('active-disabled','active-whitelist','active-blacklist');
+    if (el.querySelector('input').checked) el.classList.add('active-' + m);
+  });
+}
+
+function addMyIp() {
+  var ta = document.getElementById('ipTextarea');
+  var myIp = '{{ current_ip }}';
+  if (ta.value.indexOf(myIp) === -1) {
+    ta.value = ta.value ? ta.value.trim() + '\n' + myIp : myIp;
+  }
+}
+
+// Count IPs
+document.getElementById('ipTextarea').addEventListener('input', function() {
+  var lines = this.value.split(/[\n,]/).filter(l => l.trim() && !l.trim().startsWith('#'));
+  document.getElementById('ipCount').textContent = lines.length + ' IP(s)';
+});
+</script>
+{% endblock %}

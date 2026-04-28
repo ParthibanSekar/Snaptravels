@@ -455,6 +455,59 @@ function utcToIST(timeStr) {
 </div>
 {% endif %}
 
+<!-- ── Chaos Type Selection ─────────────────────────────────────────────── -->
+<div class="ac-card" style="border-left:3px solid #f59e0b">
+  <div class="ac-card-head">
+    <div class="ac-badge" style="background:#1c1305;color:#f59e0b"><i class="bi bi-sliders"></i></div>
+    <div style="flex:1">
+      <div class="ac-card-title">Chaos Types — Include / Exclude</div>
+      <div class="ac-card-sub">Select which chaos types to include in the auto chaos loop</div>
+    </div>
+  </div>
+  <div class="ac-card-body">
+    <form method="POST" action="{{ url_for('chaos_admin.update_excluded_types') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px">
+        {% set type_options = [
+          ('named_outage',    'bi-exclamation-triangle-fill', '#ef4444', 'Named Outage',    'DB down, payment, checkout crashes'),
+          ('page_load',       'bi-speedometer2',              '#a78bfa', 'Page Load',        'Server delays, JS errors, resource failures'),
+          ('func_chaos',      'bi-bug-fill',                  '#f59e0b', 'Functionality',    'Broken images, forms, CTAs, 404s'),
+          ('component_chaos', 'bi-grid-1x2-fill',             '#22d3ee', 'Component',        'UI component breakage'),
+          ('ab_test',         'bi-shuffle',                   '#34d399', 'A/B Test',          'DOM identifier mutation'),
+        ] %}
+        {% for type_key, icon, color, title, desc in type_options %}
+        {% set is_excluded = type_key in excluded_types %}
+        <label style="display:flex;align-items:flex-start;gap:10px;background:{{ '#0f0305' if is_excluded else '#080d14' }};border:1px solid {{ '#3d1020' if is_excluded else '#1a2640' }};border-radius:8px;padding:12px 14px;cursor:pointer;transition:all .2s;opacity:{{ '0.5' if is_excluded else '1' }}"
+               onmouseover="this.style.borderColor='{{ color }}40'" onmouseout="this.style.borderColor='{{ '#3d1020' if is_excluded else '#1a2640' }}'">
+          <input type="checkbox" name="included_types" value="{{ type_key }}" {{ '' if is_excluded else 'checked' }}
+                 style="accent-color:{{ color }};margin-top:3px;flex-shrink:0;width:16px;height:16px"
+                 onchange="this.closest('label').style.opacity=this.checked?'1':'0.5'">
+          <div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+              <i class="bi {{ icon }}" style="color:{{ color }};font-size:.85rem"></i>
+              <span style="font-size:.78rem;font-weight:700;color:{{ '#6b7280' if is_excluded else '#e2e8f0' }}">{{ title }}</span>
+            </div>
+            <div style="font-size:.65rem;color:#4a6080;line-height:1.4">{{ desc }}</div>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button type="submit" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:1px solid #b45309;padding:8px 18px;border-radius:6px;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter=''">
+          <i class="bi bi-check2-circle"></i>Save & Rebuild Schedule
+        </button>
+        <span style="font-size:.72rem;color:#4a6080">
+          {% if excluded_types %}
+            {{ 5 - excluded_types|length }} of 5 types active — {{ excluded_types|length }} excluded
+          {% else %}
+            All 5 types active
+          {% endif %}
+        </span>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ── How It Works ─────────────────────────────────────────────────────── -->
 <div class="ac-card" style="border-left:3px solid #1e3a5f">
   <div class="ac-card-head" style="cursor:pointer;user-select:none" onclick="document.getElementById('howItWorks').style.display=document.getElementById('howItWorks').style.display==='none'?'':'none';this.querySelector('.hw-chev').classList.toggle('open')">

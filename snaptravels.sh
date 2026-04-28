@@ -92,6 +92,8 @@ COLS = [
     ('failure_mode', 'webhook_url',                           'VARCHAR(500)'),
     # ── Booking — payment method ──────────────────────────────────
     ('booking',      'payment_method',                        "VARCHAR(20) DEFAULT 'card'"),
+    # ── FailureMode — auto chaos excluded types ───────────────────
+    ('failure_mode', 'auto_chaos_excluded_json',              'TEXT'),
 ]
 
 conn = sqlite3.connect(DB)

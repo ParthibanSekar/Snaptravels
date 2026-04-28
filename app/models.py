@@ -279,6 +279,8 @@ class FailureMode(db.Model):
     auto_chaos_ends_at      = db.Column(db.DateTime,    nullable=True)
     # JSON list of today's scheduled windows: [{"type":…,"start":…,"end":…}, …]
     auto_chaos_schedule_json = db.Column(db.Text,       nullable=True)
+    # JSON list of excluded chaos types: ["ab_test","component_chaos"]
+    auto_chaos_excluded_json = db.Column(db.Text,       nullable=True)
 
     # Audit
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

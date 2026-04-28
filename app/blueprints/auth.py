@@ -45,8 +45,7 @@ def _is_token_expired(sent_at):
 # ── Login ──────────────────────────────────────────────────────────────────
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@limiter.limit("10 per minute; 30 per hour", methods=["POST"],
-               error_message="Too many login attempts. Please wait before trying again.")
+@limiter.exempt
 def login():
     if 'user_id' in session:
         return redirect(url_for('public.home'))
@@ -114,8 +113,7 @@ def login():
 # ── Signup ─────────────────────────────────────────────────────────────────
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
-@limiter.limit("5 per hour", methods=["POST"],
-               error_message="Too many signup attempts. Please try again later.")
+@limiter.exempt
 def signup():
     if 'user_id' in session:
         return redirect(url_for('public.home'))
@@ -210,8 +208,7 @@ def check_email():
 # ── Resend verification email ─────────────────────────────────────────────
 
 @auth_bp.route('/resend-confirmation', methods=['POST'])
-@limiter.limit("3 per hour",
-               error_message="Too many resend attempts. Please wait before trying again.")
+@limiter.exempt
 def resend_confirmation():
     """Resend the verification email with a fresh token."""
     email = request.form.get('email', '').strip()

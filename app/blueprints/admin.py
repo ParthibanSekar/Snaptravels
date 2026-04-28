@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app.models import Flight, Hotel, Booking, User
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from app.models import Flight, Hotel, Booking, User, SiteConfig
 from app.forms import FlightFormAdmin
 from app.services.auth import roles_required, get_current_user
 from app.services.audit import audit_action, log_audit
@@ -131,3 +131,54 @@ def view_booking(booking_id):
     booking = Booking.query.get_or_404(booking_id)
     user = get_current_user()
     return render_template('admin_booking_details.html', booking=booking, user=user)
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  IP Access Control
+# ══════════════════════════════════════════════════════════════════════════
+
+@admin_bp.route('/ip-access', methods=['GET'])
+@roles_required('admin')
+def ip_access():
+    """IP Access Control management page."""
+    mode = SiteConfig.get('ip_access_mode', 'disabled')
+    ip_list = SiteConfig.get('ip_access_list', '')
+    user = get_current_user()
+    # Get current visitor IP for display
+    forwarded = request.headers.get('X-Forwarded-For', '')
+    current_ip = forwarded.split(',')[0].strip() if forwarded else request.remote_addr
+    return render_template('admin_ip_access.html',
+                           mode=mode, ip_list=ip_list,
+                           current_ip=current_ip, user=user)
+
+
+@admin_bp.route('/ip-access/update', methods=['POST'])
+@roles_required('admin')
+def ip_access_update():
+    """Update IP access control settings."""
+    mode = request.form.get('mode', 'disabled').strip()
+    ip_list = request.form.get('ip_list', '').strip()
+
+    if mode not in ('disabled', 'whitelist', 'blacklist'):
+        mode = 'disabled'
+
+    # Clean up IP list — remove empty lines, trim whitespace
+    cleaned = ','.join(
+        line.strip() for line in ip_list.replace('\n', ',').split(',')
+        if line.strip() and not line.strip().startswith('#')
+    )
+
+    SiteConfig.set('ip_access_mode', mode)
+    SiteConfig.set('ip_access_list', cleaned)
+
+    log_audit('IP_ACCESS_UPDATE', target_type='CONFIG', target_label='ip_access',
+              detail={'mode': mode, 'ip_count': len(cleaned.split(',')) if cleaned else 0})
+
+    if mode == 'disabled':
+        flash('IP Access Control disabled — all IPs can access the site.', 'success')
+    elif mode == 'whitelist':
+        flash(f'Whitelist mode active — only listed IPs can access the site.', 'warning')
+    else:
+        flash(f'Blacklist mode active — listed IPs are blocked.', 'warning')
+
+    return redirect(url_for('admin.ip_access'))

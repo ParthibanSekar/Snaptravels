@@ -9,7 +9,7 @@ from config import Config
 
 db = SQLAlchemy()
 csrf = CSRFProtect()
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "60 per hour"])
+limiter = Limiter(key_func=get_remote_address, default_limits=["100000 per day", "10000 per hour"])
 mail = Mail()
 
 
@@ -93,6 +93,10 @@ def create_app():
             }
         except Exception:
             return {'chaos_page_js': '', 'component_chaos_js': '', 'ab_test_js': ''}
+
+    # ── IP Access Control ────────────────────────────────────────────────
+    from app.services.ip_access import check_ip_access
+    app.before_request(check_ip_access)
 
     # ── Chaos: server-side page delay + 404 storm + session kill ─────────
     @app.before_request
