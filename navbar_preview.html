@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnapTravels — Navbar & Logo Design Preview</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; }
+
+/* ═══════════════════════════════════════════
+   SECTION LABELS
+═══════════════════════════════════════════ */
+.section-label {
+  background: #fff;
+  border-bottom: 3px solid #e63950;
+  padding: 14px 28px;
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.section-label span { color: #9ca3af; font-weight: 400; text-transform: none; letter-spacing: 0; font-size: .82rem; }
+.preview-bg { background: #f8fafc; padding: 40px 0 0; }
+.preview-note {
+  max-width: 900px; margin: 0 auto 32px;
+  background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+  padding: 12px 18px; font-size: .83rem; color: #92400e;
+}
+
+/* ═══════════════════════════════════════════
+   OPTION A — "Wordmark pill" (Agoda-inspired)
+   Logomark: rounded square badge, gradient
+   Wordmark: snap (thin) + TRAVELS (black bold)
+═══════════════════════════════════════════ */
+.navbar-a {
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,.07);
+  box-shadow: 0 2px 16px rgba(0,0,0,.06);
+  position: relative;
+  padding: 0;
+  height: 68px;
+  display: flex;
+  align-items: stretch;
+}
+.navbar-a::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #e63950 0%, #f97316 35%, #facc15 65%, #e63950 100%);
+  background-size: 200% 100%;
+  animation: topbar 3s linear infinite;
+}
+@keyframes topbar { 0%{background-position:0% 0} 100%{background-position:200% 0} }
+
+.nav-a-inner {
+  max-width: 1200px; margin: 0 auto; padding: 0 20px;
+  display: flex; align-items: stretch; width: 100%; gap: 0;
+}
+
+/* Logo A */
+.logo-a {
+  display: flex; align-items: center; gap: 11px;
+  text-decoration: none; padding-right: 24px; flex-shrink: 0;
+}
+.logo-a-badge {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, #e63950 0%, #c81d37 100%);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(230,57,80,.35), inset 0 1px 0 rgba(255,255,255,.2);
+  position: relative;
+  flex-shrink: 0;
+}
+.logo-a-badge svg { position: relative; z-index: 1; }
+.logo-a-text {
+  display: flex; flex-direction: column; line-height: 1;
+}
+.logo-a-snap { font-size: .72rem; font-weight: 500; color: #9ca3af; letter-spacing: .12em; text-transform: uppercase; }
+.logo-a-travels { font-size: 1.22rem; font-weight: 900; color: #0f172a; letter-spacing: -.5px; }
+.logo-a-travels em { color: #e63950; font-style: normal; }
+
+/* Nav items A */
+.nav-a-list {
+  display: flex; align-items: stretch; list-style: none; flex: 1; padding: 0;
+}
+.nav-a-link {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 0 13px; height: 100%;
+  text-decoration: none; color: #4b5563;
+  font-size: .68rem; font-weight: 600; letter-spacing: .02em;
+  border-bottom: 3px solid transparent;
+  transition: all .15s; white-space: nowrap;
+  position: relative;
+}
+.nav-a-link i { font-size: 1.18rem; color: #6b7280; transition: color .15s, transform .15s; }
+.nav-a-link:hover { color: #e63950; }
+.nav-a-link:hover i { color: #e63950; transform: translateY(-2px); }
+.nav-a-link.active { color: #e63950; border-bottom-color: #e63950; font-weight: 700; }
+.nav-a-link.active i { color: #e63950; }
+
+/* Right A */
+.nav-a-right { display: flex; align-items: center; gap: 4px; padding-left: 12px; flex-shrink: 0; }
+.wishlist-btn-a {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 0 10px; height: 100%;
+  text-decoration: none; color: #4b5563;
+  font-size: .68rem; font-weight: 600; background: none; border: none; cursor: pointer;
+  transition: color .15s;
+}
+.wishlist-btn-a i { font-size: 1.18rem; color: #e63950; }
+.wishlist-btn-a:hover { color: #e63950; }
+.account-pill-a {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px 6px 6px; border-radius: 24px;
+  border: 1.5px solid #e5e7eb; background: #fff;
+  text-decoration: none; color: #111; font-size: .8rem; font-weight: 600;
+  transition: all .15s; white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  margin-left: 4px;
+}
+.account-pill-a:hover { border-color: #e63950; box-shadow: 0 2px 12px rgba(230,57,80,.15); }
+.avatar-a {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, #e63950, #f97316);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: .78rem; font-weight: 700; flex-shrink: 0;
+}
+
+
+/* ═══════════════════════════════════════════
+   OPTION B — "Gradient brand bar" (MakeMyTrip-inspired)
+   Double-line nav: thin promo strip top + main nav
+   Logo: horizontal lockup with icon on left, bigger wordmark
+═══════════════════════════════════════════ */
+.navbar-b-wrap { background: #fff; box-shadow: 0 2px 20px rgba(0,0,0,.08); }
+
+/* Top promo strip */
+.navbar-b-strip {
+  background: linear-gradient(90deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  padding: 5px 20px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 20px;
+  font-size: .72rem; color: #94a3b8; font-weight: 500;
+}
+.navbar-b-strip a { color: #94a3b8; text-decoration: none; transition: color .15s; }
+.navbar-b-strip a:hover { color: #e63950; }
+.navbar-b-strip-sep { color: #334155; }
+.promo-pill {
+  background: linear-gradient(90deg, #e63950, #f97316);
+  color: #fff; padding: 2px 10px; border-radius: 20px;
+  font-size: .68rem; font-weight: 700; animation: pulse-pill 2s infinite;
+}
+@keyframes pulse-pill { 0%,100%{opacity:1} 50%{opacity:.8} }
+
+/* Main nav B */
+.navbar-b {
+  height: 62px; display: flex; align-items: stretch;
+  max-width: 1200px; margin: 0 auto; padding: 0 20px;
+  position: relative;
+}
+.logo-b {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; padding-right: 22px; flex-shrink: 0;
+}
+.logo-b-icon {
+  width: 42px; height: 42px;
+  background: linear-gradient(145deg, #e63950, #c81d37);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(230,57,80,.4), inset 0 1px 0 rgba(255,255,255,.25);
+  position: relative; overflow: hidden;
+}
+.logo-b-icon::after {
+  content: '';
+  position: absolute; top: -30%; left: -10%; width: 60%; height: 60%;
+  background: rgba(255,255,255,.15); border-radius: 50%;
+}
+.logo-b-word {
+  font-size: 1.32rem; font-weight: 900; color: #0f172a; letter-spacing: -.6px;
+}
+.logo-b-word .snap { color: #e63950; }
+.logo-b-word .dot { color: #f97316; font-size: 1.6rem; line-height: 0; vertical-align: middle; }
+.logo-b-tagline {
+  font-size: .6rem; color: #9ca3af; font-weight: 500; letter-spacing: .08em;
+  text-transform: uppercase; display: block; margin-top: 1px; letter-spacing: .12em;
+}
+
+/* Nav items B */
+.nav-b-list {
+  display: flex; align-items: stretch; list-style: none; flex: 1; padding: 0;
+}
+.nav-b-link {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 0 12px; height: 100%;
+  text-decoration: none; color: #374151;
+  font-size: .66rem; font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all .15s; white-space: nowrap; position: relative;
+  background: none; border-top: none; border-left: none; border-right: none;
+  cursor: pointer;
+}
+.nav-b-link i { font-size: 1.15rem; color: #6b7280; transition: all .15s; }
+.nav-b-link:hover { color: #e63950; }
+.nav-b-link:hover i { color: #e63950; transform: translateY(-2px); }
+.nav-b-link.active { color: #e63950; border-bottom-color: #e63950; }
+.nav-b-link.active i { color: #e63950; }
+.new-tag {
+  position: absolute; top: 10px; right: 5px;
+  background: #e63950; color: #fff; font-size: .5rem; font-weight: 800;
+  padding: 1px 4px; border-radius: 4px; letter-spacing: .02em;
+}
+
+/* Right B */
+.nav-b-right { display: flex; align-items: center; gap: 2px; padding-left: 10px; flex-shrink: 0; }
+.btn-login-b {
+  padding: 7px 18px; border-radius: 22px;
+  border: 2px solid #e63950; background: #fff;
+  color: #e63950; font-size: .8rem; font-weight: 700;
+  cursor: pointer; transition: all .15s; text-decoration: none; white-space: nowrap;
+}
+.btn-login-b:hover { background: #e63950; color: #fff; }
+.btn-signup-b {
+  padding: 7px 18px; border-radius: 22px;
+  border: 2px solid #e63950; background: #e63950;
+  color: #fff; font-size: .8rem; font-weight: 700;
+  cursor: pointer; transition: all .15s; text-decoration: none; white-space: nowrap;
+  margin-left: 6px;
+}
+.btn-signup-b:hover { background: #c81d37; border-color: #c81d37; }
+.wishlist-b {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 0 10px; height: 100%;
+  text-decoration: none; color: #4b5563;
+  font-size: .66rem; font-weight: 600; background: none; border: none; cursor: pointer;
+}
+.wishlist-b i { font-size: 1.15rem; color: #e63950; }
+.wishlist-b:hover { color: #e63950; }
+
+
+/* ═══════════════════════════════════════════
+   OPTION C — "Premium dark strip" (bold, luxury)
+   Dark navy top bar + white main nav
+   Logo: large wordmark, "ST" geometric badge
+═══════════════════════════════════════════ */
+.navbar-c-top {
+  background: #0f172a;
+  height: 36px;
+  display: flex; align-items: center;
+  padding: 0 20px; gap: 24px; justify-content: flex-end;
+  font-size: .72rem; color: #64748b;
+}
+.navbar-c-top a { color: #64748b; text-decoration: none; transition: color .15s; }
+.navbar-c-top a:hover { color: #e63950; }
+.c-top-sep { color: #1e293b; }
+.navbar-c-main {
+  background: #fff;
+  box-shadow: 0 2px 20px rgba(0,0,0,.08);
+  height: 64px;
+  display: flex; align-items: stretch;
+  border-bottom: 1px solid #f1f5f9;
+}
+.nav-c-inner {
+  max-width: 1200px; margin: 0 auto; padding: 0 20px;
+  display: flex; align-items: stretch; width: 100%;
+}
+.logo-c {
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none; padding-right: 26px; flex-shrink: 0;
+}
+.logo-c-badge {
+  width: 40px; height: 40px;
+  background: #0f172a;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  flex-shrink: 0;
+}
+.logo-c-badge::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 40%;
+  background: linear-gradient(0deg, #e63950, transparent);
+}
+.logo-c-badge svg { position: relative; z-index: 1; }
+.logo-c-word { display: flex; flex-direction: column; }
+.logo-c-top-line { display: flex; align-items: baseline; gap: 0; }
+.logo-c-snap { font-size: 1.25rem; font-weight: 300; color: #0f172a; letter-spacing: -.2px; }
+.logo-c-travels { font-size: 1.25rem; font-weight: 900; color: #0f172a; letter-spacing: -.5px; }
+.logo-c-travels em { color: #e63950; font-style: normal; }
+.logo-c-tag { font-size: .58rem; color: #94a3b8; font-weight: 500; letter-spacing: .15em; text-transform: uppercase; margin-top: 1px; }
+
+/* Nav C */
+.nav-c-list {
+  display: flex; align-items: stretch; list-style: none; flex: 1; padding: 0;
+}
+.nav-c-link {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 0 11px; height: 100%;
+  text-decoration: none; color: #374151;
+  font-size: .67rem; font-weight: 600; white-space: nowrap;
+  border-bottom: 3px solid transparent; transition: all .15s;
+  background: none; border-top: none; border-left: none; border-right: none; cursor: pointer;
+}
+.nav-c-link i { font-size: 1.15rem; color: #6b7280; transition: all .15s; }
+.nav-c-link:hover { color: #e63950; }
+.nav-c-link:hover i { color: #e63950; transform: translateY(-2px); }
+.nav-c-link.active { color: #e63950; border-bottom-color: #e63950; font-weight: 700; }
+.nav-c-link.active i { color: #e63950; }
+
+/* Right C */
+.nav-c-right { display: flex; align-items: center; gap: 4px; padding-left: 10px; flex-shrink: 0; }
+.notif-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1.5px solid #e5e7eb; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; position: relative; color: #6b7280; font-size: 1.05rem;
+  transition: all .15s;
+}
+.notif-btn:hover { border-color: #e63950; color: #e63950; }
+.notif-dot {
+  width: 8px; height: 8px; background: #e63950; border-radius: 50%;
+  position: absolute; top: 6px; right: 6px; border: 1.5px solid #fff;
+}
+.account-pill-c {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 14px 5px 5px; border-radius: 24px;
+  border: 1.5px solid #e5e7eb; background: #fff;
+  text-decoration: none; color: #111; font-size: .79rem; font-weight: 600;
+  transition: all .15s; white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0,0,0,.07); margin-left: 4px;
+}
+.account-pill-c:hover { border-color: #e63950; box-shadow: 0 3px 14px rgba(230,57,80,.14); }
+.avatar-c {
+  width: 29px; height: 29px; border-radius: 50%;
+  background: linear-gradient(135deg, #e63950, #f97316);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: .76rem; font-weight: 700; flex-shrink: 0;
+}
+
+
+/* ═══════════════════════════════════════════
+   LOGO-ONLY SHOWCASE
+═══════════════════════════════════════════ */
+.logo-showcase {
+  background: #fff; padding: 32px 40px;
+}
+.logo-demo-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  max-width: 920px; margin: 0 auto;
+}
+.logo-demo-box {
+  background: #f8fafc; border: 1.5px solid #e5e7eb; border-radius: 14px;
+  padding: 28px 24px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.logo-demo-box h4 { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: #9ca3af; font-weight: 700; }
+.logo-demo-box .on-dark {
+  background: #0f172a; border-radius: 10px;
+  padding: 14px 20px; display: flex; align-items: center;
+}
+
+/* ── Comparison row ── */
+.comparison {
+  background: #fafafa; padding: 32px 40px;
+  border-top: 1px solid #f0f0f0;
+}
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 700px; margin: 0 auto; }
+.compare-box {
+  background: #fff; border-radius: 14px; border: 1.5px solid #e5e7eb;
+  padding: 24px; text-align: center;
+}
+.compare-box h4 { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: #9ca3af; font-weight: 700; margin-bottom: 16px; }
+.compare-box.current-box { border-color: #fca5a5; background: #fff5f5; }
+.compare-box.new-box { border-color: #86efac; background: #f0fdf4; }
+.tag-before { background: #fca5a5; color: #7f1d1d; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; display: inline-block; margin-bottom: 10px; }
+.tag-after { background: #86efac; color: #14532d; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; display: inline-block; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div class="preview-note" style="max-width:1200px;margin:20px auto 0">
+  ⚡ <strong>Design Preview</strong> — Three navbar + logo options below. Review and tell Claude which one you like (or mix elements from different options).
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     OPTION A — Clean Modern (Agoda-inspired)
+══════════════════════════════════════════════════════════════════ -->
+<div class="section-label" style="margin-top:20px">
+  Option A — Clean Wordmark Split <span>Agoda-inspired · Minimal · Elegant</span>
+</div>
+
+<nav class="navbar-a">
+  <div class="nav-a-inner">
+    <!-- Logo A: rounded square badge + split-weight wordmark -->
+    <a class="logo-a" href="#">
+      <div class="logo-a-badge">
+        <svg viewBox="0 0 28 28" width="22" height="22" fill="none">
+          <!-- Stylised paper plane path -->
+          <path d="M3 14L25 4L18 24L13 15L3 14Z" fill="white" fill-opacity=".95" stroke="white" stroke-width=".3" stroke-linejoin="round"/>
+          <path d="M13 15L18 11" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="logo-a-text">
+        <span class="logo-a-snap">snap</span>
+        <span class="logo-a-travels">T<em>r</em>avels</span>
+      </div>
+    </a>
+
+    <!-- Nav A -->
+    <ul class="nav-a-list">
+      <li><a class="nav-a-link active" href="#"><i class="bi bi-airplane-fill"></i>Flights</a></li>
+      <li><a class="nav-a-link" href="#"><i class="bi bi-building"></i>Hotels</a></li>
+      <li><a class="nav-a-link" href="#"><i class="bi bi-map-fill"></i>Packages</a></li>
+      <li><a class="nav-a-link" href="#"><i class="bi bi-train-front-fill"></i>Trains</a></li>
+      <li><a class="nav-a-link" href="#"><i class="bi bi-bus-front-fill"></i>Buses</a></li>
+      <li><a class="nav-a-link" href="#"><i class="bi bi-car-front-fill"></i>Cabs</a></li>
+      <li><a class="nav-a-link" href="#"><i class="bi bi-lightning-fill"></i>Activities</a></li>
+      <li><a class="nav-a-link" href="#"><i class="bi bi-shield-fill-check"></i>Travel Ins.</a></li>
+      <li><a class="nav-a-link" href="#"><i class="bi bi-grid-3x3-gap-fill"></i>More</a></li>
+    </ul>
+
+    <!-- Right A -->
+    <div class="nav-a-right">
+      <button class="wishlist-btn-a">
+        <i class="bi bi-heart-fill"></i>Wishlist
+      </button>
+      <a class="account-pill-a" href="#">
+        <div class="avatar-a">A</div>
+        <span>Admin</span>
+        <i class="bi bi-chevron-down" style="font-size:.6rem;opacity:.5;margin-left:2px"></i>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     OPTION B — MakeMyTrip-inspired (Promo strip + main nav)
+══════════════════════════════════════════════════════════════════ -->
+<div class="section-label" style="margin-top:32px">
+  Option B — Dual-strip MMT Style <span>MakeMyTrip-inspired · Promo strip · Bold wordmark</span>
+</div>
+
+<div class="navbar-b-wrap">
+  <!-- Promo strip -->
+  <div class="navbar-b-strip">
+    <span><i class="bi bi-telephone-fill" style="color:#e63950;margin-right:4px"></i>1800-123-4567</span>
+    <span class="navbar-b-strip-sep">|</span>
+    <a href="#">My Bookings</a>
+    <span class="navbar-b-strip-sep">|</span>
+    <a href="#">Download App</a>
+    <span class="navbar-b-strip-sep">|</span>
+    <span class="promo-pill">🔥 FLAT ₹500 OFF</span>
+  </div>
+
+  <!-- Main nav -->
+  <div style="background:#fff">
+    <div class="navbar-b" style="max-width:1200px;margin:0 auto;padding:0 20px;width:100%">
+      <!-- Logo B -->
+      <a class="logo-b" href="#">
+        <div class="logo-b-icon">
+          <svg viewBox="0 0 28 28" width="22" height="22" fill="none">
+            <path d="M3 14L25 4L18 24L13 15L3 14Z" fill="white" fill-opacity=".96" stroke="white" stroke-width=".2" stroke-linejoin="round"/>
+            <path d="M13 15L18 11" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity=".55"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-b-word">
+            <span class="snap">snap</span><span class="dot">·</span><span>travels</span>
+          </div>
+          <span class="logo-b-tagline">Book Smart. Travel Far.</span>
+        </div>
+      </a>
+
+      <!-- Nav B -->
+      <ul class="nav-b-list">
+        <li><a class="nav-b-link active" href="#"><i class="bi bi-airplane-fill"></i>Flights</a></li>
+        <li><a class="nav-b-link" href="#"><i class="bi bi-building"></i>Hotels</a></li>
+        <li><a class="nav-b-link" href="#"><i class="bi bi-map-fill"></i>Packages</a></li>
+        <li><a class="nav-b-link" href="#"><i class="bi bi-train-front-fill"></i>Trains</a></li>
+        <li><a class="nav-b-link" href="#"><i class="bi bi-bus-front-fill"></i>Buses</a></li>
+        <li><a class="nav-b-link" href="#"><i class="bi bi-car-front-fill"></i>Cabs</a></li>
+        <li style="position:relative"><a class="nav-b-link" href="#"><i class="bi bi-lightning-fill"></i>Activities<span class="new-tag">NEW</span></a></li>
+        <li><a class="nav-b-link" href="#"><i class="bi bi-shield-fill-check"></i>Travel Ins.</a></li>
+        <li><a class="nav-b-link" href="#"><i class="bi bi-grid-3x3-gap-fill"></i>More</a></li>
+      </ul>
+
+      <!-- Right B -->
+      <div class="nav-b-right">
+        <button class="wishlist-b">
+          <i class="bi bi-heart-fill"></i>Wishlist
+        </button>
+        <a class="account-pill-a" href="#" style="margin-left:4px">
+          <div class="avatar-a">A</div>
+          <span>Admin</span>
+          <i class="bi bi-chevron-down" style="font-size:.6rem;opacity:.5;margin-left:2px"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     OPTION C — Premium Dark Strip (luxury / premium travel)
+══════════════════════════════════════════════════════════════════ -->
+<div class="section-label" style="margin-top:32px">
+  Option C — Premium Dark Strip <span>Upscale · Dark top bar · Notification bell · Refined</span>
+</div>
+
+<!-- Dark utility strip -->
+<div class="navbar-c-top" style="background:#0f172a">
+  <a href="#"><i class="bi bi-telephone me-1"></i>1800-123-4567</a>
+  <span class="c-top-sep">|</span>
+  <a href="#">INR ₹</a>
+  <span class="c-top-sep">|</span>
+  <a href="#">English</a>
+  <span class="c-top-sep">|</span>
+  <a href="#" style="color:#f97316"><i class="bi bi-tag-fill me-1"></i>Offers</a>
+</div>
+
+<!-- Main nav C -->
+<div class="navbar-c-main">
+  <div class="nav-c-inner">
+    <!-- Logo C -->
+    <a class="logo-c" href="#">
+      <div class="logo-c-badge">
+        <svg viewBox="0 0 28 28" width="20" height="20" fill="none">
+          <path d="M3 14L25 4L18 24L13 15L3 14Z" fill="white" fill-opacity=".96" stroke="white" stroke-width=".2" stroke-linejoin="round"/>
+          <path d="M13 15L18 11" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity=".55"/>
+        </svg>
+      </div>
+      <div class="logo-c-word">
+        <div class="logo-c-top-line">
+          <span class="logo-c-snap">snap</span><span class="logo-c-travels">Travels<em>™</em></span>
+        </div>
+        <span class="logo-c-tag">Your Journey. Our Promise.</span>
+      </div>
+    </a>
+
+    <!-- Nav C -->
+    <ul class="nav-c-list">
+      <li><a class="nav-c-link active" href="#"><i class="bi bi-airplane-fill"></i>Flights</a></li>
+      <li><a class="nav-c-link" href="#"><i class="bi bi-building"></i>Hotels</a></li>
+      <li><a class="nav-c-link" href="#"><i class="bi bi-map-fill"></i>Packages</a></li>
+      <li><a class="nav-c-link" href="#"><i class="bi bi-train-front-fill"></i>Trains</a></li>
+      <li><a class="nav-c-link" href="#"><i class="bi bi-bus-front-fill"></i>Buses</a></li>
+      <li><a class="nav-c-link" href="#"><i class="bi bi-car-front-fill"></i>Cabs</a></li>
+      <li><a class="nav-c-link" href="#"><i class="bi bi-lightning-fill"></i>Activities</a></li>
+      <li><a class="nav-c-link" href="#"><i class="bi bi-shield-fill-check"></i>Travel Ins.</a></li>
+      <li><a class="nav-c-link" href="#"><i class="bi bi-grid-3x3-gap-fill"></i>More</a></li>
+    </ul>
+
+    <!-- Right C -->
+    <div class="nav-c-right">
+      <button class="notif-btn">
+        <i class="bi bi-bell"></i>
+        <div class="notif-dot"></div>
+      </button>
+      <button class="wishlist-btn-a" style="padding:0 10px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.67rem;font-weight:600;color:#4b5563">
+        <i class="bi bi-heart-fill" style="color:#e63950;font-size:1.15rem"></i>Wishlist
+      </button>
+      <a class="account-pill-c" href="#">
+        <div class="avatar-c">A</div>
+        <span>Admin</span>
+        <i class="bi bi-chevron-down" style="font-size:.6rem;opacity:.5;margin-left:2px"></i>
+      </a>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     LOGO CLOSEUP SHOWCASE
+══════════════════════════════════════════════════════════════════ -->
+<div class="section-label" style="margin-top:32px">
+  Logo Closeup — All 3 Options <span>On white + dark backgrounds</span>
+</div>
+
+<div class="logo-showcase">
+  <div class="logo-demo-grid">
+
+    <!-- Logo A -->
+    <div class="logo-demo-box">
+      <h4>Option A</h4>
+      <!-- On white -->
+      <a class="logo-a" href="#" style="padding:0;text-decoration:none">
+        <div class="logo-a-badge" style="width:48px;height:48px;border-radius:13px">
+          <svg viewBox="0 0 28 28" width="26" height="26" fill="none">
+            <path d="M3 14L25 4L18 24L13 15L3 14Z" fill="white" fill-opacity=".96" stroke-linejoin="round"/>
+            <path d="M13 15L18 11" stroke="white" stroke-width="1.3" stroke-linecap="round" opacity=".6"/>
+          </svg>
+        </div>
+        <div class="logo-a-text">
+          <span class="logo-a-snap" style="font-size:.75rem">snap</span>
+          <span class="logo-a-travels" style="font-size:1.45rem">T<em style="color:#e63950;font-style:normal">r</em>avels</span>
+        </div>
+      </a>
+      <!-- On dark -->
+      <div class="on-dark" style="gap:12px">
+        <div class="logo-a-badge" style="width:44px;height:44px;border-radius:12px">
+          <svg viewBox="0 0 28 28" width="24" height="24" fill="none">
+            <path d="M3 14L25 4L18 24L13 15L3 14Z" fill="white" fill-opacity=".96" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="logo-a-text">
+          <span style="font-size:.72rem;font-weight:500;color:rgba(255,255,255,.5);letter-spacing:.12em;text-transform:uppercase">snap</span>
+          <span style="font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:-.5px">T<em style="color:#f87171;font-style:normal">r</em>avels</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logo B -->
+    <div class="logo-demo-box">
+      <h4>Option B</h4>
+      <a class="logo-b" href="#" style="padding:0;text-decoration:none">
+        <div class="logo-b-icon" style="width:50px;height:50px;border-radius:14px">
+          <svg viewBox="0 0 28 28" width="26" height="26" fill="none">
+            <path d="M3 14L25 4L18 24L13 15L3 14Z" fill="white" fill-opacity=".96" stroke-linejoin="round"/>
+            <path d="M13 15L18 11" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity=".55"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-b-word" style="font-size:1.5rem">
+            <span class="snap">snap</span><span class="dot" style="font-size:1.9rem">·</span><span>travels</span>
+          </div>
+          <span class="logo-b-tagline" style="font-size:.62rem">Book Smart. Travel Far.</span>
+        </div>
+      </a>
+      <div class="on-dark" style="gap:12px">
+        <div class="logo-b-icon" style="width:46px;height:46px;border-radius:13px">
+          <svg viewBox="0 0 28 28" width="24" height="24" fill="none">
+            <path d="M3 14L25 4L18 24L13 15L3 14Z" fill="white" fill-opacity=".96" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:1.35rem;font-weight:900;color:#fff;letter-spacing:-.5px">
+            <span style="color:#f87171">snap</span><span style="color:rgba(255,255,255,.4)">·</span><span>travels</span>
+          </div>
+          <span style="font-size:.6rem;color:rgba(255,255,255,.4);font-weight:500;letter-spacing:.12em;text-transform:uppercase">Book Smart. Travel Far.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logo C -->
+    <div class="logo-demo-box">
+      <h4>Option C</h4>
+      <a class="logo-c" href="#" style="padding:0;text-decoration:none">
+        <div class="logo-c-badge" style="width:50px;height:50px;border-radius:13px">
+          <svg viewBox="0 0 28 28" width="26" height="26" fill="none">
+            <path d="M3 14L25 4L18 24L13 15L3 14Z" fill="white" fill-opacity=".96" stroke-linejoin="round"/>
+            <path d="M13 15L18 11" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity=".55"/>
+          </svg>
+        </div>
+        <div class="logo-c-word">
+          <div class="logo-c-top-line" style="font-size:1.4rem">
+            <span class="logo-c-snap" style="font-size:1.4rem">snap</span><span class="logo-c-travels" style="font-size:1.4rem">Travels<em style="color:#e63950;font-style:normal">™</em></span>
+          </div>
+          <span class="logo-c-tag" style="font-size:.6rem">Your Journey. Our Promise.</span>
+        </div>
+      </a>
+      <div class="on-dark" style="gap:12px">
+        <div style="width:46px;height:46px;background:#e63950;border-radius:13px;display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 28 28" width="24" height="24" fill="none">
+            <path d="M3 14L25 4L18 24L13 15L3 14Z" fill="white" fill-opacity=".96" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size:1.35rem;font-weight:900;color:#fff;letter-spacing:-.5px">
+            <span style="font-weight:300">snap</span><span>Travels</span><em style="color:#f87171;font-style:normal">™</em>
+          </div>
+          <span style="font-size:.58rem;color:rgba(255,255,255,.4);font-weight:500;letter-spacing:.12em;text-transform:uppercase">Your Journey. Our Promise.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     CURRENT vs SELECTED comparison placeholder
+══════════════════════════════════════════════════════════════════ -->
+<div class="comparison">
+  <div style="text-align:center;margin-bottom:24px">
+    <h3 style="font-size:1.1rem;font-weight:800;color:#0f172a">Current vs. New</h3>
+    <p style="font-size:.84rem;color:#64748b;margin-top:4px">Tell Claude "Option A", "Option B", or "Option C" — or mix: e.g. "Logo from B, navbar from C"</p>
+  </div>
+  <div class="compare-grid">
+    <div class="compare-box current-box">
+      <span class="tag-before">Before</span>
+      <div style="display:flex;align-items:center;gap:9px;justify-content:center">
+        <div style="width:36px;height:36px;background:linear-gradient(145deg,#f43f5e,#e63950);border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+            <path d="M21 16v-2l-8-5V3.5C13 2.67 12.33 2 11.5 2S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="white"/>
+          </svg>
+        </div>
+        <span style="font-size:1.1rem;font-weight:400;color:#111">Snap<strong>Travels</strong></span>
+      </div>
+      <p style="font-size:.76rem;color:#6b7280;margin-top:8px">Circle icon · plain wordmark<br>No tagline · thin accent line</p>
+    </div>
+    <div class="compare-box new-box">
+      <span class="tag-after">After (your pick)</span>
+      <p style="font-size:.84rem;color:#374151;font-weight:600;margin-bottom:4px">Choose A, B, or C above →</p>
+      <p style="font-size:.76rem;color:#6b7280">Rounded square icon · split-weight wordmark<br>Tagline · animated gradient accent · notification bell</p>
+    </div>
+  </div>
+</div>
+
+<div style="height:32px"></div>
+
+</body>
+</html>

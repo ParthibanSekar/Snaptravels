@@ -1,0 +1,528 @@
+{% extends "layouts/base.html" %}
+{% block title %}Activities & Experiences — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Dark hero gradient */
+  .activities-hero {
+    background: linear-gradient(135deg, rgba(15,23,42,.8), rgba(30,41,59,.7)), url('/static/images/hero/activities-search.jpg') center/cover no-repeat;
+    position: relative;
+    overflow: hidden;
+    padding: 60px 0;
+    color: #fff;
+  }
+
+  /* Radial glow effect top-right (amber) */
+  .activities-hero::before {
+    content: '';
+    position: absolute;
+    top: -150px;
+    right: -100px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.15), transparent);
+    border-radius: 50%;
+  }
+
+  .activities-hero .content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .activities-hero .hero-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .activities-hero .icon-box {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(245, 158, 11, 0.2);
+    border-radius: 14px;
+    font-size: 32px;
+    border: 1.5px solid rgba(245, 158, 11, 0.4);
+  }
+
+  .activities-hero h1 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .activities-hero .subtitle {
+    font-size: 1rem;
+    opacity: 0.9;
+  }
+
+  /* Search form */
+  .search-form {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    padding: 28px 24px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .search-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 14px;
+    align-items: flex-end;
+  }
+
+  @media (max-width: 768px) {
+    .search-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .search-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .search-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 8px;
+  }
+
+  .search-input,
+  .search-select {
+    padding: 10px 14px;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #334155;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  .search-input:focus,
+  .search-select:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+  }
+
+  .search-btn {
+    width: 100%;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(245, 158, 11, 0.3);
+  }
+
+  /* Filter pills */
+  .filter-section {
+    background: #fff;
+    padding: 20px 0;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 32px;
+  }
+
+  .filter-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-pill {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    border: 1.5px solid #e2e8f0;
+    color: #64748b;
+    background: #fff;
+    display: inline-block;
+  }
+
+  .filter-pill:hover {
+    border-color: #f59e0b;
+    color: #f59e0b;
+  }
+
+  .filter-pill.active {
+    background: #f59e0b;
+    color: #1f2937;
+    border-color: #f59e0b;
+    font-weight: 600;
+  }
+
+  /* Activities container */
+  .activities-container {
+    background: #f8fafc;
+    min-height: 60vh;
+    padding: 40px 0;
+  }
+
+  /* Activity cards */
+  .activity-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+  }
+
+  .activity-card {
+    background: #fff;
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .activity-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .activity-image-wrapper {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+  }
+
+  .activity-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .activity-card:hover .activity-image {
+    transform: scale(1.08);
+  }
+
+  .activity-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.5) 100%);
+  }
+
+  .activity-badges {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 4;
+  }
+
+  .category-badge {
+    display: inline-block;
+    background: #f59e0b;
+    color: #1f2937;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .discount-badge {
+    display: inline-block;
+    background: #ef4444;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+
+  .activity-body {
+    padding: 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .activity-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+    color: #0f172a;
+    line-height: 1.3;
+  }
+
+  .activity-meta {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-bottom: 10px;
+  }
+
+  .activity-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    margin-bottom: 12px;
+  }
+
+  .activity-rating-stars {
+    color: #f59e0b;
+    font-weight: 700;
+  }
+
+  .activity-rating-text {
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .activity-rating-count {
+    color: #94a3b8;
+  }
+
+  .activity-description {
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    flex-grow: 1;
+  }
+
+  .activity-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .activity-price {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .activity-original-price {
+    text-decoration: line-through;
+    color: #94a3b8;
+    font-size: 0.8rem;
+  }
+
+  .activity-current-price {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #0f172a;
+  }
+
+  .activity-price-unit {
+    color: #94a3b8;
+    font-size: 0.75rem;
+  }
+
+  .view-btn {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #1f2937;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  .view-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(245, 158, 11, 0.3);
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+  }
+
+  .empty-state-icon {
+    font-size: 4rem;
+    color: #cbd5e1;
+    margin-bottom: 16px;
+  }
+
+  .empty-state-title {
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 8px;
+  }
+
+  .empty-state-text {
+    color: #64748b;
+    margin-bottom: 20px;
+  }
+
+  .empty-state-btn {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .empty-state-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="activities-hero">
+  <div class="container">
+    <div class="content">
+      <div class="hero-header">
+        <div class="icon-box">⚡</div>
+        <div>
+          <h1>Activities & Experiences</h1>
+          <p class="subtitle">Tours, adventures, and cultural experiences across India.</p>
+        </div>
+      </div>
+
+      <!-- Search Form -->
+      <div class="search-form">
+        <form method="GET" action="{{ url_for('activities.listing') }}" class="search-row">
+          <div class="search-group">
+            <label class="search-label">City</label>
+            <input type="text" name="city" class="search-input" placeholder="Goa, Jaipur, Munnar…" value="{{ city }}">
+          </div>
+          <div class="search-group">
+            <label class="search-label">Category</label>
+            <select name="category" class="search-select">
+              <option value="">All Categories</option>
+              {% for cat in categories %}
+              <option value="{{ cat }}" {% if cat == category %}selected{% endif %}>{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="search-group">
+            <label class="search-label">Sort By</label>
+            <select name="sort" class="search-select">
+              <option value="popular" {% if sort=='popular' %}selected{% endif %}>Most Popular</option>
+              <option value="rating" {% if sort=='rating' %}selected{% endif %}>Highest Rated</option>
+              <option value="price_low" {% if sort=='price_low' %}selected{% endif %}>Price: Low to High</option>
+              <option value="price_high" {% if sort=='price_high' %}selected{% endif %}>Price: High to Low</option>
+            </select>
+          </div>
+          <button type="submit" class="search-btn">
+            <i class="bi bi-search"></i> Search
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Filter Pills -->
+<section class="filter-section">
+  <div class="container">
+    <div class="filter-pills">
+      <a href="{{ url_for('activities.listing', city=city) }}" class="filter-pill {% if not category %}active{% endif %}">All</a>
+      {% for cat in categories %}
+      <a href="{{ url_for('activities.listing', city=city, category=cat) }}" class="filter-pill {% if cat == category %}active{% endif %}">{{ cat }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Activities Listing -->
+<section class="activities-container">
+  <div class="container">
+    {% if activities %}
+    <div class="activity-cards">
+      {% for a in activities %}
+      <div class="activity-card">
+        <div class="activity-image-wrapper">
+          {% if a.image_path %}
+          <img src="{{ a.image_path }}" alt="{{ a.name }}" class="activity-image">
+          {% else %}
+          <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #f59e0b, #ef4444);"></div>
+          {% endif %}
+          <div class="activity-overlay"></div>
+
+          <div class="activity-badges">
+            <span class="category-badge">{{ a.category }}</span>
+          </div>
+
+          {% if a.discount_pct > 0 %}
+          <span class="discount-badge">{{ a.discount_pct }}% OFF</span>
+          {% endif %}
+        </div>
+
+        <div class="activity-body">
+          <h6 class="activity-title">{{ a.name }}</h6>
+
+          <div class="activity-meta">
+            📍 {{ a.city }} · ⏱️ {{ a.duration_label }}
+          </div>
+
+          <div class="activity-rating">
+            <span class="activity-rating-stars">★</span>
+            <span class="activity-rating-text">{{ a.rating }}</span>
+            <span class="activity-rating-count">({{ a.review_count }} reviews)</span>
+          </div>
+
+          {% if a.description %}
+          <p class="activity-description">{{ a.description[:100] }}{% if a.description|length > 100 %}…{% endif %}</p>
+          {% endif %}
+
+          <div class="activity-footer">
+            <div class="activity-price">
+              {% if a.original_price %}
+              <span class="activity-original-price">₹{{ "{:,.0f}".format(a.original_price) }}</span>
+              {% endif %}
+              <span class="activity-current-price">₹{{ "{:,.0f}".format(a.price_per_person) }}</span>
+              <span class="activity-price-unit">/person</span>
+            </div>
+            <a href="{{ url_for('activities.detail', activity_id=a.id) }}" class="view-btn">
+              View
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state-icon">✨</div>
+      <h5 class="empty-state-title">No activities found</h5>
+      <p class="empty-state-text">Try a different city or category.</p>
+      <a href="{{ url_for('activities.listing') }}" class="empty-state-btn">View All Activities</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

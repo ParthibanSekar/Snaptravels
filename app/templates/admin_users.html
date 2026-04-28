@@ -1,0 +1,258 @@
+{% extends "layouts/base.html" %}
+{% block title %}User Management — SnapTravels Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #0f1117 !important; color: #e2e8f0; }
+@keyframes accentSlide { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+.admin-accent-bar { height:3px; background:linear-gradient(90deg,#e63950,#f97316,#facc15,#e63950); background-size:200% 100%; animation:accentSlide 3s linear infinite; }
+.admin-topbar { background:#1a1f2e; border-bottom:1px solid #1e2433; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; }
+.admin-breadcrumb { display:flex; align-items:center; gap:8px; font-size:.82rem; color:#64748b; }
+.admin-breadcrumb a { color:#64748b; text-decoration:none; }
+.admin-breadcrumb a:hover { color:#e63950; }
+.admin-breadcrumb .sep { color:#334155; }
+.admin-breadcrumb .current { color:#e2e8f0; font-weight:600; }
+.admin-nav-links { display:flex; gap:6px; }
+.admin-nav-links a { padding:6px 14px; border-radius:8px; font-size:.78rem; font-weight:600; color:#94a3b8; text-decoration:none; transition:all .2s; border:1px solid transparent; }
+.admin-nav-links a:hover { background:#1e2433; color:#e2e8f0; }
+.admin-nav-links a.active { background:rgba(230,57,80,.12); color:#e63950; border-color:rgba(230,57,80,.25); }
+
+/* Search bar */
+.search-bar-wrap {
+  background: #1a1f2e; border: 1px solid #1e2433; border-radius: 16px;
+  padding: 16px 20px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.dark-search {
+  background: #141824; border: 1px solid #1e2433; border-radius: 10px;
+  color: #e2e8f0; padding: 9px 14px; font-size: .84rem; flex: 1; min-width: 200px;
+  transition: border-color .2s;
+}
+.dark-search:focus { outline: none; border-color: #e63950; }
+.dark-search::placeholder { color: #475569; }
+.btn-search {
+  padding: 9px 18px; border-radius: 10px; font-size: .82rem; font-weight: 700;
+  background: rgba(230,57,80,.12); border: 1px solid rgba(230,57,80,.25); color: #e63950;
+  cursor: pointer; transition: all .2s;
+}
+.btn-search:hover { background: rgba(230,57,80,.2); }
+.btn-clear {
+  padding: 9px 14px; border-radius: 10px; font-size: .82rem; font-weight: 600;
+  background: transparent; border: 1px solid #1e2433; color: #64748b;
+  text-decoration: none; transition: all .2s;
+}
+.btn-clear:hover { background: #1e2433; color: #94a3b8; }
+
+.data-panel { background:#1a1f2e; border:1px solid #1e2433; border-radius:16px; overflow:hidden; }
+.data-panel-header { padding:20px 24px; border-bottom:1px solid #1e2433; display:flex; align-items:center; justify-content:space-between; }
+.data-panel-title { font-size:1rem; font-weight:700; color:#e2e8f0; }
+.data-panel-sub { font-size:.75rem; color:#64748b; margin-top:2px; }
+
+.dark-table { width:100%; border-collapse:collapse; }
+.dark-table thead tr { background:#141824; }
+.dark-table thead th { padding:12px 18px; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#64748b; border-bottom:1px solid #1e2433; white-space:nowrap; }
+.dark-table tbody tr { border-bottom:1px solid #1e2433; transition:background .15s; }
+.dark-table tbody tr:last-child { border-bottom:none; }
+.dark-table tbody tr:hover { background:rgba(255,255,255,.025); }
+.dark-table tbody td { padding:14px 18px; font-size:.84rem; color:#cbd5e1; vertical-align:middle; }
+
+.user-avatar {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .88rem; font-weight: 800; flex-shrink: 0;
+}
+.avatar-admin { background: rgba(230,57,80,.15); color: #e63950; }
+.avatar-user  { background: rgba(56,189,248,.12); color: #38bdf8; }
+.avatar-disabled { background: rgba(100,116,139,.1); color: #64748b; }
+
+.role-badge {
+  display: inline-flex; align-items: center; padding: 3px 10px;
+  border-radius: 20px; font-size: .7rem; font-weight: 700;
+}
+.role-admin    { background: rgba(230,57,80,.12); color: #e63950; border: 1px solid rgba(230,57,80,.2); }
+.role-user     { background: rgba(34,197,94,.12); color: #4ade80; border: 1px solid rgba(34,197,94,.2); }
+.role-disabled { background: rgba(100,116,139,.1); color: #64748b; border: 1px solid rgba(100,116,139,.2); }
+
+.btn-toggle {
+  padding: 5px 12px; border-radius: 8px; font-size: .74rem; font-weight: 700;
+  border: 1px solid; cursor: pointer; transition: all .15s; background: transparent;
+}
+.btn-toggle.enable  { color: #4ade80; border-color: rgba(34,197,94,.3); }
+.btn-toggle.enable:hover { background: rgba(34,197,94,.12); }
+.btn-toggle.disable { color: #fb923c; border-color: rgba(251,146,60,.3); }
+.btn-toggle.disable:hover { background: rgba(251,146,60,.12); }
+
+.bookings-count {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 6px;
+  background: rgba(139,92,246,.1); color: #a78bfa;
+  font-size: .75rem; font-weight: 700;
+}
+
+.email-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700;
+}
+.email-verified   { background: rgba(34,197,94,.12); color: #4ade80; border: 1px solid rgba(34,197,94,.2); }
+.email-unverified { background: rgba(251,146,60,.1); color: #fb923c; border: 1px solid rgba(251,146,60,.25); }
+
+.btn-verify {
+  padding: 5px 12px; border-radius: 8px; font-size: .74rem; font-weight: 700;
+  border: 1px solid rgba(56,189,248,.3); color: #38bdf8; background: transparent;
+  cursor: pointer; transition: all .15s;
+}
+.btn-verify:hover { background: rgba(56,189,248,.12); }
+
+.btn-ghost { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:10px; font-size:.8rem; font-weight:600; background:transparent; border:1px solid #1e2433; color:#94a3b8; text-decoration:none; transition:all .2s; }
+.btn-ghost:hover { background:#1e2433; color:#e2e8f0; }
+.dark-pagination { display:flex; align-items:center; gap:4px; justify-content:center; padding:16px; }
+.pg-btn { display:inline-flex; align-items:center; justify-content:center; min-width:34px; height:34px; border-radius:8px; font-size:.8rem; font-weight:600; border:1px solid #1e2433; background:transparent; color:#94a3b8; text-decoration:none; transition:all .15s; }
+.pg-btn:hover { background:#1e2433; color:#e2e8f0; }
+.pg-btn.active { background:#e63950; border-color:#e63950; color:#fff; }
+.pg-btn.disabled { opacity:.35; pointer-events:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-accent-bar"></div>
+
+<div class="admin-topbar">
+  <div class="admin-breadcrumb">
+    <i class="bi bi-speedometer2" style="color:#e63950"></i>
+    <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+    <span class="sep">›</span>
+    <span class="current">👥 User Management</span>
+  </div>
+  <div class="admin-nav-links">
+    <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap me-1"></i>Dashboard</a>
+    <a href="{{ url_for('admin.manage_flights') }}"><i class="bi bi-airplane me-1"></i>Flights</a>
+    <a href="{{ url_for('admin.manage_bookings') }}"><i class="bi bi-receipt me-1"></i>Bookings</a>
+    <a href="{{ url_for('admin_ext.hotels') }}"><i class="bi bi-building me-1"></i>Hotels</a>
+    <a href="{{ url_for('admin_ext.users') }}" class="active"><i class="bi bi-people me-1"></i>Users</a>
+    <a href="{{ url_for('admin_ext.refunds') }}"><i class="bi bi-arrow-counterclockwise me-1"></i>Refunds</a>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4" style="max-width:1400px;margin:0 auto">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#64748b;font-weight:700">Account Management</div>
+      <h2 style="font-size:1.5rem;font-weight:900;color:#e2e8f0;margin:4px 0 0">All Users</h2>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn-ghost"><i class="bi bi-arrow-left"></i> Dashboard</a>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar-wrap">
+    <i class="bi bi-search" style="color:#475569;font-size:.9rem"></i>
+    <form method="GET" class="d-flex align-items-center gap-2 flex-grow-1 flex-wrap">
+      <input type="text" name="q" class="dark-search" placeholder="Search by email address…" value="{{ q }}">
+      <button type="submit" class="btn-search"><i class="bi bi-search me-1"></i>Search</button>
+      {% if q %}
+      <a href="{{ url_for('admin_ext.users') }}" class="btn-clear"><i class="bi bi-x me-1"></i>Clear</a>
+      {% endif %}
+    </form>
+    {% if q %}
+    <div style="font-size:.78rem;color:#64748b">Results for: <span style="color:#e2e8f0;font-weight:600">{{ q }}</span></div>
+    {% endif %}
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div>
+        <div class="data-panel-title">👥 Registered Users</div>
+        <div class="data-panel-sub">{{ users.total }} users · Page {{ users.page }} of {{ users.pages }}</div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="dark-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Email</th>
+            <th>Joined</th>
+            <th>Bookings</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users.items %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                <div class="user-avatar {{ 'avatar-admin' if u.role == 'admin' else ('avatar-disabled' if u.role == 'disabled' else 'avatar-user') }}">
+                  {{ u.email[0]|upper }}
+                </div>
+                <div>
+                  <div style="font-weight:600;color:#e2e8f0">{{ u.email }}</div>
+                  <div style="font-size:.7rem;color:#475569;margin-top:1px;font-family:monospace">ID #{{ u.id }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="role-badge {{ 'role-admin' if u.role == 'admin' else ('role-disabled' if u.role == 'disabled' else 'role-user') }}">
+                {% if u.role == 'admin' %}🔑{% elif u.role == 'disabled' %}🚫{% else %}✓{% endif %}
+                {{ u.role|capitalize }}
+              </span>
+            </td>
+            <td>
+              {% if u.email_confirmed %}
+              <span class="email-badge email-verified"><i class="bi bi-check-circle-fill"></i> Verified</span>
+              {% else %}
+              <span class="email-badge email-unverified"><i class="bi bi-exclamation-circle"></i> Pending</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-size:.8rem;color:#94a3b8">{{ u.created_at.strftime('%d %b %Y') }}</div>
+            </td>
+            <td>
+              <span class="bookings-count"><i class="bi bi-receipt"></i> {{ u.bookings|length }}</span>
+            </td>
+            <td style="text-align:right">
+              <div class="d-flex align-items-center gap-2 justify-content-end">
+                {% if not u.email_confirmed and u.role != 'admin' %}
+                <form method="POST" action="{{ url_for('admin_ext.verify_user_email', uid=u.id) }}" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn-verify" title="Manually verify email">
+                    <i class="bi bi-envelope-check me-1"></i>Verify
+                  </button>
+                </form>
+                {% endif %}
+                {% if u.role != 'admin' %}
+                <form method="POST" action="{{ url_for('admin_ext.toggle_user_status', uid=u.id) }}" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn-toggle {{ 'enable' if u.role == 'disabled' else 'disable' }}">
+                    {% if u.role == 'disabled' %}
+                      <i class="bi bi-check-circle me-1"></i>Enable
+                    {% else %}
+                      <i class="bi bi-slash-circle me-1"></i>Disable
+                    {% endif %}
+                  </button>
+                </form>
+                {% else %}
+                <span style="font-size:.72rem;color:#334155">— protected —</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if users.pages > 1 %}
+    <div class="dark-pagination">
+      {% for p in users.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+          <a href="{{ url_for('admin_ext.users', page=p, q=q) }}" class="pg-btn {{ 'active' if p == users.page else '' }}">{{ p }}</a>
+        {% else %}
+          <span class="pg-btn disabled">…</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

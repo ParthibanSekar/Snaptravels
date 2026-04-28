@@ -1,0 +1,598 @@
+{% extends "layouts/base.html" %}
+{% block title %}Book Bus Tickets — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f5f3ff; }
+.buses-page { min-height: 100vh; }
+
+/* ── Hero ─────────────────────────────────────── */
+.bus-hero {
+  background: linear-gradient(135deg, rgba(59,7,100,.78), rgba(124,58,237,.65)), url('/static/images/hero/buses-search.jpg') center/cover no-repeat;
+  padding: 32px 0 40px; position: relative; overflow: hidden;
+}
+.bus-hero::before {
+  content: ''; position: absolute; bottom: -40%; left: -10%; width: 70%; height: 180%;
+  background: radial-gradient(ellipse, rgba(255,255,255,.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+.search-card {
+  background: #fff; border-radius: 18px;
+  padding: 24px 28px; box-shadow: 0 8px 40px rgba(0,0,0,.18);
+}
+.search-card .form-control,
+.search-card .form-select {
+  border-radius: 10px; border: 1.5px solid #ede9fe;
+  padding: 10px 14px; font-size: .92rem;
+  transition: border-color .2s, box-shadow .2s;
+}
+.search-card .form-control:focus,
+.search-card .form-select:focus {
+  border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.12);
+}
+.btn-search {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 11px; font-weight: 700; width: 100%;
+  transition: all .2s; box-shadow: 0 4px 14px rgba(124,58,237,.3);
+}
+.btn-search:hover { background: linear-gradient(135deg, #5b21b6, #7c3aed); transform: translateY(-1px); }
+
+/* ── Filter sidebar ───────────────────────────── */
+.filter-panel {
+  background: #fff; border-radius: 16px;
+  padding: 20px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
+  position: sticky; top: 80px;
+}
+.filter-panel h6 { font-weight: 700; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
+.filter-section { border-bottom: 1px solid #f3f4f6; padding-bottom: 16px; margin-bottom: 16px; }
+.filter-section:last-child { border-bottom: none; }
+.sort-side-btn {
+  border: 1.5px solid #ede9fe; background: #fff; border-radius: 8px;
+  padding: 6px 12px; font-size: .82rem; cursor: pointer; transition: all .15s;
+  color: #374151; font-weight: 500; display: block; width: 100%; text-align: left; margin-bottom: 6px;
+}
+.sort-side-btn:hover, .sort-side-btn.active { background: #f5f3ff; border-color: #c4b5fd; color: #7c3aed; }
+.type-filter-btn {
+  border: 1.5px solid #ede9fe; background: #fff; border-radius: 8px;
+  padding: 6px 12px; font-size: .82rem; cursor: pointer; transition: all .15s;
+  color: #374151; font-weight: 600; display: flex; align-items: center; gap: 6px;
+  margin-bottom: 6px; width: 100%;
+}
+.type-filter-btn:hover { background: #f5f3ff; border-color: #c4b5fd; color: #7c3aed; }
+.type-filter-btn.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+.filter-cb { display: flex; align-items: center; gap: 8px; font-size: .83rem; margin-bottom: 7px; }
+.filter-cb input { accent-color: #7c3aed; }
+
+/* ── Bus cards ──────────────────────────────── */
+.bus-card {
+  background: #fff; border-radius: 18px;
+  border: 1.5px solid #ede9fe;
+  box-shadow: 0 2px 14px rgba(124,58,237,.05);
+  transition: all .2s; overflow: hidden; margin-bottom: 16px;
+  position: relative;
+}
+.bus-card:hover { border-color: #c4b5fd; box-shadow: 0 8px 32px rgba(124,58,237,.13); transform: translateY(-2px); }
+.bus-card-top { height: 4px; background: linear-gradient(90deg, #7c3aed, #c4b5fd); }
+
+/* Bus type badge */
+.bus-type-badge {
+  display: inline-block; border-radius: 6px;
+  padding: 2px 9px; font-size: .68rem; font-weight: 700;
+  letter-spacing: .03em; margin-top: 4px;
+}
+.type-volvo    { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+.type-sleeper  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.type-seater   { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+.type-non-ac   { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
+.type-luxury   { background: #f5f3ff; color: #4c1d95; border: 1px solid #c4b5fd; }
+.type-default  { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+
+/* Route visual */
+.route-wrap { display: flex; align-items: center; gap: 10px; }
+.route-time { font-size: 1.35rem; font-weight: 900; color: #0f172a; line-height: 1; }
+.route-station { font-size: .7rem; color: #9ca3af; margin-top: 3px; }
+.route-mid { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.route-dur { font-size: .72rem; color: #6b7280; font-weight: 700; }
+.route-line-wrap { width: 100%; display: flex; align-items: center; }
+.route-dot { width: 8px; height: 8px; border-radius: 50%; background: #7c3aed; flex-shrink: 0; }
+.route-bar { flex: 1; height: 2px; background: linear-gradient(90deg, #7c3aed, #c4b5fd, #7c3aed); }
+.route-bus-icon { font-size: .9rem; margin: 0 5px; flex-shrink: 0; }
+
+/* Seat bar */
+.seats-badge-green { font-size:.65rem; color:#16a34a; font-weight:700; background:#dcfce7; padding:1px 8px; border-radius:10px; }
+.seats-badge-orange { font-size:.65rem; color:#d97706; font-weight:700; background:#fef3c7; padding:1px 8px; border-radius:10px; }
+.avail-bar { height: 5px; border-radius: 3px; margin-top: 4px; background: #e5e7eb; overflow: hidden; width: 80px; }
+.avail-bar-fill { height: 100%; border-radius: 3px; }
+
+/* Amenity pills */
+.amenity-pill {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: #f5f3ff; border: 1px solid #ede9fe; border-radius: 6px;
+  padding: 2px 7px; font-size: .68rem; color: #5b21b6; font-weight: 600;
+}
+
+/* Price + CTA */
+.price-main { font-size: 1.3rem; font-weight: 900; color: #7c3aed; line-height: 1; }
+.btn-book-bus {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 10px 22px; font-weight: 700; font-size: .88rem;
+  transition: all .2s; box-shadow: 0 4px 12px rgba(124,58,237,.25); white-space: nowrap;
+}
+.btn-book-bus:hover { background: linear-gradient(135deg, #5b21b6, #7c3aed); color: #fff; transform: translateY(-1px); }
+
+/* Sort bar */
+.sort-bar {
+  background: #fff; border-radius: 12px; padding: 12px 18px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.06);
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+}
+
+/* Popular route cards */
+.route-card {
+  background: #fff; border-radius: 14px; border: 1.5px solid #ede9fe;
+  padding: 14px 16px; cursor: pointer; transition: all .15s; text-align: center;
+}
+.route-card:hover { background: #f5f3ff; border-color: #c4b5fd; transform: translateY(-2px); }
+.route-name { font-weight: 700; font-size: .88rem; color: #111; }
+.route-km { font-size: .75rem; color: #9ca3af; margin-top: 3px; }
+.route-est { font-size: .78rem; font-weight: 700; color: #7c3aed; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<div class="bus-hero">
+  <div class="container">
+    <div class="d-flex align-items-center gap-3 mb-4 text-white">
+      <div style="width:52px;height:52px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🚌</div>
+      <div>
+        <h1 class="fw-black mb-0" style="font-size:1.9rem;letter-spacing:-.01em">Bus Tickets</h1>
+        <p class="mb-0 opacity-75" style="font-size:.88rem">Comfortable intercity buses — Volvo, AC Sleeper &amp; more.</p>
+      </div>
+    </div>
+    <div class="search-card">
+      <form method="POST" action="{{ url_for('buses.search') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-geo-alt text-primary me-1"></i>From City
+            </label>
+            <input type="text" name="origin" class="form-control st-ac-city" placeholder="Chennai, Mumbai…" value="{{ origin }}" autocomplete="off" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-geo-alt-fill text-danger me-1"></i>To City
+            </label>
+            <input type="text" name="destination" class="form-control st-ac-city" placeholder="Bangalore, Pune…" value="{{ destination }}" autocomplete="off" required>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-calendar3 text-primary me-1"></i>Travel Date
+            </label>
+            <input type="date" name="travel_date" class="form-control" value="{{ travel_date }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">Bus Type</label>
+            <select name="bus_type" class="form-control">
+              <option value="ALL"        {% if bus_type=="ALL"        %}selected{% endif %}>All Types</option>
+              <option value="AC Sleeper" {% if bus_type=="AC Sleeper" %}selected{% endif %}>🛏 AC Sleeper</option>
+              <option value="Volvo"      {% if bus_type=="Volvo"      %}selected{% endif %}>⭐ Volvo AC</option>
+              <option value="AC Seater"  {% if bus_type=="AC Seater"  %}selected{% endif %}>❄️ AC Seater</option>
+              <option value="Non-AC"     {% if bus_type=="Non-AC"     %}selected{% endif %}>🚌 Non-AC</option>
+            </select>
+          </div>
+          <div class="col-md-1">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">Seats</label>
+            <select name="passengers" class="form-control">
+              {% for i in range(1,7) %}
+              <option value="{{ i }}" {% if i==passengers %}selected{% endif %}>{{ i }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-1">
+            <label class="form-label small fw-bold mb-1">&nbsp;</label>
+            <button type="submit" class="btn-search btn">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULTS / LANDING ══════════════════════════════════════════════════ -->
+<div class="buses-page">
+<div class="container py-4">
+
+{% if buses %}
+<div class="row g-3">
+
+  <!-- ── Filter Sidebar ── -->
+  <div class="col-lg-3 d-none d-lg-block">
+    <div class="filter-panel">
+
+      <div class="filter-section">
+        <h6 class="mb-3">Sort By</h6>
+        <button class="sort-side-btn active" onclick="sortBuses('depart', this)">
+          <i class="bi bi-sunrise me-1"></i>Earliest Departure
+        </button>
+        <button class="sort-side-btn" onclick="sortBuses('price', this)">
+          <i class="bi bi-currency-rupee me-1"></i>Lowest Fare
+        </button>
+        <button class="sort-side-btn" onclick="sortBuses('seats', this)">
+          <i class="bi bi-people me-1"></i>Most Seats
+        </button>
+        <button class="sort-side-btn" onclick="sortBuses('duration', this)">
+          <i class="bi bi-clock me-1"></i>Shortest Duration
+        </button>
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Bus Type</h6>
+        <button class="type-filter-btn active" data-btype="all" onclick="filterBusType('all', this)">
+          🚌 All Types
+        </button>
+        <button class="type-filter-btn" data-btype="sleeper" onclick="filterBusType('sleeper', this)">
+          🛏 AC Sleeper
+        </button>
+        <button class="type-filter-btn" data-btype="volvo" onclick="filterBusType('volvo', this)">
+          ⭐ Volvo AC
+        </button>
+        <button class="type-filter-btn" data-btype="seater" onclick="filterBusType('seater', this)">
+          ❄️ AC Seater
+        </button>
+        <button class="type-filter-btn" data-btype="non-ac" onclick="filterBusType('non-ac', this)">
+          🚌 Non-AC
+        </button>
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Departure Time</h6>
+        {% for slot, label, icon in [('00:00-06:00','Night (12am–6am)','🌙'),('06:00-12:00','Morning (6am–12pm)','🌅'),('12:00-18:00','Afternoon (12–6pm)','☀️'),('18:00-24:00','Evening (6pm–12am)','🌆')] %}
+        <label class="filter-cb">
+          <input type="checkbox" checked onchange="applyBusFilters()" data-slot="{{ slot }}">
+          {{ icon }} {{ label }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Seats Available</h6>
+        <label class="filter-cb">
+          <input type="checkbox" id="onlyAvail" onchange="applyBusFilters()">
+          Show only available buses
+        </label>
+      </div>
+
+      <button onclick="resetBusFilters()" class="btn btn-outline-secondary btn-sm w-100" style="border-radius:8px">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Bus Results ── -->
+  <div class="col-lg-9">
+
+    <!-- Search chips -->
+    {% if search_performed %}
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      {% if origin %}
+      <span class="badge" style="background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        🚌 {{ origin }}
+      </span>
+      {% endif %}
+      {% if destination %}
+      <span class="badge" style="background:#fef9c3;color:#92400e;border:1px solid #fde68a;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        📍 {{ destination }}
+      </span>
+      {% endif %}
+      {% if travel_date %}
+      <span class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        📅 {{ travel_date }}
+      </span>
+      {% endif %}
+      <span class="badge" style="background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        👥 {{ passengers }} seat{{ 's' if passengers > 1 }}
+      </span>
+      {% if bus_type and bus_type != 'ALL' %}
+      <span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        🚌 {{ bus_type }}
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Sort bar -->
+    <div class="sort-bar">
+      <div class="fw-bold" style="font-size:.95rem;color:#111">
+        <span id="busCount">{{ buses|length }}</span>
+        bus{{ 'es' if buses|length != 1 }}
+        {% if search_performed %}found{% else %}available{% endif %}
+      </div>
+      <div class="text-muted small">
+        <i class="bi bi-shield-check me-1 text-success"></i>All operators verified
+      </div>
+    </div>
+
+    <!-- Bus cards -->
+    <div id="busResults">
+    {% for b in buses %}
+    {% set btype_lc = b.bus_type | lower if b.bus_type else '' %}
+    {% if 'volvo' in btype_lc %}
+      {% set btype_key = 'volvo' %}{% set type_cls = 'type-volvo' %}
+    {% elif 'sleeper' in btype_lc %}
+      {% set btype_key = 'sleeper' %}{% set type_cls = 'type-sleeper' %}
+    {% elif 'non' in btype_lc or 'non-ac' in btype_lc %}
+      {% set btype_key = 'non-ac' %}{% set type_cls = 'type-non-ac' %}
+    {% elif 'luxury' in btype_lc or 'premium' in btype_lc %}
+      {% set btype_key = 'luxury' %}{% set type_cls = 'type-luxury' %}
+    {% else %}
+      {% set btype_key = 'seater' %}{% set type_cls = 'type-seater' %}
+    {% endif %}
+    {% set seats_pct = [b.seats_left / 50 * 100, 100]|min|int %}
+
+    <div class="bus-card"
+         data-depart="{{ b.depart_time }}"
+         data-price="{{ b.price }}"
+         data-seats="{{ b.seats_left }}"
+         data-duration="{{ b.duration_mins }}"
+         data-btype="{{ btype_key }}">
+      <div class="bus-card-top"></div>
+
+      <div class="p-3 pb-2">
+        <div class="row align-items-center g-3">
+
+          <!-- Operator info -->
+          <div class="col-md-3">
+            <div style="font-weight:800;font-size:.98rem;color:#111">{{ b.operator }}</div>
+            <div style="font-size:.73rem;color:#9ca3af;margin-top:2px">{{ b.bus_no }}</div>
+            <span class="bus-type-badge {{ type_cls }}">{{ b.bus_type }}</span>
+            {% if b.amenities %}
+            <div class="mt-2 d-flex flex-wrap gap-1">
+              {% for a in b.amenities.split(",")[:2] %}
+              <span class="amenity-pill">{{ a.strip() }}</span>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="mt-2 d-flex flex-wrap gap-1">
+              <span class="amenity-pill">❄️ AC</span>
+              <span class="amenity-pill">📱 USB</span>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Route visualization -->
+          <div class="col-md-5">
+            <div class="route-wrap">
+              <div class="text-center">
+                <div class="route-time">{{ b.depart_time }}</div>
+                <div class="route-station">{{ b.origin }}</div>
+              </div>
+              <div class="route-mid">
+                <div class="route-dur">{{ b.duration_mins // 60 }}h {{ b.duration_mins % 60 }}m</div>
+                <div class="route-line-wrap">
+                  <div class="route-dot"></div>
+                  <div class="route-bar"></div>
+                  <span class="route-bus-icon">🚌</span>
+                  <div class="route-bar"></div>
+                  <div class="route-dot"></div>
+                </div>
+                <div style="font-size:.65rem;color:#16a34a;font-weight:700;background:#dcfce7;padding:1px 8px;border-radius:10px">Direct</div>
+              </div>
+              <div class="text-center">
+                <div class="route-time">{{ b.arrive_time }}</div>
+                <div class="route-station">{{ b.destination }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seats + Price -->
+          <div class="col-md-4 text-md-end">
+            <!-- Seat availability -->
+            <div class="mb-2 d-flex flex-column align-items-md-end gap-1">
+              {% if b.seats_left > 15 %}
+              <span class="seats-badge-green">{{ b.seats_left }} seats available</span>
+              {% elif b.seats_left > 0 %}
+              <span class="seats-badge-orange">Only {{ b.seats_left }} left!</span>
+              {% else %}
+              <span style="font-size:.65rem;color:#dc2626;font-weight:700;background:#fee2e2;padding:1px 8px;border-radius:10px">Sold Out</span>
+              {% endif %}
+              <div class="avail-bar ms-auto">
+                <div class="avail-bar-fill" style="width:{{ seats_pct }}%;background:{{ '#16a34a' if b.seats_left > 15 else '#f59e0b' if b.seats_left > 0 else '#dc2626' }}"></div>
+              </div>
+            </div>
+            <!-- Price -->
+            <div class="price-main">₹{{ "{:,.0f}".format(b.price) }}</div>
+            <div style="font-size:.72rem;color:#9ca3af;margin-top:2px">per seat</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer row -->
+      <div class="border-top mx-3 pt-2 pb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex gap-3" style="font-size:.76rem;color:#6b7280">
+          <span><i class="bi bi-wifi me-1"></i>Wi-Fi</span>
+          <span><i class="bi bi-cup-hot me-1"></i>Snacks</span>
+          <span><i class="bi bi-shield-check me-1"></i>GPS Tracked</span>
+          <span><i class="bi bi-star-fill text-warning me-1"></i>4.{{ loop.index0 % 3 + 3 }}/5</span>
+        </div>
+        <a href="{{ url_for('buses.select', bus_id=b.id) }}" class="btn-book-bus btn">
+          Book Now — ₹{{ "{:,.0f}".format(b.price) }}
+          <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+    </div>
+
+  </div><!-- /col-lg-9 -->
+</div><!-- /row -->
+
+{% else %}
+<!-- ── Landing state ───────────────────────────────────── -->
+<!-- Popular routes -->
+<h6 class="fw-bold mb-3" style="font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:#6b7280">
+  <i class="bi bi-lightning-fill text-warning me-1"></i>Popular Bus Routes
+</h6>
+<div class="row g-3 mb-5">
+  {% set routes = [
+    ("Chennai","Bangalore","346 km","~₹280"),
+    ("Mumbai","Pune","149 km","~₹320"),
+    ("Hyderabad","Goa","660 km","~₹850"),
+    ("Delhi","Manali","570 km","~₹950"),
+    ("Bangalore","Mysore","143 km","~₹200"),
+    ("Mumbai","Goa","594 km","~₹750")
+  ] %}
+  {% for r in routes %}
+  <div class="col-6 col-md-4 col-lg-2">
+    <form method="POST" action="{{ url_for('buses.search') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="origin" value="{{ r[0] }}">
+      <input type="hidden" name="destination" value="{{ r[1] }}">
+      <input type="hidden" name="passengers" value="1">
+      <input type="hidden" name="bus_type" value="ALL">
+      <button type="submit" class="route-card w-100 border-0">
+        <div class="route-name">{{ r[0] }} → {{ r[1] }}</div>
+        <div class="route-km">{{ r[2] }}</div>
+        <div class="route-est">{{ r[3] }}</div>
+      </button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Trust badges -->
+<div class="row g-3 mb-4">
+  {% for item in [("🛡️","Safe & Verified","All operators background checked"),("💺","Comfortable Rides","Volvo, AC Sleeper & more"),("📍","Live Tracking","GPS tracked throughout"),("🔄","Free Cancellation","Up to 2 hrs before departure")] %}
+  <div class="col-6 col-md-3">
+    <div style="background:#fff;border-radius:14px;padding:18px;text-align:center;border:1.5px solid #ede9fe;box-shadow:0 2px 10px rgba(0,0,0,.04)">
+      <div style="font-size:2rem;margin-bottom:6px">{{ item[0] }}</div>
+      <div style="font-weight:700;font-size:.88rem;color:#111">{{ item[1] }}</div>
+      <div style="font-size:.75rem;color:#9ca3af;margin-top:3px">{{ item[2] }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ── No results ── #}
+{% if search_performed and not buses and not search_error %}
+<div style="text-align:center;padding:60px 20px;">
+  <div style="font-size:3.5rem;margin-bottom:16px;opacity:.8">🚌</div>
+  <h4 style="font-weight:700;color:#1e293b;margin-bottom:8px">No buses found</h4>
+  <p style="color:#64748b;max-width:420px;margin:0 auto 20px">
+    We couldn't find any buses for this route. Try different cities, another date, or select "All Types".
+  </p>
+  <a href="{{ url_for('buses.search') }}" class="btn btn-primary" style="border-radius:10px;padding:10px 24px">
+    <i class="bi bi-arrow-counterclockwise me-1"></i>New Search
+  </a>
+</div>
+{% endif %}
+
+{# ── Search error ── #}
+{% if search_performed and search_error %}
+<div style="text-align:center;padding:60px 20px;">
+  <div style="font-size:3.5rem;margin-bottom:16px;opacity:.8">⚠️</div>
+  <h4 style="font-weight:700;color:#dc2626;margin-bottom:8px">Search Failed</h4>
+  <p style="color:#64748b;max-width:480px;margin:0 auto 20px">{{ search_error }}</p>
+  <div class="d-flex justify-content-center gap-2">
+    <a href="{{ url_for('buses.search') }}" class="btn btn-outline-secondary" style="border-radius:10px;padding:10px 24px">
+      <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+    </a>
+    <button onclick="document.querySelector('form').submit()" class="btn btn-primary" style="border-radius:10px;padding:10px 24px">
+      <i class="bi bi-arrow-repeat me-1"></i>Retry Search
+    </button>
+  </div>
+</div>
+{% endif %}
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const today = new Date().toISOString().split('T')[0];
+document.querySelectorAll('input[type="date"]').forEach(i => i.min = today);
+
+// ── Sort ─────────────────────────────────────────────────────────────────
+function sortBuses(key, btn) {
+  const container = document.getElementById('busResults');
+  if (!container) return;
+  const cards = [...container.querySelectorAll('.bus-card')];
+  cards.sort((a, b) => {
+    if (key === 'depart')   return a.dataset.depart.localeCompare(b.dataset.depart);
+    if (key === 'price')    return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+    if (key === 'seats')    return parseInt(b.dataset.seats) - parseInt(a.dataset.seats);
+    if (key === 'duration') return parseInt(a.dataset.duration) - parseInt(b.dataset.duration);
+    return 0;
+  });
+  cards.forEach(c => container.appendChild(c));
+  document.querySelectorAll('.sort-side-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+// ── Bus type filter ──────────────────────────────────────────────────────
+function filterBusType(btype, btn) {
+  document.querySelectorAll('.type-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyBusFilters();
+}
+
+// ── Combine all filters ──────────────────────────────────────────────────
+function applyBusFilters() {
+  const activeBtype = document.querySelector('.type-filter-btn.active')?.dataset.btype || 'all';
+  const activeSlots = [...document.querySelectorAll('input[data-slot]:checked')].map(cb => cb.dataset.slot);
+  const onlyAvail   = document.getElementById('onlyAvail')?.checked;
+
+  document.querySelectorAll('.bus-card').forEach(card => {
+    const btype  = card.dataset.btype  || '';
+    const depart = card.dataset.depart || '00:00';
+    const seats  = parseInt(card.dataset.seats) || 0;
+    let show = true;
+
+    if (activeBtype !== 'all' && btype !== activeBtype) show = false;
+
+    if (activeSlots.length > 0) {
+      const matchSlot = activeSlots.some(slot => {
+        const [s, e] = slot.split('-');
+        return depart >= s && depart < e;
+      });
+      if (!matchSlot) show = false;
+    }
+
+    if (onlyAvail && seats === 0) show = false;
+
+    card.style.display = show ? '' : 'none';
+  });
+  updateBusCount();
+}
+
+function updateBusCount() {
+  const visible = document.querySelectorAll('.bus-card:not([style*="none"])').length;
+  const el = document.getElementById('busCount');
+  if (el) el.textContent = visible;
+}
+
+function resetBusFilters() {
+  document.querySelectorAll('input[data-slot]').forEach(cb => cb.checked = true);
+  const availCb = document.getElementById('onlyAvail');
+  if (availCb) availCb.checked = false;
+  document.querySelectorAll('.type-filter-btn').forEach(b => b.classList.remove('active'));
+  const first = document.querySelector('.type-filter-btn');
+  if (first) first.classList.add('active');
+  document.querySelectorAll('.bus-card').forEach(c => c.style.display = '');
+  document.querySelectorAll('.sort-side-btn').forEach(b => b.classList.remove('active'));
+  const firstSort = document.querySelector('.sort-side-btn');
+  if (firstSort) firstSort.classList.add('active');
+  updateBusCount();
+}
+</script>
+<script>stAC(['origin','destination']);</script>
+{% endblock %}

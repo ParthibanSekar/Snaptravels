@@ -1,0 +1,308 @@
+{% extends "layouts/base.html" %}
+{% block title %}Travel Insurance Plans — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f0f9ff; }
+
+/* ── Hero ─────────────────────────────────────── */
+.ins-hero {
+  background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 55%, #0ea5e9 100%);
+  padding: 36px 0 48px; position: relative; overflow: hidden;
+}
+.ins-hero::before {
+  content: '';
+  position: absolute; top: -30%; right: -5%; width: 55%; height: 200%;
+  background: radial-gradient(ellipse, rgba(255,255,255,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.ins-hero-icon {
+  position: absolute; right: 5%; top: 50%; transform: translateY(-50%);
+  font-size: 12rem; opacity: .07; line-height: 1; pointer-events: none;
+}
+
+/* Search card in hero */
+.ins-search-card {
+  background: #fff; border-radius: 18px;
+  padding: 22px 26px; box-shadow: 0 8px 40px rgba(0,0,0,.18);
+  display: inline-block; min-width: 480px;
+}
+.ins-search-card .form-control,
+.ins-search-card .form-select {
+  border-radius: 10px; border: 1.5px solid #bae6fd;
+  padding: 10px 14px; font-size: .92rem; font-weight: 500;
+  transition: border-color .2s, box-shadow .2s;
+}
+.ins-search-card .form-control:focus,
+.ins-search-card .form-select:focus {
+  border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,.12);
+}
+.btn-calc {
+  background: linear-gradient(135deg, #0369a1, #0ea5e9);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 11px 22px; font-weight: 700; font-size: .9rem;
+  transition: all .2s; box-shadow: 0 4px 14px rgba(3,105,161,.3);
+  white-space: nowrap;
+}
+.btn-calc:hover { background: linear-gradient(135deg, #075985, #0369a1); transform: translateY(-1px); }
+
+/* ── Plan cards ───────────────────────────────── */
+.plan-card {
+  background: #fff; border-radius: 20px; overflow: hidden;
+  box-shadow: 0 4px 20px rgba(3,105,161,.08);
+  border: 1.5px solid #e0f2fe;
+  transition: all .2s; position: relative;
+}
+.plan-card:hover { transform: translateY(-5px); box-shadow: 0 12px 36px rgba(3,105,161,.16); border-color: #7dd3fc; }
+.plan-card.highlighted {
+  border-color: #0369a1;
+  box-shadow: 0 8px 32px rgba(3,105,161,.22);
+  transform: translateY(-4px) scale(1.01);
+}
+.plan-card.highlighted:hover { transform: translateY(-8px) scale(1.01); }
+
+.plan-header {
+  padding: 22px 24px 18px; color: #fff; position: relative; overflow: hidden;
+}
+.plan-header::after {
+  content: ''; position: absolute; bottom: -30%; right: -10%;
+  width: 60%; height: 150%;
+  background: rgba(255,255,255,.08); border-radius: 50%;
+}
+.plan-badge {
+  position: absolute; top: -1px; right: 18px;
+  background: #facc15; color: #0f172a;
+  font-size: .68rem; font-weight: 800; padding: 4px 12px;
+  border-radius: 0 0 10px 10px; letter-spacing: .04em;
+}
+.plan-name { font-size: 1.25rem; font-weight: 900; letter-spacing: -.02em; }
+.plan-tagline { font-size: .78rem; opacity: .85; margin-top: 4px; font-weight: 500; }
+
+.plan-price-wrap { padding: 22px 24px 0; text-align: center; }
+.plan-from { font-size: .72rem; color: #9ca3af; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; }
+.plan-price { font-size: 2.2rem; font-weight: 900; line-height: 1; margin: 4px 0; }
+.plan-per { font-size: .72rem; color: #9ca3af; }
+.plan-rate { font-size: .75rem; color: #6b7280; margin-top: 6px; font-weight: 500; }
+
+.plan-features { padding: 18px 24px; flex-grow: 1; }
+.plan-feature {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-bottom: 12px; font-size: .84rem; color: #374151;
+}
+.plan-feature-check {
+  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .72rem; margin-top: 1px;
+}
+.plan-feature-check.green { background: #dcfce7; color: #16a34a; }
+.plan-feature .limit { color: #9ca3af; font-size: .75rem; display: block; margin-top: 1px; }
+
+.plan-footer { padding: 0 24px 24px; }
+.btn-buy {
+  display: block; border-radius: 14px; padding: 13px;
+  font-size: .9rem; font-weight: 800; text-align: center;
+  color: #fff; text-decoration: none; border: none;
+  transition: all .2s; box-shadow: 0 4px 14px rgba(0,0,0,.15);
+}
+.btn-buy:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+
+/* ── Trust badges ─────────────────────────────── */
+.trust-card {
+  background: #fff; border-radius: 16px; padding: 24px 20px; text-align: center;
+  border: 1.5px solid #e0f2fe; box-shadow: 0 2px 10px rgba(3,105,161,.05);
+  transition: all .2s;
+}
+.trust-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(3,105,161,.12); }
+.trust-icon-wrap {
+  width: 52px; height: 52px; border-radius: 14px; margin: 0 auto 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+}
+.trust-title { font-size: .92rem; font-weight: 800; color: #0c4a6e; margin-bottom: 5px; }
+.trust-desc { font-size: .75rem; color: #64748b; line-height: 1.5; }
+
+/* ── Section header ───────────────────────────── */
+.section-head { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: #9ca3af; font-weight: 700; }
+.section-head strong { color: #0c4a6e; font-size: 1.4rem; text-transform: none; letter-spacing: normal; display: block; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<div class="ins-hero">
+  <div class="container">
+    <div class="ins-hero-icon">🛡️</div>
+    <div class="row align-items-center g-4">
+      <div class="col-lg-5">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div style="width:52px;height:52px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🛡️</div>
+          <div>
+            <h1 class="fw-black text-white mb-0" style="font-size:2rem;letter-spacing:-.01em">Travel Insurance</h1>
+            <p class="text-white opacity-75 mb-0" style="font-size:.88rem">Protect your trip against cancellations, emergencies &amp; more.</p>
+          </div>
+        </div>
+        <!-- Trust stats -->
+        <div class="d-flex flex-wrap gap-3 mt-4">
+          {% for icon, val, lbl in [('✅','10,000+','Hospitals'),('🌍','180+','Countries'),('⭐','4.8/5','Rating'),('🔒','100%','Secure')] %}
+          <div style="background:rgba(255,255,255,.12);border-radius:10px;padding:10px 14px;text-align:center;min-width:80px">
+            <div style="font-size:1rem;margin-bottom:2px">{{ icon }}</div>
+            <div style="font-size:.88rem;font-weight:800;color:#fff">{{ val }}</div>
+            <div style="font-size:.62rem;color:rgba(255,255,255,.65)">{{ lbl }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="ins-search-card">
+          <div class="fw-bold mb-3" style="font-size:.88rem;color:#374151">
+            <i class="bi bi-calculator text-primary me-2"></i>Calculate Your Premium
+          </div>
+          <form method="GET" action="{{ url_for('insurance.listing') }}">
+            <div class="row g-3 align-items-end">
+              <div class="col-sm-4">
+                <label class="form-label small fw-bold mb-1" style="color:#374151">
+                  <i class="bi bi-calendar3 text-primary me-1"></i>Trip Duration
+                </label>
+                <div class="input-group">
+                  <input type="number" name="days" class="form-control" min="1" max="180"
+                         value="{{ trip_days }}" placeholder="Days">
+                  <span class="input-group-text" style="font-size:.82rem;border-color:#bae6fd;background:#f0f9ff">days</span>
+                </div>
+              </div>
+              <div class="col-sm-4">
+                <label class="form-label small fw-bold mb-1" style="color:#374151">
+                  <i class="bi bi-people text-primary me-1"></i>Travellers
+                </label>
+                <select name="persons" class="form-select">
+                  {% for i in range(1,9) %}
+                  <option value="{{ i }}" {% if i==persons %}selected{% endif %}>{{ i }} person{{ 's' if i != 1 }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-sm-4">
+                <button type="submit" class="btn-calc btn w-100">
+                  <i class="bi bi-calculator me-1"></i>Calculate
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PLAN CARDS ══════════════════════════════════════════════════════════ -->
+<div class="container py-5">
+
+  <div class="text-center mb-5">
+    <div class="section-head">
+      Insurance Plans
+      <strong>Choose Your Plan</strong>
+    </div>
+    <p class="text-muted mt-2" style="font-size:.9rem">
+      For <strong>{{ trip_days }} day{{ 's' if trip_days != 1 }}</strong> &nbsp;·&nbsp;
+      <strong>{{ persons }} traveller{{ 's' if persons != 1 }}</strong>
+    </p>
+  </div>
+
+  <div class="row g-4 justify-content-center mb-5">
+    {% for plan in plans %}
+    {% set plan_colors = {
+      'primary':  {'bg': '#0369a1', 'btn': 'linear-gradient(135deg,#0369a1,#0ea5e9)', 'price': '#0369a1'},
+      'success':  {'bg': '#059669', 'btn': 'linear-gradient(135deg,#059669,#10b981)', 'price': '#059669'},
+      'purple':   {'bg': '#7c3aed', 'btn': 'linear-gradient(135deg,#7c3aed,#a78bfa)', 'price': '#7c3aed'}
+    } %}
+    {% set pc = plan_colors.get(plan.color, plan_colors['primary']) %}
+    <div class="col-md-4">
+      <div class="plan-card h-100 d-flex flex-column {% if plan.highlighted %}highlighted{% endif %}">
+        {% if plan.highlighted %}
+        <div class="plan-badge">⭐ MOST POPULAR</div>
+        {% endif %}
+
+        <div class="plan-header" style="background:{{ pc['bg'] }}">
+          <div class="plan-name">{{ plan.name }} Plan</div>
+          {% if plan.tagline %}
+          <div class="plan-tagline">{{ plan.tagline }}</div>
+          {% endif %}
+        </div>
+
+        <div class="plan-price-wrap">
+          <div class="plan-from">From</div>
+          <div class="plan-price" style="color:{{ pc['price'] }}">
+            ₹{{ "{:,.0f}".format(plan.price_per_person_per_day * trip_days * persons) }}
+          </div>
+          <div class="plan-per">for {{ trip_days }} day{{ 's' if trip_days != 1 }}, {{ persons }} person{{ 's' if persons != 1 }}</div>
+          <div class="plan-rate">₹{{ plan.price_per_person_per_day }}/person/day</div>
+        </div>
+
+        <div class="plan-features flex-grow-1">
+          {% if plan.coverage %}
+          {% for c in plan.coverage %}
+          <div class="plan-feature">
+            <div class="plan-feature-check green"><i class="bi bi-check2"></i></div>
+            <div>
+              {{ c.get('label', c) if c is mapping else c }}
+              {% if c is mapping and c.get('limit') %}
+              <span class="limit">{{ c.limit }}</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+
+        <div class="plan-footer">
+          <a href="{{ url_for('insurance.buy', plan_id=plan.id, days=trip_days, persons=persons) }}"
+             class="btn-buy" style="background:{{ pc['btn'] }}">
+            Buy Now — ₹{{ "{:,.0f}".format(plan.price_per_person_per_day * trip_days * persons) }}
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── Trust badges ── -->
+  <div class="section-head text-center mb-4">
+    Why SnapTravels Insurance
+    <strong>Trusted by 1,00,000+ Travellers</strong>
+  </div>
+
+  <div class="row g-4">
+    {% for icon, bg, title, desc in [
+      ('🏥','#dbeafe','Cashless Hospitalisation','At 10,000+ network hospitals worldwide, no upfront payment needed.'),
+      ('✈️','#dcfce7','Trip Cancellation','Full reimbursement for covered cancellations due to illness, weather or more.'),
+      ('🧳','#fef3c7','Baggage Loss & Delay','Compensation for lost, stolen or delayed baggage on your journey.'),
+      ('🎧','#f3e8ff','24/7 Emergency Helpline','Round-the-clock support from our dedicated travel assistance team.')
+    ] %}
+    <div class="col-6 col-md-3">
+      <div class="trust-card">
+        <div class="trust-icon-wrap" style="background:{{ bg }}">{{ icon }}</div>
+        <div class="trust-title">{{ title }}</div>
+        <div class="trust-desc">{{ desc }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── FAQ quick strip ── -->
+  <div class="mt-5 p-4" style="background:#fff;border-radius:18px;border:1.5px solid #e0f2fe">
+    <div class="fw-bold mb-3" style="color:#0c4a6e;font-size:.95rem"><i class="bi bi-question-circle me-2"></i>Quick Questions</div>
+    <div class="row g-3">
+      {% for q, a in [
+        ('When does coverage start?','Coverage begins from the trip departure date you select at checkout.'),
+        ('Can I extend my policy?','Yes, you can extend before expiry via your account dashboard.'),
+        ('How do I file a claim?','Login → My Bookings → Insurance → File Claim. We process within 7 days.')
+      ] %}
+      <div class="col-md-4">
+        <div class="fw-semibold mb-1" style="font-size:.82rem;color:#0c4a6e">{{ q }}</div>
+        <div class="text-muted" style="font-size:.78rem">{{ a }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

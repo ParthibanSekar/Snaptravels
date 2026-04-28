@@ -1,0 +1,456 @@
+{% extends "layouts/base.html" %}
+{% block title %}My Dashboard — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ─── Base ────────────────────────────────────────── */
+body { background: #f4f6fb !important; }
+
+/* ─── Hero greeting banner ───────────────────────── */
+.dash-hero {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1a2340 100%);
+  position: relative; overflow: hidden; padding: 36px 0 80px;
+}
+.dash-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.dash-hero::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 0; right: 0; height: 60px;
+  background: #f4f6fb;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+
+/* Animated top accent */
+@keyframes accentSlide { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+.dash-hero-accent {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg,#e63950,#f97316,#facc15,#e63950);
+  background-size: 200% 100%; animation: accentSlide 3s linear infinite;
+}
+
+.hero-inner { position: relative; z-index: 2; }
+.hero-greeting { font-size: .78rem; font-weight: 600; color: #94a3b8; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; }
+.hero-name { font-size: 2rem; font-weight: 900; color: #fff; line-height: 1.1; }
+.hero-email { font-size: .84rem; color: #64748b; margin-top: 4px; }
+.hero-tier-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 20px; font-size: .74rem; font-weight: 700;
+  margin-top: 10px;
+}
+.tier-bronze   { background: rgba(180,90,30,.2); color: #fb923c; border: 1px solid rgba(180,90,30,.3); }
+.tier-silver   { background: rgba(148,163,184,.15); color: #94a3b8; border: 1px solid rgba(148,163,184,.3); }
+.tier-gold     { background: rgba(251,191,36,.15); color: #fbbf24; border: 1px solid rgba(251,191,36,.3); }
+.tier-platinum { background: rgba(139,92,246,.15); color: #a78bfa; border: 1px solid rgba(139,92,246,.3); }
+
+/* Decorative elements */
+.hero-deco {
+  position: absolute; right: -40px; top: -40px;
+  width: 320px; height: 320px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(230,57,80,.08) 0%, transparent 70%);
+  pointer-events: none; z-index: 1;
+}
+.hero-deco-2 {
+  position: absolute; right: 80px; bottom: 10px;
+  font-size: 5rem; opacity: .04; z-index: 1;
+  transform: rotate(-15deg);
+}
+
+/* ─── KPI Cards ──────────────────────────────────── */
+.kpi-row { margin-top: -44px; position: relative; z-index: 10; }
+.kpi-card {
+  background: #fff; border-radius: 16px; padding: 20px 22px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.07);
+  border: 1px solid #e8edf5; position: relative; overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+}
+.kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,.1); }
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: 16px 16px 0 0;
+}
+.kpi-blue::before   { background: linear-gradient(90deg,#2563eb,#60a5fa); }
+.kpi-green::before  { background: linear-gradient(90deg,#059669,#34d399); }
+.kpi-amber::before  { background: linear-gradient(90deg,#d97706,#fbbf24); }
+.kpi-indigo::before { background: linear-gradient(90deg,#7c3aed,#a78bfa); }
+.kpi-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; margin-bottom: 14px;
+}
+.kpi-blue   .kpi-icon { background: rgba(37,99,235,.1);   color: #2563eb; }
+.kpi-green  .kpi-icon { background: rgba(5,150,105,.1);   color: #059669; }
+.kpi-amber  .kpi-icon { background: rgba(217,119,6,.1);   color: #d97706; }
+.kpi-indigo .kpi-icon { background: rgba(124,58,237,.1);  color: #7c3aed; }
+.kpi-value { font-size: 1.7rem; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+.kpi-blue  .kpi-value { color: #2563eb; }
+.kpi-green .kpi-value { color: #059669; }
+.kpi-amber .kpi-value { color: #d97706; }
+.kpi-indigo .kpi-value { color: #7c3aed; }
+.kpi-label { font-size: .72rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+
+/* ─── Sidebar ────────────────────────────────────── */
+.user-sidebar-card {
+  background: #fff; border-radius: 20px; overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); border: 1px solid #e8edf5;
+  margin-bottom: 16px;
+}
+.user-card-header {
+  background: linear-gradient(135deg,#1e293b,#0f172a);
+  padding: 28px 20px 24px; text-align: center; position: relative;
+}
+.user-avatar-ring {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, #e63950, #f97316);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; font-weight: 900; color: #fff;
+  margin: 0 auto 12px; position: relative;
+  box-shadow: 0 0 0 4px rgba(230,57,80,.25);
+}
+.user-card-name { font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 2px; }
+.user-card-email { font-size: .72rem; color: #64748b; }
+.user-card-body { padding: 8px 0; }
+
+/* Sidebar nav */
+.dash-nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 20px; font-size: .85rem; font-weight: 600;
+  color: #475569; text-decoration: none; transition: all .15s;
+  border-left: 3px solid transparent; position: relative;
+}
+.dash-nav-item:hover { background: #f8faff; color: #1e293b; }
+.dash-nav-item.active {
+  background: rgba(230,57,80,.05); color: #e63950;
+  border-left-color: #e63950;
+}
+.dash-nav-item .nav-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; font-size: .85rem;
+  flex-shrink: 0; transition: all .15s;
+}
+.dash-nav-item:hover .nav-icon, .dash-nav-item.active .nav-icon {
+  background: rgba(230,57,80,.1); color: #e63950;
+}
+.dash-nav-item .nav-icon { background: #f1f5f9; color: #64748b; }
+.dash-nav-badge {
+  margin-left: auto; padding: 2px 7px; border-radius: 10px; font-size: .68rem;
+  font-weight: 800; background: #e63950; color: #fff;
+}
+
+/* Quick actions grid */
+.quick-actions-card {
+  background: #fff; border-radius: 16px; padding: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); border: 1px solid #e8edf5;
+}
+.qa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.qa-tile {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; padding: 12px 6px; border-radius: 12px;
+  text-decoration: none; transition: all .2s; border: 1px solid transparent;
+  cursor: pointer;
+}
+.qa-tile:hover { background: #f8faff; border-color: #e0e9ff; transform: translateY(-2px); }
+.qa-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: .95rem; }
+.qa-label { font-size: .65rem; font-weight: 700; color: #64748b; text-align: center; text-transform: uppercase; letter-spacing: .04em; }
+.qa-tile:hover .qa-label { color: #1e293b; }
+
+/* ─── Main Content Panels ────────────────────────── */
+.content-panel {
+  background: #fff; border-radius: 20px; overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); border: 1px solid #e8edf5;
+  margin-bottom: 20px;
+}
+.panel-header {
+  padding: 18px 22px; border-bottom: 1px solid #f0f4fb;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-title { font-size: .92rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+.panel-title-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; font-size: .85rem;
+}
+.btn-view-all {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: 10px; font-size: .75rem; font-weight: 700;
+  background: #f8faff; border: 1px solid #e0e9ff; color: #2563eb;
+  text-decoration: none; transition: all .15s;
+}
+.btn-view-all:hover { background: #eff6ff; color: #1d4ed8; }
+
+/* ─── Booking Rows ───────────────────────────────── */
+.booking-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 22px; border-bottom: 1px solid #f0f4fb; transition: background .12s;
+}
+.booking-row:last-child { border-bottom: none; }
+.booking-row:hover { background: #fafcff; }
+
+.booking-type-icon {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: .95rem;
+}
+.type-flight  { background: rgba(37,99,235,.1); color: #2563eb; }
+.type-hotel   { background: rgba(5,150,105,.1); color: #059669; }
+.type-bus     { background: rgba(124,58,237,.1); color: #7c3aed; }
+.type-train   { background: rgba(245,158,11,.1); color: #d97706; }
+.type-package { background: rgba(230,57,80,.1); color: #e63950; }
+.type-cab     { background: rgba(20,184,166,.1); color: #0d9488; }
+.type-default { background: #f1f5f9; color: #64748b; }
+
+.booking-code {
+  font-family: 'Courier New', monospace; font-size: .76rem; font-weight: 700;
+  color: #7c3aed; background: rgba(124,58,237,.07);
+  padding: 2px 7px; border-radius: 5px;
+}
+.booking-amount { font-size: .92rem; font-weight: 800; color: #1e293b; }
+.booking-date { font-size: .72rem; color: #94a3b8; margin-top: 2px; }
+
+.status-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px; font-size: .68rem; font-weight: 800;
+  white-space: nowrap;
+}
+.status-confirmed { background: rgba(5,150,105,.1); color: #059669; border: 1px solid rgba(5,150,105,.15); }
+.status-cancelled, .status-cancel { background: rgba(239,68,68,.1); color: #dc2626; border: 1px solid rgba(239,68,68,.15); }
+.status-pending   { background: rgba(245,158,11,.1); color: #d97706; border: 1px solid rgba(245,158,11,.15); }
+.status-refunded  { background: rgba(14,165,233,.1); color: #0284c7; border: 1px solid rgba(14,165,233,.15); }
+.status-default   { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+.btn-mini-view {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 11px; border-radius: 8px; font-size: .72rem; font-weight: 700;
+  background: #f8faff; border: 1px solid #e0e9ff; color: #2563eb;
+  text-decoration: none; transition: all .15s; white-space: nowrap; flex-shrink: 0;
+}
+.btn-mini-view:hover { background: #eff6ff; }
+
+/* ─── Recently Viewed ────────────────────────────── */
+.rv-chips { display: flex; flex-wrap: wrap; gap: 10px; padding: 18px 22px; }
+.rv-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 10px;
+  background: #f8faff; border: 1px solid #e0e9ff;
+  font-size: .78rem; font-weight: 600; color: #475569;
+  text-decoration: none; transition: all .15s;
+}
+.rv-chip:hover { background: #eff6ff; border-color: #bfdbfe; color: #2563eb; }
+.rv-chip-icon { font-size: .82rem; }
+
+/* ─── Empty states ───────────────────────────────── */
+.empty-state { text-align: center; padding: 44px 24px; }
+.empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: .35; }
+.empty-title { font-size: .9rem; font-weight: 700; color: #475569; margin-bottom: 6px; }
+.empty-sub   { font-size: .78rem; color: #94a3b8; }
+.empty-cta {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+  padding: 9px 20px; border-radius: 10px; font-size: .8rem; font-weight: 700;
+  background: linear-gradient(135deg,#e63950,#f97316); color: #fff;
+  text-decoration: none; border: none; transition: all .2s;
+  box-shadow: 0 4px 14px rgba(230,57,80,.25);
+}
+.empty-cta:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(230,57,80,.35); }
+
+/* ─── Section divider label ──────────────────────── */
+.section-label {
+  font-size: .7rem; font-weight: 800; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: .1em;
+  padding: 8px 20px 4px; display: block;
+}
+
+/* responsive fix */
+@media (max-width: 768px) {
+  .hero-name { font-size: 1.4rem; }
+  .kpi-value { font-size: 1.3rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero Banner -->
+<div class="dash-hero">
+  <div class="dash-hero-accent"></div>
+  <div class="hero-deco"></div>
+  <div class="hero-deco-2">✈</div>
+  <div class="container hero-inner">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="hero-greeting">Welcome back</div>
+        <div class="hero-name">{{ user.email.split('@')[0].title() }} 👋</div>
+        <div class="hero-email">{{ user.email }}</div>
+        {% if rewards %}
+        <div class="hero-tier-badge tier-{{ rewards.tier|lower }}">
+          {% if rewards.tier == 'Gold' %}🏅{% elif rewards.tier == 'Platinum' %}💎{% elif rewards.tier == 'Silver' %}🥈{% else %}🔵{% endif %}
+          {{ rewards.tier }} Member · {{ rewards.points }} pts
+        </div>
+        {% endif %}
+      </div>
+      <div class="col-auto d-none d-md-block" style="opacity:.15;font-size:5rem">🌏</div>
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5" style="margin-top:-10px">
+
+  <!-- KPI Stats -->
+  <div class="kpi-row">
+    <div class="row g-3">
+      <div class="col-6 col-md-3">
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-icon"><i class="bi bi-ticket-perforated-fill"></i></div>
+          <div class="kpi-value">{{ recent_bookings|length }}</div>
+          <div class="kpi-label">Bookings</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="kpi-card kpi-green">
+          <div class="kpi-icon"><i class="bi bi-currency-rupee"></i></div>
+          <div class="kpi-value">₹{{ "{:,.0f}".format(total_spent) }}</div>
+          <div class="kpi-label">Total Spent</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="kpi-card kpi-amber">
+          <div class="kpi-icon"><i class="bi bi-star-fill"></i></div>
+          <div class="kpi-value">{{ rewards.points if rewards else 0 }}</div>
+          <div class="kpi-label">Reward Points</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="kpi-card kpi-indigo">
+          <div class="kpi-icon"><i class="bi bi-heart-fill"></i></div>
+          <div class="kpi-value">{{ wishlist_count }}</div>
+          <div class="kpi-label">Saved Items</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-2">
+
+    <!-- ── Sidebar ─────────────────────────────────── -->
+    <div class="col-lg-3">
+      {% set active_page = 'dashboard' %}
+      {% include '_user_sidebar.html' %}
+    </div>
+
+    <!-- ── Main Content ─────────────────────────────── -->
+    <div class="col-lg-9">
+
+      <!-- Recent Bookings -->
+      <div class="content-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <div class="panel-title-icon" style="background:rgba(37,99,235,.1);color:#2563eb"><i class="bi bi-ticket-perforated-fill"></i></div>
+            Recent Bookings
+          </div>
+          <a href="{{ url_for('public.my_bookings') }}" class="btn-view-all">
+            View All <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+
+        {% if recent_bookings %}
+        {% for bk in recent_bookings %}
+        {% set item_type = bk.items[0].type if bk.items else 'DEFAULT' %}
+        <div class="booking-row">
+          <!-- Type icon -->
+          <div class="booking-type-icon {{ 'type-flight' if item_type == 'FLIGHT' else ('type-hotel' if item_type == 'HOTEL' else ('type-bus' if item_type == 'BUS' else ('type-train' if item_type == 'TRAIN' else ('type-package' if item_type == 'PACKAGE' else 'type-default')))) }}">
+            {% if item_type == 'FLIGHT' %}<i class="bi bi-airplane-fill"></i>
+            {% elif item_type == 'HOTEL' %}<i class="bi bi-building"></i>
+            {% elif item_type == 'BUS' %}<i class="bi bi-bus-front-fill"></i>
+            {% elif item_type == 'TRAIN' %}<i class="bi bi-train-front-fill"></i>
+            {% elif item_type == 'PACKAGE' %}<i class="bi bi-gift-fill"></i>
+            {% elif item_type == 'CAB' %}<i class="bi bi-car-front-fill"></i>
+            {% else %}<i class="bi bi-ticket-perforated"></i>{% endif %}
+          </div>
+
+          <!-- Info -->
+          <div class="flex-grow-1 min-w-0">
+            <div class="d-flex align-items-center gap-8 flex-wrap" style="gap:8px">
+              <span class="booking-code">{{ bk.booking_code }}</span>
+              <span style="font-size:.78rem;font-weight:700;color:#64748b;text-transform:uppercase">{{ item_type }}</span>
+            </div>
+            <div class="booking-date"><i class="bi bi-calendar3 me-1"></i>{{ bk.created_at.strftime('%d %b %Y') }}</div>
+          </div>
+
+          <!-- Amount -->
+          <div class="text-end me-3">
+            <div class="booking-amount">₹{{ "{:,.0f}".format(bk.total_amount) }}</div>
+          </div>
+
+          <!-- Status -->
+          {% set s = bk.status|lower %}
+          <span class="status-pill {{ 'status-confirmed' if s == 'confirmed' else ('status-cancelled' if 'cancel' in s else ('status-refunded' if 'refund' in s else ('status-pending' if s == 'requested' else 'status-default'))) }}">
+            {% if s == 'confirmed' %}✓
+            {% elif 'cancel' in s %}✕
+            {% elif 'refund' in s %}↩
+            {% elif s == 'requested' %}⏳
+            {% endif %}
+            {{ bk.status.replace('_',' ').title() }}
+          </span>
+
+          <!-- Action -->
+          <a href="{{ url_for('public.booking_details', booking_id=bk.id) }}" class="btn-mini-view">
+            <i class="bi bi-eye"></i> View
+          </a>
+        </div>
+        {% endfor %}
+
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🎫</div>
+          <div class="empty-title">No bookings yet</div>
+          <div class="empty-sub">Start planning your next adventure!</div>
+          <a href="{{ url_for('public.home') }}" class="empty-cta">
+            <i class="bi bi-search"></i> Explore Destinations
+          </a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Recently Viewed -->
+      {% if recently_viewed %}
+      <div class="content-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <div class="panel-title-icon" style="background:rgba(124,58,237,.1);color:#7c3aed"><i class="bi bi-clock-history"></i></div>
+            Recently Viewed
+          </div>
+        </div>
+        <div class="rv-chips">
+          {% for rv in recently_viewed %}
+          <span class="rv-chip">
+            <span class="rv-chip-icon">
+              {% if rv.item_type == 'FLIGHT' %}✈
+              {% elif rv.item_type == 'HOTEL' %}🏨
+              {% elif rv.item_type == 'ACTIVITY' %}🎯
+              {% elif rv.item_type == 'BUS' %}🚌
+              {% elif rv.item_type == 'PACKAGE' %}🎁
+              {% else %}📍{% endif %}
+            </span>
+            {{ rv.title or rv.item_type + ' #' + rv.ref_id|string }}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Quick tip / promo banner -->
+      <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:20px;padding:24px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;box-shadow:0 4px 24px rgba(0,0,0,.12)">
+        <div>
+          <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#e63950;font-weight:700;margin-bottom:4px">Limited Offer</div>
+          <div style="font-size:1rem;font-weight:800;color:#fff;margin-bottom:4px">✈ Save up to 40% on flight + hotel combos</div>
+          <div style="font-size:.78rem;color:#64748b">Book a package deal and earn 3× reward points.</div>
+        </div>
+        <a href="{{ url_for('packages.listing') }}"
+           style="display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:12px;background:linear-gradient(135deg,#e63950,#f97316);color:#fff;font-weight:800;font-size:.82rem;text-decoration:none;white-space:nowrap;box-shadow:0 4px 14px rgba(230,57,80,.4);flex-shrink:0">
+          <i class="bi bi-gift"></i> Explore Packages
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

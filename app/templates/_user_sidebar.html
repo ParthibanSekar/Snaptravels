@@ -1,0 +1,200 @@
+{#
+  Shared user dashboard sidebar.
+  Expects: user (User object)
+  Context-processor provides: sidebar_unread, sidebar_wishlist, sidebar_rewards
+  Optional: active_page (string) — 'dashboard','bookings','travelers','wishlist',
+                                    'notifications','rewards','price_alerts','trips'
+#}
+<style>
+/* ── Sidebar wrapper ─────────────────────────────── */
+.user-sidebar-card {
+  background: #fff; border-radius: 20px; overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); border: 1px solid #e8edf5;
+  margin-bottom: 16px; position: sticky; top: 80px;
+}
+.user-card-header {
+  background: linear-gradient(135deg,#1e293b,#0f172a);
+  padding: 24px 20px 20px; text-align: center;
+}
+.user-avatar-ring {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, #e63950, #f97316);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; font-weight: 900; color: #fff;
+  margin: 0 auto 10px;
+  box-shadow: 0 0 0 3px rgba(230,57,80,.25);
+}
+.user-card-name  { font-size: .92rem; font-weight: 800; color: #fff; margin-bottom: 2px; }
+.user-card-email { font-size: .68rem; color: #475569; }
+.user-tier-pill  {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: .68rem; font-weight: 700;
+  margin-top: 8px;
+  background: rgba(251,191,36,.15); color: #fbbf24; border: 1px solid rgba(251,191,36,.25);
+}
+
+.section-label {
+  font-size: .65rem; font-weight: 800; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: .12em;
+  padding: 10px 18px 4px; display: block;
+}
+.dash-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px; font-size: .84rem; font-weight: 600;
+  color: #475569; text-decoration: none; transition: all .15s;
+  border-left: 3px solid transparent;
+}
+.dash-nav-item:hover { background: #f8faff; color: #1e293b; }
+.dash-nav-item.active {
+  background: rgba(230,57,80,.05); color: #e63950;
+  border-left-color: #e63950;
+}
+.nav-icon {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: .8rem;
+  background: #f1f5f9; color: #64748b; transition: all .15s;
+}
+.dash-nav-item:hover .nav-icon,
+.dash-nav-item.active .nav-icon { background: rgba(230,57,80,.1); color: #e63950; }
+.dash-nav-badge {
+  margin-left: auto; padding: 2px 7px; border-radius: 10px;
+  font-size: .66rem; font-weight: 800; background: #e63950; color: #fff;
+}
+
+/* Quick-book grid */
+.quick-actions-card {
+  background: #fff; border-radius: 16px; padding: 14px 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.06); border: 1px solid #e8edf5;
+}
+.qa-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.qa-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 10px 4px; border-radius: 10px; text-decoration: none;
+  transition: all .2s; border: 1px solid transparent;
+}
+.qa-tile:hover { background: #f8faff; border-color: #e0e9ff; transform: translateY(-2px); }
+.qa-icon-sm { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .85rem; }
+.qa-label-sm { font-size: .6rem; font-weight: 700; color: #64748b; text-align: center; text-transform: uppercase; letter-spacing: .04em; }
+.qa-tile:hover .qa-label-sm { color: #1e293b; }
+</style>
+
+<div class="user-sidebar-card">
+  <!-- Profile Header -->
+  <div class="user-card-header">
+    <div class="user-avatar-ring">{{ user.email[0].upper() }}</div>
+    <div class="user-card-name">{{ user.email.split('@')[0].title() }}</div>
+    <div class="user-card-email">{{ user.email }}</div>
+    {% if sidebar_rewards %}
+    <div class="user-tier-pill">
+      {% if sidebar_rewards.tier == 'Platinum' %}💎{% elif sidebar_rewards.tier == 'Gold' %}🏅{% else %}🥈{% endif %}
+      {{ sidebar_rewards.tier }} · {{ sidebar_rewards.points }} pts
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Navigation -->
+  <span class="section-label">Account</span>
+
+  <a href="{{ url_for('user.dashboard') }}"
+     class="dash-nav-item {{ 'active' if active_page == 'dashboard' else '' }}">
+    <span class="nav-icon"><i class="bi bi-speedometer2"></i></span>
+    Dashboard
+  </a>
+  <a href="{{ url_for('user.profile') }}"
+     class="dash-nav-item {{ 'active' if active_page == 'profile' else '' }}">
+    <span class="nav-icon"><i class="bi bi-person-circle"></i></span>
+    My Profile
+  </a>
+  <a href="{{ url_for('public.my_bookings') }}"
+     class="dash-nav-item {{ 'active' if active_page == 'bookings' else '' }}">
+    <span class="nav-icon"><i class="bi bi-ticket-perforated"></i></span>
+    My Bookings
+  </a>
+  <a href="{{ url_for('user.travelers') }}"
+     class="dash-nav-item {{ 'active' if active_page == 'travelers' else '' }}">
+    <span class="nav-icon"><i class="bi bi-people"></i></span>
+    Saved Travelers
+  </a>
+
+  <span class="section-label">Explore</span>
+
+  <a href="{{ url_for('user.wishlist') }}"
+     class="dash-nav-item {{ 'active' if active_page == 'wishlist' else '' }}">
+    <span class="nav-icon"><i class="bi bi-heart"></i></span>
+    Wishlist
+    {% if sidebar_wishlist and sidebar_wishlist > 0 %}
+    <span class="dash-nav-badge">{{ sidebar_wishlist }}</span>
+    {% endif %}
+  </a>
+  <a href="{{ url_for('user.notifications') }}"
+     class="dash-nav-item {{ 'active' if active_page == 'notifications' else '' }}">
+    <span class="nav-icon"><i class="bi bi-bell"></i></span>
+    Notifications
+    {% if sidebar_unread and sidebar_unread > 0 %}
+    <span class="dash-nav-badge">{{ sidebar_unread }}</span>
+    {% endif %}
+  </a>
+  <a href="{{ url_for('user.rewards') }}"
+     class="dash-nav-item {{ 'active' if active_page == 'rewards' else '' }}">
+    <span class="nav-icon"><i class="bi bi-star"></i></span>
+    Rewards
+  </a>
+  <a href="{{ url_for('user.price_alerts') }}"
+     class="dash-nav-item {{ 'active' if active_page == 'price_alerts' else '' }}">
+    <span class="nav-icon"><i class="bi bi-bell-fill"></i></span>
+    Price Alerts
+  </a>
+  <a href="{{ url_for('trips.listing') }}"
+     class="dash-nav-item {{ 'active' if active_page == 'trips' else '' }}">
+    <span class="nav-icon"><i class="bi bi-map"></i></span>
+    My Trips
+  </a>
+
+  <span class="section-label">Settings</span>
+
+  <a href="{{ url_for('twofa.security') }}"
+     class="dash-nav-item {{ 'active' if active_page == 'security' else '' }}">
+    <span class="nav-icon"><i class="bi bi-shield-lock"></i></span>
+    Security
+    {% if user.totp_enabled %}
+    <span class="dash-nav-badge" style="background:#16a34a">ON</span>
+    {% endif %}
+  </a>
+  <a href="{{ url_for('auth.logout') }}"
+     class="dash-nav-item"
+     style="color:#ef4444;border-radius:0 0 18px 18px">
+    <span class="nav-icon" style="background:#fff1f2;color:#ef4444"><i class="bi bi-box-arrow-right"></i></span>
+    Logout
+  </a>
+</div>
+
+<!-- Quick Book -->
+<div class="quick-actions-card">
+  <div style="font-size:.65rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Quick Book</div>
+  <div class="qa-grid">
+    <a href="{{ url_for('public.flights') }}" class="qa-tile">
+      <div class="qa-icon-sm" style="background:rgba(37,99,235,.1);color:#2563eb"><i class="bi bi-airplane-fill"></i></div>
+      <span class="qa-label-sm">Flights</span>
+    </a>
+    <a href="{{ url_for('public.hotels') }}" class="qa-tile">
+      <div class="qa-icon-sm" style="background:rgba(5,150,105,.1);color:#059669"><i class="bi bi-building"></i></div>
+      <span class="qa-label-sm">Hotels</span>
+    </a>
+    <a href="{{ url_for('buses.search') }}" class="qa-tile">
+      <div class="qa-icon-sm" style="background:rgba(124,58,237,.1);color:#7c3aed"><i class="bi bi-bus-front-fill"></i></div>
+      <span class="qa-label-sm">Buses</span>
+    </a>
+    <a href="{{ url_for('activities.listing') }}" class="qa-tile">
+      <div class="qa-icon-sm" style="background:rgba(245,158,11,.1);color:#d97706"><i class="bi bi-stars"></i></div>
+      <span class="qa-label-sm">Tours</span>
+    </a>
+    <a href="{{ url_for('packages.listing') }}" class="qa-tile">
+      <div class="qa-icon-sm" style="background:rgba(230,57,80,.1);color:#e63950"><i class="bi bi-gift"></i></div>
+      <span class="qa-label-sm">Packages</span>
+    </a>
+    <a href="{{ url_for('insurance.listing') }}" class="qa-tile">
+      <div class="qa-icon-sm" style="background:rgba(20,184,166,.1);color:#0d9488"><i class="bi bi-shield-check"></i></div>
+      <span class="qa-label-sm">Insurance</span>
+    </a>
+  </div>
+</div>

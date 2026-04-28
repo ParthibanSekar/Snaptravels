@@ -1,0 +1,49 @@
+{% extends "layouts/base.html" %}
+{% block title %}Server Error — SnapTravels{% endblock %}
+{% block extra_head %}
+<style>
+.error-page { background: #fff5f5; min-height: 80vh; display: flex; align-items: center; }
+.error-code { font-size: 7rem; font-weight: 900; color: #fecaca; line-height: 1; }
+.error-icon { font-size: 3.5rem; }
+.error-card { border-radius: 20px; border: none; border-top: 4px solid #ef4444; box-shadow: 0 4px 32px rgba(239,68,68,.1); padding: 3rem 2.5rem; text-align: center; }
+.trace-box { background: #1e293b; border-radius: 10px; padding: .75rem 1.1rem; font-family: monospace; font-size: .78rem; color: #94a3b8; word-break: break-all; margin-top: 1rem; }
+.trace-box span { color: #f8fafc; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="error-page">
+<div class="container py-5">
+<div class="row justify-content-center">
+<div class="col-lg-6">
+  <div class="error-card bg-white">
+    <div class="error-code text-danger">500</div>
+    <div class="error-icon mb-3">⚙️</div>
+    <h2 class="fw-bold mb-2">Something Went Wrong</h2>
+    <p class="text-muted">Our servers hit an unexpected snag. Our team has been notified and is working on a fix. No data was lost.</p>
+
+    {% if trace_id %}
+    <div class="trace-box">
+      Reference ID: <span>{{ trace_id }}</span>
+      <br><small class="text-muted">Share this with support to help us diagnose faster</small>
+    </div>
+    {% endif %}
+
+    <div class="alert alert-warning border-0 rounded-3 mt-3" style="font-size:.85rem;">
+      <i class="bi bi-shield-check me-1"></i>
+      If you were in the middle of a booking, <strong>no charge was made</strong>. Please try again.
+    </div>
+
+    <div class="mt-4 d-flex gap-2 justify-content-center flex-wrap">
+      <a href="{{ url_for('public.home') }}" class="btn btn-danger rounded-pill px-4">
+        <i class="bi bi-house me-1"></i> Back to Home
+      </a>
+      <a href="javascript:history.back()" class="btn btn-outline-secondary rounded-pill px-4">
+        <i class="bi bi-arrow-left me-1"></i> Go Back
+      </a>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

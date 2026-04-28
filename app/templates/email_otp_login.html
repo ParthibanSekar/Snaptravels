@@ -1,0 +1,89 @@
+{% extends "layouts/base.html" %}
+{% block title %}Email Verification — SnapTravels{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+
+      <div class="card border-0 shadow" style="border-radius:20px;overflow:hidden">
+
+        <!-- Header -->
+        <div class="card-body text-center pt-5 pb-3"
+             style="background:linear-gradient(135deg,#1d4ed8,#6366f1)">
+          <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+               style="width:72px;height:72px;background:rgba(255,255,255,.18)">
+            <i class="bi bi-envelope-check-fill text-white" style="font-size:2rem"></i>
+          </div>
+          <h4 class="text-white fw-bold mb-1">Check your inbox</h4>
+          <p class="mb-0" style="color:#bfdbfe;font-size:.9rem">
+            Login code sent to <strong>{{ email }}</strong>
+          </p>
+        </div>
+
+        <!-- Body -->
+        <div class="card-body px-4 py-4">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ 'danger' if cat == 'danger' else 'info' }} py-2 px-3 mb-3" style="font-size:.85rem">
+              {{ msg }}
+            </div>
+            {% endfor %}
+          {% endwith %}
+
+          <p class="text-muted small text-center mb-3">
+            Enter the 6-digit code from your email to complete login.
+            It expires in <strong>{{ expires_minutes }} minutes</strong>.
+          </p>
+
+          <form method="POST" action="{{ url_for('twofa.login_email_otp') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- OTP input -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold small">Verification Code</label>
+              <input type="text" name="otp" class="form-control form-control-lg text-center fw-bold"
+                     inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
+                     placeholder="• • • • • •"
+                     style="font-size:1.6rem;letter-spacing:.3rem;border-radius:12px;border:2px solid #e5e7eb"
+                     autofocus required>
+              <div class="form-text text-center mt-1">6-digit code from your email</div>
+            </div>
+
+            <!-- Verify -->
+            <div class="d-grid mb-3">
+              <button type="submit" class="btn btn-primary btn-lg fw-semibold"
+                      style="border-radius:30px;background:linear-gradient(135deg,#1d4ed8,#6366f1);border:none">
+                <i class="bi bi-unlock-fill me-2"></i>Verify & Sign In
+              </button>
+            </div>
+
+            <!-- Resend -->
+            <div class="text-center mb-2">
+              <button type="submit" name="resend" value="1"
+                      class="btn btn-link btn-sm text-decoration-none p-0" style="color:#6366f1">
+                <i class="bi bi-arrow-clockwise me-1"></i>Resend code
+              </button>
+            </div>
+          </form>
+
+          <!-- Back to login -->
+          <div class="text-center">
+            <a href="{{ url_for('auth.login') }}" class="small text-muted text-decoration-none">
+              <i class="bi bi-arrow-left me-1"></i>Back to login
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Hint -->
+      <p class="text-center text-muted small mt-3">
+        <i class="bi bi-shield-lock me-1"></i>
+        Never share this code — SnapTravels will never ask for it.
+      </p>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

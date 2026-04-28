@@ -1,0 +1,121 @@
+
+{
+  "name": "SnapTravels - Travel Booking",
+  "short_name": "SnapTravels",
+  "description": "Complete travel booking platform for flights and hotels",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1D2C78",
+  "theme_color": "#1D2C78",
+  "orientation": "portrait-primary",
+  "categories": ["travel", "booking", "lifestyle"],
+  "lang": "en",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/assets/images/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/images/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/assets/images/screenshot-narrow.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search Flights",
+      "short_name": "Flights",
+      "description": "Search and book flights",
+      "url": "/?tab=flights",
+      "icons": [
+        {
+          "src": "/assets/images/flight-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Search Hotels",
+      "short_name": "Hotels", 
+      "description": "Search and book hotels",
+      "url": "/?tab=hotels",
+      "icons": [
+        {
+          "src": "/assets/images/hotel-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "My Bookings",
+      "short_name": "Bookings",
+      "description": "View my travel bookings",
+      "url": "/bookings",
+      "icons": [
+        {
+          "src": "/assets/images/booking-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}

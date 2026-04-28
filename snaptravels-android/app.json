@@ -1,0 +1,11 @@
+{
+  "name": "snaptravels",
+  "displayName": "SnapTravels",
+  "version": "1.0.0",
+  "buildNumber": 1,
+  "description": "Book flights, hotels, buses, trains, cabs & experiences with SnapTravels",
+  "android": {
+    "package": "com.snaptravels.app",
+    "versionCode": 1
+  }
+}

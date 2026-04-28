@@ -1,0 +1,472 @@
+{% extends "layouts/base.html" %}
+{% block title %}Booking Details — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f8f7ff; }
+
+/* ── Hero strip ───────────────────────────────── */
+.bdet-hero {
+  background: linear-gradient(135deg, #7f1d1d 0%, #e63950 55%, #f97316 100%);
+  padding: 28px 0 36px; position: relative; overflow: hidden;
+}
+.bdet-hero::before {
+  content: '';
+  position: absolute; bottom: -40%; right: -5%; width: 55%; height: 200%;
+  background: radial-gradient(ellipse, rgba(255,255,255,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Step indicator */
+.step-indicator {
+  display: flex; align-items: center; gap: 0;
+  margin-bottom: 22px;
+}
+.step-item { display: flex; align-items: center; gap: 0; }
+.step-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .72rem; font-weight: 800; flex-shrink: 0;
+}
+.step-dot.done  { background: #fff; color: #e63950; }
+.step-dot.active { background: rgba(255,255,255,.25); color: #fff; border: 2px solid rgba(255,255,255,.6); }
+.step-dot.future { background: rgba(255,255,255,.1); color: rgba(255,255,255,.5); }
+.step-label { font-size: .68rem; color: rgba(255,255,255,.8); font-weight: 600; margin-left: 7px; white-space: nowrap; }
+.step-label.done  { color: #fff; font-weight: 700; }
+.step-connector { width: 32px; height: 2px; background: rgba(255,255,255,.25); margin: 0 6px; }
+.step-connector.done { background: rgba(255,255,255,.7); }
+
+/* Booking code row */
+.bdet-code-row {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.bdet-code {
+  font-family: monospace; font-size: 1.35rem; font-weight: 900; color: #fff; letter-spacing: .06em;
+}
+
+/* ── Main cards ───────────────────────────────── */
+.bdet-card {
+  background: #fff; border-radius: 18px;
+  border: 1.5px solid #f0f0f0;
+  box-shadow: 0 2px 14px rgba(0,0,0,.06);
+  overflow: hidden; margin-bottom: 18px;
+}
+.bdet-card-head {
+  padding: 14px 22px; border-bottom: 1px solid #f3f4f6;
+  display: flex; align-items: center; gap: 10px;
+}
+.bdet-card-head-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .95rem; flex-shrink: 0;
+}
+.bdet-card-head-title { font-weight: 800; font-size: .92rem; color: #0f172a; }
+.bdet-card-head-sub   { font-size: .72rem; color: #9ca3af; margin-top: 1px; }
+
+/* Info rows */
+.info-row {
+  display: flex; align-items: flex-start; padding: 11px 22px;
+  border-bottom: 1px solid #fafafa; gap: 16px;
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { font-size: .75rem; color: #9ca3af; font-weight: 600; min-width: 130px; flex-shrink: 0; text-transform: uppercase; letter-spacing: .06em; padding-top: 1px; }
+.info-val { font-size: .88rem; color: #111; font-weight: 600; }
+
+/* Status badge */
+.status-badge-lg {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .8rem; font-weight: 800; padding: 6px 16px; border-radius: 22px;
+  letter-spacing: .03em;
+}
+.sb-confirmed  { background: #dcfce7; color: #15803d; border: 1.5px solid #86efac; }
+.sb-cancelled  { background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; }
+.sb-requested  { background: #fff7ed; color: #c2410c; border: 1.5px solid #fdba74; }
+.sb-refunded   { background: #e0f2fe; color: #0369a1; border: 1.5px solid #7dd3fc; }
+.sb-other      { background: #f3f4f6; color: #374151; border: 1.5px solid #d1d5db; }
+
+/* Booked item row */
+.item-card {
+  border: 1.5px solid #f0f0f0; border-radius: 14px; padding: 18px 20px; margin-bottom: 12px;
+  transition: border-color .15s;
+}
+.item-card:hover { border-color: #fca5a5; }
+.item-card:last-child { margin-bottom: 0; }
+.item-type-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  border-radius: 6px; padding: 2px 10px; font-size: .68rem; font-weight: 800;
+  letter-spacing: .04em; margin-bottom: 8px;
+}
+.item-flight-badge { background: #dbeafe; color: #1d4ed8; }
+.item-hotel-badge  { background: #dcfce7; color: #15803d; }
+.item-train-badge  { background: #ede9fe; color: #5b21b6; }
+.item-pkg-badge    { background: #fff7ed; color: #c2410c; }
+
+/* Route timeline in item */
+.item-route {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+}
+.item-route-time { font-size: 1.05rem; font-weight: 900; color: #0f172a; }
+.item-route-city { font-size: .68rem; color: #9ca3af; }
+.item-route-bar { flex: 1; height: 2px; background: linear-gradient(90deg,#e63950,#f97316); border-radius: 2px; position: relative; }
+.item-route-bar::after { content:'✈'; position:absolute; top:50%; left:50%; transform:translate(-50%,-65%); font-size:.7rem; }
+
+/* ── Right sticky panel ───────────────────────── */
+.summary-panel {
+  background: #fff; border-radius: 18px;
+  border: 1.5px solid #f0f0f0;
+  box-shadow: 0 2px 14px rgba(0,0,0,.06);
+  position: sticky; top: 80px; overflow: hidden;
+}
+.summary-panel-head {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  padding: 18px 22px; color: #fff;
+}
+.summary-panel-head .s-title { font-size: .95rem; font-weight: 800; margin-bottom: 2px; }
+.summary-panel-head .s-sub { font-size: .72rem; color: rgba(255,255,255,.55); }
+
+.summary-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 11px 22px; border-bottom: 1px solid #fafafa;
+  font-size: .83rem;
+}
+.summary-row:last-of-type { border-bottom: none; }
+.summary-row .s-key { color: #6b7280; }
+.summary-row .s-val { font-weight: 700; color: #111; }
+.summary-total {
+  padding: 14px 22px; background: #f8fafc;
+  border-top: 2px solid #f0f0f0;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.summary-total .t-key { font-size: .8rem; font-weight: 700; color: #374151; }
+.summary-total .t-val { font-size: 1.3rem; font-weight: 900; color: #e63950; }
+
+/* Action buttons */
+.action-zone { padding: 16px 22px; display: flex; flex-direction: column; gap: 10px; }
+.btn-action {
+  border-radius: 12px; padding: 11px 18px; font-weight: 700; font-size: .85rem;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  text-decoration: none; cursor: pointer; transition: all .15s; border: none; width: 100%;
+}
+.btn-action-print  { background: #f8fafc; color: #374151; border: 1.5px solid #e5e7eb; }
+.btn-action-print:hover  { background: #f0f9ff; border-color: #7dd3fc; color: #0369a1; }
+.btn-action-home   { background: linear-gradient(135deg, #e63950, #f97316); color: #fff; }
+.btn-action-home:hover { opacity: .9; transform: translateY(-1px); }
+.btn-action-cancel { background: #fff; color: #dc2626; border: 1.5px solid #fca5a5; }
+.btn-action-cancel:hover { background: #fff5f5; border-color: #f87171; }
+
+/* Alert styles */
+.status-alert {
+  margin: 0 22px 16px; border-radius: 12px; padding: 12px 16px;
+  font-size: .8rem; font-weight: 500; display: flex; align-items: flex-start; gap: 8px;
+}
+.status-alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+.status-alert-danger  { background: #fff5f5; border: 1px solid #fca5a5; color: #991b1b; }
+.status-alert-info    { background: #f0f9ff; border: 1px solid #7dd3fc; color: #075985; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<div class="bdet-hero">
+  <div class="container">
+    <!-- Step indicator -->
+    <div class="step-indicator mb-3">
+      {% for step, label in [('1','Search'),('2','Select'),('3','Pay'),('4','Confirmed')] %}
+      <div class="step-item">
+        <div class="step-dot done">{{ step }}</div>
+        <span class="step-label done">{{ label }}</span>
+      </div>
+      {% if not loop.last %}
+      <div class="step-connector done"></div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="bdet-code-row">
+      <div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Booking Reference</div>
+        <div class="bdet-code">{{ booking.booking_code }}</div>
+      </div>
+      <!-- Status badge -->
+      {% if booking.status == 'CONFIRMED' %}
+        <span class="status-badge-lg sb-confirmed"><i class="bi bi-check-circle-fill"></i>Confirmed</span>
+      {% elif booking.status == 'CANCELLATION_REQUESTED' %}
+        <span class="status-badge-lg sb-requested"><i class="bi bi-hourglass-split"></i>Cancellation Pending</span>
+      {% elif booking.status == 'CANCELLED' %}
+        <span class="status-badge-lg sb-cancelled"><i class="bi bi-x-circle-fill"></i>Cancelled</span>
+      {% elif booking.status == 'REFUNDED' %}
+        <span class="status-badge-lg sb-refunded"><i class="bi bi-arrow-counterclockwise"></i>Refunded</span>
+      {% else %}
+        <span class="status-badge-lg sb-other">{{ booking.status }}</span>
+      {% endif %}
+
+      <div class="ms-auto">
+        <a href="{{ url_for('public.my_bookings') }}"
+           style="background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:22px;padding:8px 20px;font-size:.8rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s">
+          <i class="bi bi-arrow-left"></i> My Trips
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════════════════ -->
+<div class="container py-4">
+<div class="row g-4">
+
+  <!-- ── Left column ── -->
+  <div class="col-lg-8">
+
+    <!-- Customer details card -->
+    <div class="bdet-card">
+      <div class="bdet-card-head">
+        <div class="bdet-card-head-icon" style="background:#fef3c7"><i class="bi bi-person-fill" style="color:#d97706"></i></div>
+        <div>
+          <div class="bdet-card-head-title">Traveller Details</div>
+          <div class="bdet-card-head-sub">Booking made on {{ booking.created_at.strftime('%d %B %Y at %I:%M %p') }}</div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Full Name</span>
+        <span class="info-val">{{ booking.customer_name }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Email</span>
+        <span class="info-val">{{ booking.customer_email }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Phone</span>
+        <span class="info-val">{{ booking.customer_phone or '—' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Booking Date</span>
+        <span class="info-val">{{ booking.created_at.strftime('%d %B %Y at %I:%M %p') }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Status</span>
+        <span class="info-val">
+          {% if booking.status == 'CONFIRMED' %}
+            <span class="status-badge-lg sb-confirmed"><i class="bi bi-check-circle-fill"></i>Confirmed</span>
+          {% elif booking.status == 'CANCELLATION_REQUESTED' %}
+            <span class="status-badge-lg sb-requested"><i class="bi bi-hourglass-split"></i>Cancellation Requested</span>
+          {% elif booking.status == 'CANCELLED' %}
+            <span class="status-badge-lg sb-cancelled"><i class="bi bi-x-circle-fill"></i>Cancelled</span>
+          {% elif booking.status == 'REFUNDED' %}
+            <span class="status-badge-lg sb-refunded"><i class="bi bi-arrow-counterclockwise"></i>Refunded</span>
+          {% else %}
+            <span class="status-badge-lg sb-other">{{ booking.status }}</span>
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    <!-- Booked items card -->
+    {% if booking.items %}
+    <div class="bdet-card">
+      <div class="bdet-card-head">
+        <div class="bdet-card-head-icon" style="background:#dbeafe"><i class="bi bi-bag-check-fill" style="color:#1d4ed8"></i></div>
+        <div>
+          <div class="bdet-card-head-title">Booked Items</div>
+          <div class="bdet-card-head-sub">{{ booking.items|length }} item{{ 's' if booking.items|length != 1 }} in this booking</div>
+        </div>
+      </div>
+
+      <div class="p-4">
+        {% for item in booking.items %}
+        <div class="item-card">
+          <!-- Item type badge -->
+          {% if item.type == 'FLIGHT' %}
+            <span class="item-type-badge item-flight-badge"><i class="bi bi-airplane-fill"></i>FLIGHT</span>
+          {% elif item.type == 'HOTEL' %}
+            <span class="item-type-badge item-hotel-badge"><i class="bi bi-building"></i>HOTEL</span>
+          {% elif item.type == 'TRAIN' %}
+            <span class="item-type-badge" style="background:#ede9fe;color:#5b21b6"><i class="bi bi-train-front-fill"></i>TRAIN</span>
+          {% elif item.type == 'BUS' %}
+            <span class="item-type-badge" style="background:#f5f3ff;color:#6d28d9"><i class="bi bi-bus-front-fill"></i>BUS</span>
+          {% else %}
+            <span class="item-type-badge item-pkg-badge"><i class="bi bi-map-fill"></i>PACKAGE</span>
+          {% endif %}
+
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="fw-bold" style="font-size:.95rem;color:#111">{{ item.title }}</div>
+            <div class="fw-bold" style="font-size:1.1rem;color:#16a34a">₹{{ "%.0f"|format(item.amount) }}</div>
+          </div>
+
+          <!-- Flight route timeline -->
+          {% if item.type == 'FLIGHT' and item.details %}
+          <div class="item-route mt-2">
+            <div class="text-center">
+              <div class="item-route-time">{{ item.details.get('depart_time','--') }}</div>
+              <div class="item-route-city">{{ item.details.get('origin','') }}</div>
+            </div>
+            <div class="item-route-bar mx-2"></div>
+            <div class="text-center">
+              <div class="item-route-time">{{ item.details.get('arrive_time','--') }}</div>
+              <div class="item-route-city">{{ item.details.get('destination','') }}</div>
+            </div>
+          </div>
+          {% if item.details.get('cabin_class') %}
+          <div class="mt-2">
+            <span style="background:#dbeafe;color:#1d4ed8;border-radius:6px;padding:2px 10px;font-size:.72rem;font-weight:700">
+              {{ item.details.cabin_class }}
+            </span>
+          </div>
+          {% endif %}
+          {% endif %}
+
+          <!-- Hotel details -->
+          {% if item.type == 'HOTEL' and item.details %}
+          <div class="d-flex gap-4 mt-2" style="font-size:.82rem;color:#6b7280">
+            <span><i class="bi bi-geo-alt me-1 text-success"></i>{{ item.details.get('city','') }}</span>
+            <span><i class="bi bi-moon me-1 text-success"></i>{{ item.details.get('nights','') }} night{{ 's' if item.details.get('nights') != 1 }}</span>
+            {% if item.details.get('checkin') %}
+            <span><i class="bi bi-calendar-check me-1 text-success"></i>{{ item.details.get('checkin') }}</span>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Package / other details -->
+          {% if item.type not in ['FLIGHT','HOTEL'] and item.details %}
+          <div class="mt-2" style="font-size:.82rem;color:#6b7280">
+            {% if item.details.get('destination') %}
+            <span><i class="bi bi-geo-alt me-1 text-warning"></i>{{ item.details.destination }}</span>
+            {% endif %}
+            {% if item.details.get('duration_nights') %}
+            <span class="ms-3"><i class="bi bi-moon me-1 text-warning"></i>{{ item.details.duration_nights }} nights</span>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ── Right sticky panel ── -->
+  <div class="col-lg-4">
+    <div class="summary-panel">
+      <div class="summary-panel-head">
+        <div class="s-title">💳 Payment Summary</div>
+        <div class="s-sub">{{ booking.booking_code }}</div>
+      </div>
+
+      <div class="summary-row">
+        <span class="s-key">Total Amount</span>
+        <span class="s-val" style="color:#16a34a">₹{{ "%.0f"|format(booking.total_amount) }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="s-key">Currency</span>
+        <span class="s-val">{{ booking.currency }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="s-key">Payment Status</span>
+        <span class="s-val">
+          <span style="background:#dcfce7;color:#15803d;border-radius:20px;padding:3px 10px;font-size:.75rem;font-weight:800">✅ Paid</span>
+        </span>
+      </div>
+      <div class="summary-row">
+        <span class="s-key">Booking Date</span>
+        <span class="s-val" style="font-size:.8rem">{{ booking.created_at.strftime('%d %b %Y') }}</span>
+      </div>
+
+      <div class="summary-total">
+        <span class="t-key">Grand Total</span>
+        <span class="t-val">₹{{ "%.0f"|format(booking.total_amount) }}</span>
+      </div>
+
+      <!-- Status alerts -->
+      {% if booking.status == 'CANCELLATION_REQUESTED' %}
+      <div class="status-alert status-alert-warning">
+        <i class="bi bi-hourglass-split flex-shrink-0 mt-1"></i>
+        <div><strong>Cancellation pending.</strong><br>
+          Refund of <strong>₹{{ "%.0f"|format(booking.total_amount) }}</strong> will be processed within 5–7 business days once approved.</div>
+      </div>
+      {% elif booking.status == 'CANCELLED' %}
+      <div class="status-alert status-alert-danger">
+        <i class="bi bi-x-circle-fill flex-shrink-0 mt-1"></i>
+        <div><strong>Booking cancelled.</strong><br>If a refund was initiated, it will appear within 7 days.</div>
+      </div>
+      {% elif booking.status == 'REFUNDED' %}
+      <div class="status-alert status-alert-info">
+        <i class="bi bi-arrow-counterclockwise flex-shrink-0 mt-1"></i>
+        <div><strong>Refund processed.</strong><br>The refund has been credited to your original payment method.</div>
+      </div>
+      {% endif %}
+
+      <!-- Action buttons -->
+      <div class="action-zone">
+        <button class="btn-action btn-action-print" onclick="window.print()">
+          <i class="bi bi-printer"></i> Print Receipt
+        </button>
+        <a href="{{ url_for('public.home') }}" class="btn-action btn-action-home">
+          <i class="bi bi-house"></i> Back to Home
+        </a>
+        {% if booking.status == 'CONFIRMED' %}
+        <button class="btn-action btn-action-cancel" data-bs-toggle="modal" data-bs-target="#cancelModal">
+          <i class="bi bi-x-circle"></i> Cancel Booking
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══ Cancel Modal ═══════════════════════════════════════════════════════ -->
+{% if booking.status == 'CONFIRMED' %}
+<div class="modal fade" id="cancelModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:20px;overflow:hidden">
+      <div class="modal-header border-0 pb-0" style="background:#fff5f5;padding:24px 24px 12px">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:42px;height:42px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center">
+            <i class="bi bi-x-circle-fill text-danger" style="font-size:1.1rem"></i>
+          </div>
+          <div>
+            <h5 class="modal-title fw-bold mb-0">Cancel Booking</h5>
+            <div class="text-muted" style="font-size:.78rem">This action will submit a cancellation request</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 py-3">
+        <p class="text-muted mb-3" style="font-size:.88rem">
+          Are you sure you want to cancel booking <strong>{{ booking.booking_code }}</strong>?
+        </p>
+        <div class="rounded-3 p-3 mb-3" style="background:#f8fafc;border:1.5px solid #e5e7eb">
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">Booking amount</span>
+            <strong>₹{{ "%.0f"|format(booking.total_amount) }}</strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted small">Estimated refund</span>
+            <span class="text-success fw-semibold small">Full · 5–7 business days</span>
+          </div>
+        </div>
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;font-size:.8rem;color:#92400e">
+          <i class="bi bi-info-circle me-1"></i>
+          Cancellation goes to our team for review. You'll be notified when the refund is processed.
+        </div>
+      </div>
+      <div class="modal-footer border-0 px-4 pb-4 gap-2">
+        <button type="button" class="btn btn-outline-secondary flex-fill" data-bs-dismiss="modal" style="border-radius:10px;font-weight:700">
+          Keep Booking
+        </button>
+        <form method="POST" action="{{ url_for('user.cancel_booking', booking_id=booking.id) }}" class="flex-fill">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger w-100" style="border-radius:10px;font-weight:800">
+            <i class="bi bi-x-circle me-1"></i>Yes, Cancel
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

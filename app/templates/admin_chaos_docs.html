@@ -1,0 +1,370 @@
+{% extends "layouts/base.html" %}
+{% block title %}Chaos Engineering Docs — SnapTravels Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background:#080b10 !important; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif !important; }
+
+.docs-hero { background:#080b10; padding:24px 0 20px; border-bottom:1px solid #151c28; }
+.docs-breadcrumb { font-size:.72rem; color:#3d5070; font-weight:500; letter-spacing:.03em; margin-bottom:10px; }
+.docs-breadcrumb a { color:#3b82f6; text-decoration:none; }
+.docs-breadcrumb a:hover { text-decoration:underline; }
+.docs-breadcrumb span { color:#4a6080; }
+.docs-title { font-size:1.25rem; font-weight:700; color:#e2e8f0; letter-spacing:-.02em; margin:0; }
+.docs-subtitle { font-size:.78rem; color:#3d5070; margin-top:4px; }
+
+/* Sidebar nav */
+.docs-nav { position:sticky; top:80px; }
+.docs-nav-item {
+  display:block; padding:8px 14px; border-radius:6px; font-size:.78rem; font-weight:600;
+  color:#64748b; text-decoration:none; margin-bottom:2px; transition:all .15s;
+  border-left:2px solid transparent;
+}
+.docs-nav-item:hover { color:#e2e8f0; background:rgba(255,255,255,.03); }
+.docs-nav-item.active { color:#3b82f6; border-left-color:#3b82f6; background:rgba(59,130,246,.06); }
+
+/* Section cards */
+.doc-section {
+  background:#0d1117; border:1px solid #151c28; border-radius:10px;
+  overflow:hidden; margin-bottom:20px;
+}
+.doc-section-head {
+  padding:18px 22px; border-bottom:1px solid #151c28;
+  display:flex; align-items:center; gap:10px;
+}
+.doc-section-body { padding:22px; }
+.doc-badge { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.95rem; flex-shrink:0; }
+
+/* Tables */
+.doc-table { width:100%; border-collapse:collapse; font-size:.76rem; }
+.doc-table th { text-align:left; padding:10px 12px; color:#475569; font-weight:700; border-bottom:1px solid #1e2d40; background:#080b10; position:sticky; top:0; }
+.doc-table td { padding:10px 12px; border-bottom:1px solid #111820; color:#94a3b8; vertical-align:top; }
+.doc-table td:first-child { color:#e2e8f0; font-weight:600; white-space:nowrap; }
+.doc-table tr:last-child td { border-bottom:none; }
+.doc-table .c-red { color:#f87171; }
+.doc-table .c-orange { color:#fb923c; }
+.doc-table .c-blue { color:#60a5fa; }
+.doc-table .c-purple { color:#c4b5fd; font-weight:700; }
+
+/* Tip items */
+.tip-item { display:flex; gap:8px; margin-bottom:8px; font-size:.78rem; color:#94a3b8; line-height:1.7; }
+.tip-icon { flex-shrink:0; margin-top:2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="docs-hero">
+  <div class="container">
+    <div class="docs-breadcrumb">
+      <a href="{{ url_for('chaos_admin.dashboard') }}">Admin / Chaos Engineering</a>
+      <span>/</span> Documentation
+    </div>
+    <h1 class="docs-title"><i class="bi bi-book me-2" style="color:#3b82f6"></i>Chaos Engineering Documentation</h1>
+    <div class="docs-subtitle">Complete guide to every chaos setting, what it does, and how monitoring tools detect it</div>
+  </div>
+</div>
+
+<div class="container py-4">
+<div class="row g-4">
+
+<!-- Sidebar Nav -->
+<div class="col-lg-3 d-none d-lg-block">
+  <nav class="docs-nav">
+    <div style="font-size:.65rem;font-weight:800;color:#2d4060;text-transform:uppercase;letter-spacing:.1em;padding:8px 14px;margin-bottom:4px">On This Page</div>
+    <a href="#overview" class="docs-nav-item active">Overview</a>
+    <a href="#section0" class="docs-nav-item">Core Chaos Engine</a>
+    <a href="#section1" class="docs-nav-item">Page Load Chaos</a>
+    <a href="#section2" class="docs-nav-item">Functionality Failures</a>
+    <a href="#section3" class="docs-nav-item">Component Chaos</a>
+    <a href="#section4" class="docs-nav-item">A/B Test Chaos</a>
+    <a href="#profiles" class="docs-nav-item">Named Outage Profiles</a>
+    <a href="#auto" class="docs-nav-item">Auto Chaos Mode</a>
+    <a href="#tips" class="docs-nav-item">Quick Tips</a>
+    <a href="#troubleshoot" class="docs-nav-item">Troubleshooting</a>
+    <hr style="border-color:#151c28;margin:12px 14px">
+    <a href="{{ url_for('chaos_admin.dashboard') }}" class="docs-nav-item" style="color:#3b82f6">
+      <i class="bi bi-arrow-left me-1"></i>Back to Console
+    </a>
+  </nav>
+</div>
+
+<!-- Main Content -->
+<div class="col-lg-9">
+
+<!-- Overview -->
+<div class="doc-section" id="overview">
+  <div class="doc-section-head">
+    <div class="doc-badge" style="background:#0a1624;color:#3b82f6"><i class="bi bi-gear"></i></div>
+    <div>
+      <div style="font-weight:700;font-size:.9rem;color:#e2e8f0">How Chaos Engineering Works</div>
+    </div>
+  </div>
+  <div class="doc-section-body">
+    <div style="font-size:.82rem;color:#94a3b8;line-height:1.8">
+      <p style="margin:0 0 12px">The Chaos Control Panel injects <strong style="color:#e2e8f0">realistic, controlled failures</strong> into SnapTravels so that monitoring tools (Synthetic, APM, RUM, and Mobile APM) detect and alert on them — perfect for <strong style="color:#e2e8f0">RCA demos</strong> and incident response training.</p>
+      <p style="margin:0 0 12px">The panel is divided into <strong style="color:#e2e8f0">five independent sections</strong>:</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:12px">
+        <div style="background:#080b10;border:1px solid #151c28;border-left:3px solid #3b82f6;border-radius:6px;padding:10px 14px">
+          <div style="font-size:.75rem;font-weight:700;color:#e2e8f0">Section 0</div>
+          <div style="font-size:.68rem;color:#64748b">Core Chaos Engine</div>
+        </div>
+        <div style="background:#080b10;border:1px solid #151c28;border-left:3px solid #a78bfa;border-radius:6px;padding:10px 14px">
+          <div style="font-size:.75rem;font-weight:700;color:#e2e8f0">Section 1</div>
+          <div style="font-size:.68rem;color:#64748b">Page Load Performance</div>
+        </div>
+        <div style="background:#080b10;border:1px solid #151c28;border-left:3px solid #f59e0b;border-radius:6px;padding:10px 14px">
+          <div style="font-size:.75rem;font-weight:700;color:#e2e8f0">Section 2</div>
+          <div style="font-size:.68rem;color:#64748b">Functionality Failures</div>
+        </div>
+        <div style="background:#080b10;border:1px solid #151c28;border-left:3px solid #22d3ee;border-radius:6px;padding:10px 14px">
+          <div style="font-size:.75rem;font-weight:700;color:#e2e8f0">Section 3</div>
+          <div style="font-size:.68rem;color:#64748b">Component-Level Chaos</div>
+        </div>
+        <div style="background:#080b10;border:1px solid #151c28;border-left:3px solid #34d399;border-radius:6px;padding:10px 14px">
+          <div style="font-size:.75rem;font-weight:700;color:#e2e8f0">Section 4</div>
+          <div style="font-size:.68rem;color:#64748b">A/B Test Chaos</div>
+        </div>
+      </div>
+      <p style="margin:0">Each section has its own master toggle. You can activate <strong style="color:#e2e8f0">any combination</strong> at the same time. Sections 1–4 work <strong style="color:#fbbf24">independently</strong> of the Core Chaos Engine.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Section 0: Core Chaos Engine -->
+<div class="doc-section" id="section0">
+  <div class="doc-section-head">
+    <div class="doc-badge" style="background:#0f1a33;color:#3b82f6"><i class="bi bi-cpu"></i></div>
+    <div>
+      <div style="font-weight:700;font-size:.9rem;color:#e2e8f0">Section 0 — Core Chaos Engine</div>
+      <div style="font-size:.7rem;color:#3d5070">Login storms, DB failures, payment gateway, API errors</div>
+    </div>
+    <span style="font-size:.65rem;background:#16a34a;color:#fff;padding:2px 8px;border-radius:4px;font-weight:700;margin-left:auto">MASTER SWITCH</span>
+  </div>
+  <div class="doc-section-body" style="padding:0;overflow-x:auto">
+    <table class="doc-table">
+      <thead><tr><th>Setting</th><th>Type</th><th>What It Does</th><th>What Monitoring Sees</th></tr></thead>
+      <tbody>
+        <tr><td>Login failure rate</td><td>0–100%</td><td>Random login attempts throw "Authentication service unavailable"</td><td class="c-red">APM error spike, RUM JS errors, Synthetic login fails</td></tr>
+        <tr><td>Login slowdown</td><td>0–5000ms</td><td>Server-side delay before every login attempt</td><td class="c-orange">APM transaction time spike, RUM TTFB increase</td></tr>
+        <tr><td>DB completely down</td><td>ON/OFF</td><td>All DB queries throw "Connection refused" — pages crash 500</td><td class="c-red">APM DB trace errors, /health → 503, cascading alerts</td></tr>
+        <tr><td>DB slowdown</td><td>0–5000ms</td><td>Delay on every DB-heavy operation</td><td class="c-orange">APM slow queries, response time spike</td></tr>
+        <tr><td>Search timeout rate</td><td>0–100%</td><td>Search randomly fails with "upstream timeout"</td><td class="c-red">APM error on search, Synthetic search fails</td></tr>
+        <tr><td>Search slowdown</td><td>0–5000ms</td><td>Delay before returning search results</td><td class="c-orange">APM slow transaction, RUM slow /flights and /hotels</td></tr>
+        <tr><td>Checkout exception</td><td>0–100%</td><td>Booking crashes mid-transaction → payment failed</td><td class="c-red">APM exception on /booking POST</td></tr>
+        <tr><td>Payment gateway down</td><td>ON/OFF</td><td>Every payment fails "gateway unreachable"</td><td class="c-red">APM payment errors, Synthetic booking fails</td></tr>
+        <tr><td>Payment failure rate</td><td>0–100%</td><td>Random "Card declined by issuing bank"</td><td class="c-red">APM payment exception, partial failures</td></tr>
+        <tr><td>API 5xx rate</td><td>0–100%</td><td>Mobile API returns 500 randomly</td><td class="c-red">Mobile APM crash spike, REST API 5xx alerts</td></tr>
+        <tr><td>API slowdown</td><td>0–5000ms</td><td>Delay on every mobile API call</td><td class="c-orange">Mobile APM slow response, latency spike</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Section 1: Page Load -->
+<div class="doc-section" id="section1">
+  <div class="doc-section-head">
+    <div class="doc-badge" style="background:#190f33;color:#a78bfa"><i class="bi bi-hourglass-split"></i></div>
+    <div>
+      <div style="font-weight:700;font-size:.9rem;color:#e2e8f0">Section 1 — Page Load Performance Chaos</div>
+      <div style="font-size:.7rem;color:#3d5070">Server delays, JS errors, resource failures, memory pressure</div>
+    </div>
+    <span style="font-size:.65rem;background:#7c3aed;color:#fff;padding:2px 8px;border-radius:4px;font-weight:700;margin-left:auto">INDEPENDENT</span>
+  </div>
+  <div class="doc-section-body" style="padding:0;overflow-x:auto">
+    <table class="doc-table">
+      <thead><tr><th>Setting</th><th>What It Does</th><th>What Monitoring Sees</th></tr></thead>
+      <tbody>
+        <tr><td>Server-Side Delay</td><td>Flask sleeps N seconds before sending HTML. Range: 0–60s.</td><td class="c-orange">RUM: massive TTFB spike. Synthetic: page timeout. APM: slow routes.</td></tr>
+        <tr><td>Target Pages</td><td>Choose which pages get delayed — or "All" for everything.</td><td class="c-blue">Only selected pages slow in monitoring. Others stay fast.</td></tr>
+        <tr><td class="c-purple">JS Console Errors</td><td>Injects TypeError, ReferenceError, Promise rejections. Simulates broken SDK.</td><td class="c-red">RUM: JS error spike. Error tracking shows realistic stack traces.</td></tr>
+        <tr><td class="c-purple">Resource Failures</td><td>Appends broken script/link tags + failed fetch() calls. Network tab shows 404s.</td><td class="c-red">RUM: resource errors. Network monitoring shows failed JS/CSS/API.</td></tr>
+        <tr><td class="c-purple">Memory Pressure</td><td>Allocates ~96MB array. Causes GC pauses and heap spike.</td><td class="c-orange">RUM: memory spike. DevTools shows heap jump + long GC.</td></tr>
+        <tr><td class="c-purple">Render-Blocking</td><td>Synchronous busy-wait freezes browser (max 4s). Page appears frozen.</td><td class="c-red">RUM: LCP/FCP spike. "Long Task" warnings in performance timeline.</td></tr>
+        <tr><td class="c-purple">Large DOM Payload</td><td>Appends 8,000 hidden spans. Slows reflows and layout.</td><td class="c-orange">RUM: DOM size exceeds threshold. Lighthouse flags it.</td></tr>
+        <tr><td class="c-purple">Webfont Failure</td><td>Loads broken webfont causing FOIT (Flash of Invisible Text).</td><td class="c-red">RUM: font load error, text invisible for 3s.</td></tr>
+        <tr><td class="c-purple">TTFB Spike</td><td>White-screen overlay for 3–8s after DOMContentLoaded.</td><td class="c-orange">RUM: high TTFB flagged. Visual appears broken.</td></tr>
+        <tr><td class="c-purple">Cache Chaos</td><td>Randomizes cache headers, forces no-store on assets.</td><td class="c-orange">RUM: repeat page loads slower. Cache hit rate drops.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Section 2: Functionality -->
+<div class="doc-section" id="section2">
+  <div class="doc-section-head">
+    <div class="doc-badge" style="background:#1c1305;color:#f59e0b"><i class="bi bi-bug"></i></div>
+    <div>
+      <div style="font-weight:700;font-size:.9rem;color:#e2e8f0">Section 2 — Functionality Failures</div>
+      <div style="font-size:.7rem;color:#3d5070">Broken images, forms, buttons, sessions, navigation</div>
+    </div>
+    <span style="font-size:.65rem;background:#dc2626;color:#fff;padding:2px 8px;border-radius:4px;font-weight:700;margin-left:auto">INDEPENDENT</span>
+  </div>
+  <div class="doc-section-body" style="padding:0;overflow-x:auto">
+    <table class="doc-table">
+      <thead><tr><th>Setting</th><th>What It Does</th><th>What Monitoring Sees</th></tr></thead>
+      <tbody>
+        <tr><td>Empty Search Results</td><td>All searches return zero results regardless of query.</td><td class="c-orange">Synthetic: empty results. RUM: abnormal user flow.</td></tr>
+        <tr><td>Form Errors</td><td>60% of form submits intercepted → fake "503 Server Error".</td><td class="c-red">RUM: form errors. Synthetic: booking flow fails.</td></tr>
+        <tr><td>Broken Images</td><td>~55% of images replaced with broken URLs.</td><td class="c-red">RUM: image 404s spike. Visual regression detected.</td></tr>
+        <tr><td>Infinite Spinner</td><td>All action buttons show permanent "Processing..." spinner.</td><td class="c-red">Synthetic: timeout. RUM: rage-clicks. Zero conversions.</td></tr>
+        <tr><td>Broken CTAs</td><td>~45% of buttons become unclickable (opacity 0.45).</td><td class="c-red">Synthetic: click fails. RUM: interaction errors.</td></tr>
+        <tr><td>404 Storm Rate</td><td>Random pages return 404. Rate 0.0–1.0.</td><td class="c-red">Synthetic: random 404s. APM: error rate spike.</td></tr>
+        <tr><td>Session Kill Rate</td><td>Random requests clear session → logged out. Rate 0.0–1.0.</td><td class="c-red">Synthetic: flows break mid-way. Unexpected logouts.</td></tr>
+        <tr><td>Wrong Search Results</td><td>Search returns mismatched results (hotels for flight search).</td><td class="c-orange">Synthetic: validation fails. Data integrity alert.</td></tr>
+        <tr><td>Fake Sold Out</td><td>Random items show "Sold Out" even when available.</td><td class="c-orange">Conversion rate drops. Availability discrepancy.</td></tr>
+        <tr><td>Broken Date Picker</td><td>Date picker freezes or shows wrong dates.</td><td class="c-red">Synthetic: date selection fails. RUM: JS error.</td></tr>
+        <tr><td>OTP Invalid</td><td>2FA OTP validation always fails.</td><td class="c-red">Login flow breaks after password step.</td></tr>
+        <tr><td>Email Chaos</td><td>Confirmation emails fail or contain garbled content.</td><td class="c-orange">Email delivery monitoring alerts.</td></tr>
+        <tr><td>Maintenance Flood</td><td>Random pages show maintenance overlay.</td><td class="c-red">Synthetic: pages unavailable. Availability drops.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Section 3: Component -->
+<div class="doc-section" id="section3">
+  <div class="doc-section-head">
+    <div class="doc-badge" style="background:#041c21;color:#22d3ee"><i class="bi bi-grid-1x2"></i></div>
+    <div>
+      <div style="font-weight:700;font-size:.9rem;color:#e2e8f0">Section 3 — Component-Level Chaos</div>
+      <div style="font-size:.7rem;color:#3d5070">Random UI component breakage at configurable rate</div>
+    </div>
+  </div>
+  <div class="doc-section-body" style="padding:0;overflow-x:auto">
+    <table class="doc-table">
+      <thead><tr><th>Setting</th><th>What It Does</th><th>What Monitoring Sees</th></tr></thead>
+      <tbody>
+        <tr><td>Chaos Rate</td><td>0–100% chance per page load that components break.</td><td class="c-blue">Controls the probability of any component breaking.</td></tr>
+        <tr><td>Break Search Widget</td><td>Search autocomplete and input fields malfunction.</td><td class="c-red">Synthetic: search flow fails at input step.</td></tr>
+        <tr><td>Break Results</td><td>Result cards render incorrectly or show errors.</td><td class="c-red">Visual regression. Layout shift detected.</td></tr>
+        <tr><td>Break Booking CTAs</td><td>Book/Pay buttons disappear or become non-functional.</td><td class="c-red">Synthetic: booking flow fails. Zero conversions.</td></tr>
+        <tr><td>Break Pricing</td><td>Prices show as NaN, ₹0, or wildly wrong values.</td><td class="c-orange">Data integrity alert. Price validation fails.</td></tr>
+        <tr><td>Break CSS</td><td>Layout breaks — overlapping elements, wrong colors.</td><td class="c-orange">Visual regression detected in screenshots.</td></tr>
+        <tr><td>Break Navigation</td><td>Nav links point to wrong pages or return 404.</td><td class="c-red">Synthetic: navigation fails. Broken link alerts.</td></tr>
+        <tr><td>Break Autocomplete</td><td>City autocomplete crashes with JS error on type.</td><td class="c-red">RUM: JS error on search pages. Functional break.</td></tr>
+        <tr><td>Break Date Picker</td><td>Date picker component freezes on interaction.</td><td class="c-red">Synthetic: date selection timeout.</td></tr>
+        <tr><td>Break Ratings</td><td>Star ratings show wrong values or crash.</td><td class="c-orange">Data integrity issue on listing pages.</td></tr>
+        <tr><td>Break Loyalty Points</td><td>Loyalty/reward points display as zero or error.</td><td class="c-orange">Dashboard data integrity alert.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Section 4: A/B Test -->
+<div class="doc-section" id="section4">
+  <div class="doc-section-head">
+    <div class="doc-badge" style="background:#062013;color:#34d399"><i class="bi bi-shuffle"></i></div>
+    <div>
+      <div style="font-weight:700;font-size:.9rem;color:#e2e8f0">Section 4 — A/B Test Chaos</div>
+      <div style="font-size:.7rem;color:#3d5070">Mutates DOM identifiers without visual change</div>
+    </div>
+  </div>
+  <div class="doc-section-body">
+    <div style="font-size:.82rem;color:#94a3b8;line-height:1.8;margin-bottom:14px">
+      This is the most subtle chaos type. Pages <strong style="color:#e2e8f0">look identical</strong> to users, but internal DOM element IDs, form names, button identifiers, and CSS classes are mutated. This breaks Synthetic monitors that rely on specific selectors, and analytics events fire with wrong labels.
+    </div>
+    <table class="doc-table">
+      <thead><tr><th>Setting</th><th>What It Mutates</th><th>What Breaks</th></tr></thead>
+      <tbody>
+        <tr><td>A/B Login</td><td>Login form field IDs and names</td><td class="c-red">Synthetic login monitor can't find username/password fields.</td></tr>
+        <tr><td>A/B Search</td><td>Search input IDs and submit button</td><td class="c-red">Synthetic search monitor fails at input step.</td></tr>
+        <tr><td>A/B Booking</td><td>Booking form IDs, payment fields</td><td class="c-red">Synthetic booking flow can't fill payment details.</td></tr>
+        <tr><td>A/B Profile</td><td>Dashboard element IDs</td><td class="c-red">Synthetic dashboard checks fail on assertions.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Named Outage Profiles -->
+<div class="doc-section" id="profiles">
+  <div class="doc-section-head">
+    <div class="doc-badge" style="background:#1f0a0a;color:#ef4444"><i class="bi bi-lightning"></i></div>
+    <div>
+      <div style="font-weight:700;font-size:.9rem;color:#e2e8f0">Named Outage Profiles</div>
+      <div style="font-size:.7rem;color:#3d5070">One-click presets for realistic outage scenarios</div>
+    </div>
+  </div>
+  <div class="doc-section-body">
+    <div style="font-size:.82rem;color:#94a3b8;line-height:1.7;margin-bottom:14px">
+      Clicking a profile <strong style="color:#4ade80">auto-enables the Core Chaos Engine</strong> and sets the appropriate knobs for a set duration. After expiry, all settings are automatically cleared.
+    </div>
+    <table class="doc-table">
+      <thead><tr><th>Profile</th><th>What It Activates</th><th>Real-World Scenario</th></tr></thead>
+      <tbody>
+        <tr><td>Login Storm</td><td>60% login failure + 800ms slowdown</td><td>Auth service under DDoS</td></tr>
+        <tr><td>DB Degraded</td><td>2500ms DB delay + 1500ms checkout</td><td>Database replica lag</td></tr>
+        <tr><td>DB Down</td><td>DB completely down = ON</td><td>Primary database unreachable</td></tr>
+        <tr><td>Payment Down</td><td>Payment gateway = OFF</td><td>Payment processor outage</td></tr>
+        <tr><td>Checkout Chaos</td><td>50% crash + 600ms delay</td><td>Microservice instability</td></tr>
+        <tr><td>Search Timeout</td><td>40% timeout + 1500ms delay</td><td>Upstream provider degraded</td></tr>
+        <tr><td>API 5xx Storm</td><td>35% 5xx + 700ms delay</td><td>Mobile backend instability</td></tr>
+        <tr><td>CDN Failure</td><td>Page load + webfont + resource failures</td><td>CDN edge node down</td></tr>
+        <tr><td>Email Service Down</td><td>Email chaos enabled</td><td>SMTP provider outage</td></tr>
+        <tr><td>Maintenance Flood</td><td>Maintenance overlay on pages</td><td>Accidental maintenance flag</td></tr>
+        <tr><td>Third-Party Blackout</td><td>Resource failures + component breaks</td><td>Third-party JS vendor down</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Auto Chaos Mode -->
+<div class="doc-section" id="auto">
+  <div class="doc-section-head">
+    <div class="doc-badge" style="background:#1f0a0a;color:#ef4444"><i class="bi bi-robot"></i></div>
+    <div>
+      <div style="font-weight:700;font-size:.9rem;color:#e2e8f0">Auto Chaos Mode</div>
+      <div style="font-size:.7rem;color:#3d5070">Continuous automated chaos loop</div>
+    </div>
+  </div>
+  <div class="doc-section-body">
+    <div style="font-size:.82rem;color:#94a3b8;line-height:1.8">
+      <p style="margin:0 0 12px"><strong style="color:#e2e8f0">Continuous Loop:</strong> Auto Chaos cycles through all 5 chaos types (Named Outage, Page Load, Functionality, Component, A/B Test) in a random order. After each cycle completes, a new cycle begins with freshly shuffled order. Runs 24/7 until disabled.</p>
+      <p style="margin:0 0 12px"><strong style="color:#e2e8f0">Event Duration:</strong> Each event runs for <strong style="color:#c8d6e8">30 or 60 minutes</strong> (randomly chosen).</p>
+      <p style="margin:0 0 12px"><strong style="color:#e2e8f0">Cooling Gap:</strong> A mandatory <strong style="color:#c8d6e8">3-hour gap</strong> (plus 0–30 min jitter) between events. Gives monitoring time to show recovery before next chaos.</p>
+      <p style="margin:0 0 12px"><strong style="color:#e2e8f0">Daily Reshuffle:</strong> At <strong style="color:#c8d6e8">05:35 IST (00:05 UTC)</strong> the entire schedule rebuilds with new random order and timing.</p>
+      <p style="margin:0"><strong style="color:#e2e8f0">View Schedule:</strong> Visit the <a href="{{ url_for('chaos_admin.auto_chaos_dashboard') }}" style="color:#3b82f6">Auto Chaos Dashboard</a> to see the full timeline with countdown timers.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Tips -->
+<div class="doc-section" id="tips">
+  <div class="doc-section-head">
+    <div class="doc-badge" style="background:#1c1305;color:#f59e0b"><i class="bi bi-lightbulb"></i></div>
+    <div><div style="font-weight:700;font-size:.9rem;color:#e2e8f0">Quick Tips</div></div>
+  </div>
+  <div class="doc-section-body">
+    <div class="tip-item"><span class="tip-icon" style="color:#4ade80">&#10003;</span><div><strong style="color:#e2e8f0">Sections are independent</strong> — Page Load chaos works without Core Chaos, and vice versa.</div></div>
+    <div class="tip-item"><span class="tip-icon" style="color:#4ade80">&#10003;</span><div><strong style="color:#e2e8f0">Save after every change</strong> — Click "Save All Chaos Settings" at the bottom after toggling any setting.</div></div>
+    <div class="tip-item"><span class="tip-icon" style="color:#4ade80">&#10003;</span><div><strong style="color:#e2e8f0">Named Profiles auto-enable</strong> — Clicking a profile turns on Core Chaos and sets the knobs automatically.</div></div>
+    <div class="tip-item"><span class="tip-icon" style="color:#4ade80">&#10003;</span><div><strong style="color:#e2e8f0">"End All Chaos"</strong> — Resets ALL knobs in ALL sections to zero/off instantly.</div></div>
+    <div class="tip-item"><span class="tip-icon" style="color:#4ade80">&#10003;</span><div><strong style="color:#e2e8f0">Target specific pages</strong> — Page Load delay only applies to selected pages; others load normally.</div></div>
+    <div class="tip-item"><span class="tip-icon" style="color:#4ade80">&#10003;</span><div><strong style="color:#e2e8f0">JS injections are global</strong> — Console errors, resource failures, memory pressure apply to ALL pages when enabled.</div></div>
+  </div>
+</div>
+
+<!-- Troubleshooting -->
+<div class="doc-section" id="troubleshoot">
+  <div class="doc-section-head">
+    <div class="doc-badge" style="background:#0a1624;color:#60a5fa"><i class="bi bi-wrench"></i></div>
+    <div><div style="font-weight:700;font-size:.9rem;color:#e2e8f0">Troubleshooting</div></div>
+  </div>
+  <div class="doc-section-body">
+    <div class="tip-item"><span class="tip-icon" style="color:#fbbf24">!</span><div><strong style="color:#e2e8f0">Chaos not firing?</strong> — Visit <code style="color:#93c5fd;background:#080b10;padding:2px 6px;border-radius:4px">/admin/chaos/debug</code> for a diagnostic report showing exactly why chaos may not be triggering.</div></div>
+    <div class="tip-item"><span class="tip-icon" style="color:#fbbf24">!</span><div><strong style="color:#e2e8f0">Code changes not reflecting?</strong> — Run <code style="color:#93c5fd;background:#080b10;padding:2px 6px;border-radius:4px">bash snaptravels.sh restart</code> to pick up Python file changes.</div></div>
+    <div class="tip-item"><span class="tip-icon" style="color:#fbbf24">!</span><div><strong style="color:#e2e8f0">Auto Chaos schedule empty?</strong> — Toggle Auto Chaos OFF then ON again to force a fresh schedule rebuild.</div></div>
+    <div class="tip-item"><span class="tip-icon" style="color:#60a5fa">i</span><div><strong style="color:#e2e8f0">State API</strong> — <code style="color:#93c5fd;background:#080b10;padding:2px 6px;border-radius:4px">/admin/chaos/state.json</code> returns all chaos state as JSON (unauthenticated, for REST API monitors).</div></div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:20px">
+  <a href="{{ url_for('chaos_admin.dashboard') }}" style="font-size:.82rem;color:#3b82f6;text-decoration:none;font-weight:600">
+    <i class="bi bi-arrow-left me-1"></i>Back to Chaos Console
+  </a>
+</div>
+
+</div><!-- /col -->
+</div><!-- /row -->
+</div><!-- /container -->
+{% endblock %}

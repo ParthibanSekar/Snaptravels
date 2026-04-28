@@ -1,0 +1,311 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Create Account – SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-wrapper {
+    min-height: calc(100vh - 220px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    background: #f5f7fa;
+  }
+  .auth-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+    width: 100%;
+    max-width: 460px;
+    overflow: hidden;
+  }
+  .auth-card-header {
+    background: linear-gradient(135deg, #e63950 0%, #c0392b 100%);
+    color: #fff;
+    padding: 32px 40px 28px;
+    text-align: center;
+  }
+  .auth-card-header .auth-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-bottom: 12px;
+  }
+  .auth-card-header h2 { font-size: 1.5rem; font-weight: 700; margin: 0 0 4px; }
+  .auth-card-header p  { margin: 0; opacity: .88; font-size: .9rem; }
+
+  /* Progress steps */
+  .signup-steps {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .signup-steps span {
+    width: 32px; height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.35);
+  }
+  .signup-steps span.active { background: #fff; }
+
+  .auth-card-body { padding: 36px 40px 32px; }
+  .auth-card-body .form-label {
+    font-weight: 600; font-size: .85rem; color: #444; margin-bottom: 6px;
+  }
+  .auth-card-body .form-control {
+    border-radius: 10px;
+    border: 1.5px solid #e0e0e0;
+    padding: 10px 14px;
+    font-size: .95rem;
+    transition: border-color .2s;
+  }
+  .auth-card-body .form-control:focus {
+    border-color: #e63950;
+    box-shadow: 0 0 0 3px rgba(230,57,80,.12);
+  }
+  .form-control.is-valid   { border-color: #28a745 !important; }
+  .form-control.is-invalid { border-color: #dc3545 !important; }
+
+  .btn-auth {
+    background: #e63950; border: none; border-radius: 10px;
+    color: #fff; font-weight: 700; font-size: 1rem;
+    padding: 12px; width: 100%;
+    transition: background .2s, transform .1s;
+  }
+  .btn-auth:hover  { background: #c0392b; transform: translateY(-1px); }
+  .btn-auth:active { transform: translateY(0); }
+
+  .auth-divider {
+    display: flex; align-items: center; gap: 12px;
+    color: #aaa; font-size: .82rem; margin: 20px 0;
+  }
+  .auth-divider::before, .auth-divider::after {
+    content: ''; flex: 1; height: 1px; background: #e5e5e5;
+  }
+  .auth-link { color: #e63950; font-weight: 600; text-decoration: none; }
+  .auth-link:hover { color: #c0392b; text-decoration: underline; }
+
+  /* Password strength bar */
+  .pwd-strength { margin-top: 6px; }
+  .pwd-strength .bar {
+    height: 4px; border-radius: 2px; background: #eee;
+    overflow: hidden; margin-bottom: 4px;
+  }
+  .pwd-strength .bar-fill {
+    height: 100%; border-radius: 2px;
+    width: 0; transition: width .3s, background .3s;
+  }
+  .pwd-strength .label { font-size: .75rem; }
+
+  /* Perks strip */
+  .perks-strip {
+    display: flex; gap: 16px; justify-content: center;
+    margin-top: 24px; padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+  }
+  .perks-strip .perk {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; font-size: .75rem; color: #777; text-align: center;
+  }
+  .perks-strip .perk i {
+    font-size: 1.2rem; color: #e63950;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+
+    <!-- Header -->
+    <div class="auth-card-header">
+      <div class="auth-icon"><i class="bi bi-person-plus-fill"></i></div>
+      <h2>Create Account</h2>
+      <p>Join millions of travellers on SnapTravels</p>
+      <div class="signup-steps">
+        <span class="active"></span>
+        <span class="active"></span>
+        <span></span>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="auth-card-body">
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mb-3"
+                 role="alert" style="border-radius:10px;font-size:.9rem">
+              <i class="bi bi-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}-fill me-2"></i>{{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" id="signupForm" novalidate>
+        {{ form.hidden_tag() }}
+
+        <!-- Email -->
+        <div class="mb-3">
+          {{ form.email.label(class="form-label") }}
+          <div class="input-group">
+            <span class="input-group-text" style="border-radius:10px 0 0 10px;border:1.5px solid #e0e0e0;background:#f8f9fa">
+              <i class="bi bi-envelope text-muted"></i>
+            </span>
+            {{ form.email(class="form-control", placeholder="your@email.com", id="signupEmail",
+                          style="border-radius:0 10px 10px 0;border-left:0") }}
+          </div>
+          {% for error in form.email.errors %}
+            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Password -->
+        <div class="mb-1">
+          {{ form.password.label(class="form-label") }}
+          <div class="position-relative">
+            {{ form.password(class="form-control pe-5", placeholder="Min 8 characters", id="signupPassword",
+                             oninput="checkStrength(this.value)") }}
+            <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted pe-3 py-0"
+                    style="background:none;border:none;" onclick="togglePwd('signupPassword',this)">
+              <i class="bi bi-eye-slash"></i>
+            </button>
+          </div>
+          {% for error in form.password.errors %}
+            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+          {% endfor %}
+          <!-- Strength bar -->
+          <div class="pwd-strength" id="pwdStrength" style="display:none">
+            <div class="bar"><div class="bar-fill" id="pwdBar"></div></div>
+            <span class="label text-muted" id="pwdLabel"></span>
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="mb-4 mt-3">
+          {{ form.password2.label(class="form-label") }}
+          <div class="position-relative">
+            {{ form.password2(class="form-control pe-5", placeholder="Repeat password", id="signupPassword2",
+                              oninput="checkMatch()") }}
+            <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted pe-3 py-0"
+                    style="background:none;border:none;" onclick="togglePwd('signupPassword2',this)">
+              <i class="bi bi-eye-slash"></i>
+            </button>
+          </div>
+          <div id="matchMsg" class="small mt-1" style="display:none"></div>
+          {% for error in form.password2.errors %}
+            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <button type="submit" class="btn-auth mb-3">
+          <i class="bi bi-rocket-takeoff me-2"></i>Create My Account
+        </button>
+
+        <p class="text-muted text-center" style="font-size:.78rem">
+          By signing up you agree to our
+          <a href="#" class="auth-link">Terms</a> &amp;
+          <a href="#" class="auth-link">Privacy Policy</a>
+        </p>
+      </form>
+
+      <div class="auth-divider">already a member?</div>
+
+      <div class="text-center" style="font-size:.9rem">
+        <a href="{{ url_for('auth.login') }}" class="auth-link">
+          <i class="bi bi-box-arrow-in-right me-1"></i>Sign in to your account
+        </a>
+      </div>
+
+      <div class="text-center mt-3">
+        <a href="{{ url_for('public.home') }}" class="text-muted text-decoration-none" style="font-size:.85rem">
+          <i class="bi bi-arrow-left me-1"></i>Continue as Guest
+        </a>
+      </div>
+
+      <!-- Perks -->
+      <div class="perks-strip">
+        <div class="perk">
+          <i class="bi bi-tag-fill"></i>
+          <span>Exclusive<br>Deals</span>
+        </div>
+        <div class="perk">
+          <i class="bi bi-bell-fill"></i>
+          <span>Price<br>Alerts</span>
+        </div>
+        <div class="perk">
+          <i class="bi bi-heart-fill"></i>
+          <span>Save<br>Wishlist</span>
+        </div>
+        <div class="perk">
+          <i class="bi bi-shield-fill-check"></i>
+          <span>Secure<br>Booking</span>
+        </div>
+      </div>
+
+    </div><!-- /auth-card-body -->
+  </div><!-- /auth-card -->
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function togglePwd(id, btn) {
+  const inp = document.getElementById(id);
+  const icon = btn.querySelector('i');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    icon.className = 'bi bi-eye';
+  } else {
+    inp.type = 'password';
+    icon.className = 'bi bi-eye-slash';
+  }
+}
+
+function checkStrength(val) {
+  const bar   = document.getElementById('pwdBar');
+  const label = document.getElementById('pwdLabel');
+  const wrap  = document.getElementById('pwdStrength');
+  if (!val) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  let score = 0;
+  if (val.length >= 8)               score++;
+  if (/[A-Z]/.test(val))             score++;
+  if (/[0-9]/.test(val))             score++;
+  if (/[^A-Za-z0-9]/.test(val))      score++;
+  const levels = [
+    { w: '25%', color: '#e63950', text: 'Weak' },
+    { w: '50%', color: '#fd7e14', text: 'Fair' },
+    { w: '75%', color: '#ffc107', text: 'Good' },
+    { w: '100%', color: '#28a745', text: 'Strong 🔒' },
+  ];
+  const l = levels[score - 1] || levels[0];
+  bar.style.width    = l.w;
+  bar.style.background = l.color;
+  label.textContent  = l.text;
+  label.style.color  = l.color;
+}
+
+function checkMatch() {
+  const p1  = document.getElementById('signupPassword').value;
+  const p2  = document.getElementById('signupPassword2').value;
+  const msg = document.getElementById('matchMsg');
+  if (!p2) { msg.style.display = 'none'; return; }
+  msg.style.display = 'block';
+  if (p1 === p2) {
+    msg.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i><span class="text-success">Passwords match</span>';
+  } else {
+    msg.innerHTML = '<i class="bi bi-x-circle-fill text-danger me-1"></i><span class="text-danger">Passwords don\'t match</span>';
+  }
+}
+</script>
+{% endblock %}

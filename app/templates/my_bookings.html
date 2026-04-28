@@ -1,0 +1,353 @@
+{% extends "layouts/base.html" %}
+{% block title %}My Bookings — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f4f6fb; }
+
+/* ── Hero strip ───────────────────────────────── */
+.trips-hero {
+  background: linear-gradient(135deg, #7f1d1d 0%, #e63950 55%, #f97316 100%);
+  padding: 32px 0 72px; position: relative; overflow: hidden;
+}
+.trips-hero::before {
+  content: '';
+  position: absolute; bottom: -40%; right: -5%; width: 55%; height: 200%;
+  background: radial-gradient(ellipse, rgba(255,255,255,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.trips-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0; right: 0; height: 48px;
+  background: #f4f6fb;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+.page-hero-accent {
+  height: 3px;
+  background: linear-gradient(90deg, #e63950, #f97316, #facc15, #e63950);
+  background-size: 200% 100%;
+  animation: accentSlide 3s linear infinite;
+}
+@keyframes accentSlide {
+  0% { background-position: 0% 50% }
+  100% { background-position: 200% 50% }
+}
+
+/* ── Stat cards ───────────────────────────────── */
+.stat-pill {
+  background: rgba(255,255,255,.14); border-radius: 14px; padding: 14px 20px;
+  border: 1px solid rgba(255,255,255,.18); text-align: center; min-width: 115px;
+}
+.stat-pill-val { font-size: 1.65rem; font-weight: 900; color: #fff; line-height: 1; }
+.stat-pill-lbl { font-size: .68rem; color: rgba(255,255,255,.7); font-weight: 600; margin-top: 3px; text-transform: uppercase; letter-spacing: .07em; }
+
+/* ── Filter tabs ──────────────────────────────── */
+.trips-tabs {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  background: #fff; border-radius: 14px; padding: 12px 18px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.05); margin-bottom: 18px;
+  align-items: center;
+  border: 1px solid #e8edf5;
+}
+.tab-pill {
+  border: 1.5px solid #e5e7eb; background: #fff; border-radius: 22px;
+  padding: 6px 16px; font-size: .78rem; font-weight: 600; color: #6b7280;
+  cursor: pointer; transition: all .15s;
+}
+.tab-pill:hover { border-color: #e63950; color: #e63950; }
+.tab-pill.active { background: #e63950; border-color: #e63950; color: #fff; }
+
+/* ── Booking cards ────────────────────────────── */
+.booking-card {
+  background: #fff; border-radius: 18px;
+  border: 1.5px solid #f0f0f0;
+  box-shadow: 0 2px 14px rgba(0,0,0,.05);
+  transition: all .2s; overflow: hidden; margin-bottom: 14px;
+}
+.booking-card:hover { border-color: #fca5a5; box-shadow: 0 6px 24px rgba(230,57,80,.1); transform: translateY(-2px); }
+.booking-card-bar { height: 4px; }
+
+.booking-type-row {
+  padding: 11px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.booking-type-icon { font-size: .82rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.booking-code-chip {
+  font-family: monospace; font-size: .7rem; font-weight: 700;
+  background: rgba(255,255,255,.2); padding: 3px 10px; border-radius: 6px;
+  letter-spacing: .05em;
+}
+
+/* Status badges */
+.status-badge {
+  font-size: .65rem; font-weight: 800; padding: 3px 10px; border-radius: 20px;
+  letter-spacing: .04em; display: inline-flex; align-items: center; gap: 4px;
+}
+.status-confirmed  { background: #dcfce7; color: #15803d; }
+.status-cancelled  { background: #fee2e2; color: #dc2626; }
+.status-pending    { background: #fef3c7; color: #b45309; }
+.status-requested  { background: #fff7ed; color: #c2410c; }
+.status-refunded   { background: #e0f2fe; color: #0369a1; }
+
+/* Route timeline inline */
+.route-inline {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .82rem; color: #374151; font-weight: 500;
+}
+.route-inline .r-time { font-weight: 900; font-size: .95rem; color: #0f172a; }
+.route-inline .r-city { font-size: .65rem; color: #9ca3af; }
+.route-inline .r-bar { flex: 1; height: 2px; background: linear-gradient(90deg,#e63950,#f97316); border-radius: 2px; position: relative; min-width: 30px; }
+.route-inline .r-bar::after { content:'✈'; position:absolute; top:50%; left:50%; transform:translate(-50%,-60%); font-size:.65rem; }
+.route-inline .r-dur { font-size:.62rem; color:#9ca3af; font-weight:700; white-space:nowrap; }
+
+.amount-val { font-size: 1.1rem; font-weight: 900; color: #e63950; }
+.amount-lbl { font-size: .65rem; color: #9ca3af; font-weight: 600; margin-bottom: 1px; }
+
+.btn-details {
+  border: 1.5px solid #e63950; background: #fff; color: #e63950;
+  border-radius: 10px; padding: 7px 14px; font-size: .78rem; font-weight: 700;
+  transition: all .15s; text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-details:hover { background: #e63950; color: #fff; }
+
+/* Empty state */
+.empty-card {
+  background: #fff; border-radius: 16px; border: 1px solid #e8edf5;
+  padding: 64px 24px; text-align: center;
+}
+.empty-card-icon { font-size: 3.5rem; margin-bottom: 12px; opacity: .3; }
+.empty-card h5 { color: #475569; font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.empty-card p { color: #94a3b8; font-size: .84rem; margin-bottom: 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-hero-accent"></div>
+
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<div class="trips-hero">
+  <div class="container" style="max-width:1200px">
+    <div class="d-flex align-items-center gap-3 mb-4 text-white">
+      <div style="width:52px;height:52px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🧳</div>
+      <div>
+        <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700;opacity:.7;margin-bottom:2px">My Account</div>
+        <h1 class="fw-black mb-0" style="font-size:1.9rem;letter-spacing:-.01em">My Bookings</h1>
+        <p class="mb-0 opacity-75" style="font-size:.85rem">All your flights, hotels &amp; holiday packages in one place.</p>
+      </div>
+    </div>
+
+    {% if bookings %}
+    <div class="d-flex flex-wrap gap-3">
+      <div class="stat-pill">
+        <div class="stat-pill-val">{{ bookings|length }}</div>
+        <div class="stat-pill-lbl">Total Trips</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-val" style="color:#86efac">{{ bookings | selectattr('status','equalto','CONFIRMED') | list | length }}</div>
+        <div class="stat-pill-lbl">Confirmed</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-val" style="color:#fca5a5">{{ bookings | selectattr('status','equalto','CANCELLED') | list | length }}</div>
+        <div class="stat-pill-lbl">Cancelled</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-pill-val" style="color:#fde68a">₹{{ "{:,.0f}".format(bookings | sum(attribute='total_amount')) }}</div>
+        <div class="stat-pill-lbl">Total Spent</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ══ CONTENT ══════════════════════════════════════════════════════════════ -->
+<div class="container py-4" style="max-width:1200px">
+  <div class="row g-4">
+
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+      {% set active_page = 'bookings' %}
+      {% include '_user_sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-9">
+
+      {% if not bookings %}
+      <div class="empty-card">
+        <div class="empty-card-icon">🧳</div>
+        <h5>No Bookings Yet</h5>
+        <p>Your booked flights, hotels and holiday packages will appear here once you make a booking.</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+          <a href="{{ url_for('public.flights') }}" style="background:#e63950;color:#fff;border-radius:22px;padding:10px 22px;font-weight:700;text-decoration:none;font-size:.85rem">✈ Search Flights</a>
+          <a href="{{ url_for('public.hotels') }}" style="background:#fff;border:1.5px solid #e5e7eb;color:#374151;border-radius:22px;padding:10px 22px;font-weight:700;text-decoration:none;font-size:.85rem">🏨 Browse Hotels</a>
+        </div>
+      </div>
+
+      {% else %}
+
+      <!-- Filter tabs -->
+      <div class="trips-tabs">
+        <span class="fw-bold text-muted me-1" style="font-size:.76rem">Filter:</span>
+        <button class="tab-pill active" data-filter="all">All ({{ bookings|length }})</button>
+        <button class="tab-pill" data-filter="CONFIRMED">
+          ✅ Confirmed ({{ bookings | selectattr('status','equalto','CONFIRMED') | list | length }})
+        </button>
+        <button class="tab-pill" data-filter="CANCELLED">
+          ❌ Cancelled ({{ bookings | selectattr('status','equalto','CANCELLED') | list | length }})
+        </button>
+        <button class="tab-pill" data-filter="CANCELLATION_REQUESTED">
+          ⏳ Pending ({{ bookings | selectattr('status','equalto','CANCELLATION_REQUESTED') | list | length }})
+        </button>
+      </div>
+
+      <!-- Booking cards -->
+      <div id="bookingList">
+      {% for booking in bookings %}
+      {% set first_item = booking.items[0] if booking.items else None %}
+      {% set item_type = first_item.type if first_item else 'BOOKING' %}
+      {% set det = first_item.details if first_item else {} %}
+
+      {% if item_type == 'FLIGHT' %}
+        {% set bar_color = 'linear-gradient(90deg,#0ea5e9,#38bdf8)' %}
+        {% set header_bg = '#0c4a6e' %}
+        {% set type_label = '✈ Flight Booking' %}
+      {% elif item_type == 'HOTEL' %}
+        {% set bar_color = 'linear-gradient(90deg,#059669,#34d399)' %}
+        {% set header_bg = '#064e3b' %}
+        {% set type_label = '🏨 Hotel Booking' %}
+      {% elif item_type == 'TRAIN' %}
+        {% set bar_color = 'linear-gradient(90deg,#1d4ed8,#60a5fa)' %}
+        {% set header_bg = '#1e3a8a' %}
+        {% set type_label = '🚆 Train Booking' %}
+      {% elif item_type == 'BUS' %}
+        {% set bar_color = 'linear-gradient(90deg,#7c3aed,#c4b5fd)' %}
+        {% set header_bg = '#4c1d95' %}
+        {% set type_label = '🚌 Bus Booking' %}
+      {% elif item_type == 'CAB' %}
+        {% set bar_color = 'linear-gradient(90deg,#0f766e,#5eead4)' %}
+        {% set header_bg = '#134e4a' %}
+        {% set type_label = '🚗 Cab Booking' %}
+      {% else %}
+        {% set bar_color = 'linear-gradient(90deg,#f97316,#fb923c)' %}
+        {% set header_bg = '#7c2d12' %}
+        {% set type_label = '🗺 Holiday Package' %}
+      {% endif %}
+
+      {% if booking.status == 'CONFIRMED' %}
+        {% set status_cls = 'status-confirmed' %}{% set status_icon = '✅' %}
+      {% elif booking.status == 'CANCELLED' %}
+        {% set status_cls = 'status-cancelled' %}{% set status_icon = '❌' %}
+      {% elif booking.status == 'CANCELLATION_REQUESTED' %}
+        {% set status_cls = 'status-requested' %}{% set status_icon = '⏳' %}
+      {% elif booking.status == 'REFUNDED' %}
+        {% set status_cls = 'status-refunded' %}{% set status_icon = '↩' %}
+      {% else %}
+        {% set status_cls = 'status-pending' %}{% set status_icon = '⏳' %}
+      {% endif %}
+
+      <div class="booking-card booking-row" data-status="{{ booking.status }}">
+        <div class="booking-card-bar" style="background:{{ bar_color }}"></div>
+
+        <!-- Type header -->
+        <div class="booking-type-row" style="background:{{ header_bg }}">
+          <span class="booking-type-icon text-white">
+            <span>{{ type_label }}</span>
+          </span>
+          <div class="d-flex align-items-center gap-2">
+            <span class="status-badge {{ status_cls }}">{{ status_icon }} {{ booking.status.replace('_',' ') }}</span>
+            <span class="booking-code-chip text-white">{{ booking.booking_code }}</span>
+          </div>
+        </div>
+
+        <!-- Card body -->
+        <div class="p-3">
+          <div class="row align-items-center g-2">
+
+            <!-- Trip info -->
+            <div class="col-md-5">
+              {% if first_item %}
+              <div class="fw-bold mb-1" style="font-size:.9rem;color:#111">{{ first_item.title }}</div>
+              {% endif %}
+
+              {% if item_type == 'FLIGHT' and det %}
+              <div class="route-inline my-2">
+                <div class="text-center">
+                  <div class="r-time">{{ det.get('depart_time','--') }}</div>
+                  <div class="r-city">{{ det.get('origin','') }}</div>
+                </div>
+                <div class="r-bar mx-2"></div>
+                <div class="r-dur">{{ det.get('duration','') or '~' }}</div>
+                <div class="r-bar mx-2"></div>
+                <div class="text-center">
+                  <div class="r-time">{{ det.get('arrive_time','--') }}</div>
+                  <div class="r-city">{{ det.get('destination','') }}</div>
+                </div>
+              </div>
+              {% elif item_type == 'HOTEL' and det %}
+              <div class="text-muted small mt-1">
+                <i class="bi bi-calendar-range me-1" style="color:#059669"></i>
+                {% if det.get('checkin') %}Check-in: <strong>{{ det.get('checkin') }}</strong>{% endif %}
+                {% if det.get('nights') %} · {{ det.get('nights') }} night{{ 's' if det.get('nights') != 1 }}{% endif %}
+              </div>
+              {% elif det %}
+              <div class="text-muted small mt-1">
+                <i class="bi bi-geo-alt me-1" style="color:#f97316"></i>
+                {{ det.get('destination', det.get('origin','')) }}
+                {% if det.get('duration_nights') %} · {{ det.get('duration_nights') }} nights{% endif %}
+              </div>
+              {% endif %}
+
+              <div class="text-muted mt-1" style="font-size:.7rem">
+                <i class="bi bi-clock-history me-1"></i>Booked {{ booking.created_at.strftime('%d %b %Y') }}
+              </div>
+            </div>
+
+            <!-- Traveller -->
+            <div class="col-md-3">
+              <div class="text-muted mb-1" style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Traveller</div>
+              <div class="fw-bold" style="font-size:.88rem;color:#111">{{ booking.customer_name or '—' }}</div>
+              <div class="text-muted" style="font-size:.7rem">{{ booking.customer_email }}</div>
+            </div>
+
+            <!-- Amount -->
+            <div class="col-md-2 text-center">
+              <div class="amount-lbl">Amount Paid</div>
+              <div class="amount-val">₹{{ "{:,.0f}".format(booking.total_amount) }}</div>
+            </div>
+
+            <!-- CTA -->
+            <div class="col-md-2 text-end">
+              <a href="{{ url_for('public.booking_details', booking_id=booking.id) }}" class="btn-details">
+                Details <i class="bi bi-arrow-right"></i>
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      </div>
+
+      {% endif %}
+
+    </div><!-- /col-lg-9 -->
+  </div><!-- /row -->
+</div><!-- /container -->
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.tab-pill').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const filter = this.dataset.filter;
+    document.querySelectorAll('.booking-row').forEach(row => {
+      row.style.display = (filter === 'all' || row.dataset.status === filter) ? '' : 'none';
+    });
+  });
+});
+</script>
+{% endblock %}

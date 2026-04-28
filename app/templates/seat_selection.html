@@ -1,0 +1,230 @@
+{% extends "layouts/base.html" %}
+{% block title %}Select Seats — {{ flight.airline }} {{ flight.flight_no }}{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:860px">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('public.flights') }}">Flights</a></li>
+      <li class="breadcrumb-item active">Seat Selection</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <!-- Seat Map -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+              <i class="bi bi-airplane me-2"></i>
+              <strong>{{ flight.airline }} {{ flight.flight_no }}</strong>
+              <span class="ms-2 small opacity-75">{{ flight.origin }} → {{ flight.destination }}</span>
+            </div>
+            <div class="small opacity-75">{{ flight.depart_time }} – {{ flight.arrive_time }}</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Legend -->
+          <div class="d-flex gap-3 mb-4 flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+              <div class="seat-demo bg-success rounded" style="width:22px;height:22px"></div>
+              <small>Available</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <div class="seat-demo rounded" style="width:22px;height:22px;background:#e2e8f0"></div>
+              <small>Occupied</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <div class="seat-demo bg-warning rounded" style="width:22px;height:22px"></div>
+              <small>Selected</small>
+            </div>
+          </div>
+
+          <!-- Instructions -->
+          <div class="alert alert-info py-2 small mb-3">
+            <i class="bi bi-info-circle me-1"></i>
+            Please select <strong>{{ passengers }}</strong> seat{{ 's' if passengers > 1 }} to continue.
+          </div>
+
+          <form method="POST" id="seatForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- Airplane nose -->
+            <div class="text-center mb-2">
+              <div class="d-inline-flex flex-column align-items-center">
+                <i class="bi bi-triangle-fill text-secondary" style="font-size:2rem;transform:rotate(-90deg)"></i>
+                <small class="text-muted">FRONT</small>
+              </div>
+            </div>
+
+            <!-- Column headers -->
+            <div class="d-flex justify-content-center align-items-center gap-1 mb-2">
+              <div style="width:32px"></div>
+              <div class="text-center text-muted small" style="width:32px">A</div>
+              <div class="text-center text-muted small" style="width:32px">B</div>
+              <div class="text-center text-muted small" style="width:32px">C</div>
+              <div class="text-center text-muted small" style="width:16px"></div>
+              <div class="text-center text-muted small" style="width:32px">D</div>
+              <div class="text-center text-muted small" style="width:32px">E</div>
+              <div class="text-center text-muted small" style="width:32px">F</div>
+            </div>
+
+            <!-- Rows -->
+            <div class="seat-map overflow-auto" style="max-height:420px">
+              {% for row in range(1, 31) %}
+              {% set is_exit = row in [10, 20] %}
+              {% if is_exit %}
+              <div class="d-flex justify-content-center align-items-center gap-1 my-1">
+                <small class="text-danger" style="font-size:10px">← EXIT</small>
+                <div style="width:240px;height:2px;background:#dc3545;opacity:.4"></div>
+                <small class="text-danger" style="font-size:10px">EXIT →</small>
+              </div>
+              {% endif %}
+              <div class="d-flex justify-content-center align-items-center gap-1 mb-1">
+                <div class="text-muted small text-end" style="width:32px">{{ row }}</div>
+                {% for col in ['A', 'B', 'C'] %}
+                {% set seat_id = row|string + col %}
+                {% if seat_id in occupied %}
+                <div class="seat occupied rounded" style="width:32px;height:30px;background:#e2e8f0;cursor:not-allowed"
+                     title="{{ seat_id }} — Occupied"></div>
+                {% else %}
+                <label class="seat available rounded" title="{{ seat_id }}"
+                       style="width:32px;height:30px;background:#22c55e;cursor:pointer;transition:all .15s">
+                  <input type="checkbox" name="seats" value="{{ seat_id }}" class="d-none seat-checkbox">
+                </label>
+                {% endif %}
+                {% endfor %}
+                <div style="width:16px"></div>
+                {% for col in ['D', 'E', 'F'] %}
+                {% set seat_id = row|string + col %}
+                {% if seat_id in occupied %}
+                <div class="seat occupied rounded" style="width:32px;height:30px;background:#e2e8f0;cursor:not-allowed"
+                     title="{{ seat_id }} — Occupied"></div>
+                {% else %}
+                <label class="seat available rounded" title="{{ seat_id }}"
+                       style="width:32px;height:30px;background:#22c55e;cursor:pointer;transition:all .15s">
+                  <input type="checkbox" name="seats" value="{{ seat_id }}" class="d-none seat-checkbox">
+                </label>
+                {% endif %}
+                {% endfor %}
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- Selected seats display -->
+            <div class="mt-3 p-3 border rounded bg-light">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                  <span class="fw-semibold small">Selected seats:</span>
+                  <span id="selectedDisplay" class="ms-2 text-primary fw-bold">None</span>
+                </div>
+                <span id="selectedCount" class="badge bg-warning text-dark">0 / {{ passengers }}</span>
+              </div>
+            </div>
+
+            <div class="d-grid mt-3">
+              <button type="submit" class="btn btn-primary py-2 fw-semibold" id="continueBtn" disabled>
+                <i class="bi bi-arrow-right-circle me-1"></i> Continue to Booking
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary sidebar -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm sticky-top" style="top:80px">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3">Flight Summary</h6>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">Flight</span>
+            <span class="small fw-semibold">{{ flight.flight_no }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">Route</span>
+            <span class="small">{{ flight.origin.split('(')[0].strip() }} → {{ flight.destination.split('(')[0].strip() }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">Departure</span>
+            <span class="small fw-semibold">{{ flight.depart_time }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">Arrival</span>
+            <span class="small fw-semibold">{{ flight.arrive_time }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">Duration</span>
+            <span class="small">{{ flight.duration_mins // 60 }}h {{ flight.duration_mins % 60 }}m</span>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">Passengers</span>
+            <span class="small fw-semibold">{{ passengers }}</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted small">Base fare</span>
+            <span class="fw-bold text-primary">₹{{ "{:,.0f}".format(flight.price * passengers) }}</span>
+          </div>
+          <hr>
+          <div class="text-center mt-2">
+            <small class="text-muted"><i class="bi bi-shield-check text-success me-1"></i>Secure booking</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tips -->
+      <div class="card border-0 bg-light mt-3">
+        <div class="card-body small">
+          <div class="fw-semibold mb-2"><i class="bi bi-lightbulb text-warning me-1"></i>Seat Tips</div>
+          <ul class="mb-0 ps-3 text-muted">
+            <li class="mb-1">Rows 1–5 are business/premium</li>
+            <li class="mb-1">Window seats: A and F</li>
+            <li class="mb-1">Aisle seats: C and D</li>
+            <li>Exit rows (10, 20) have extra legroom</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const maxSeats = {{ passengers }};
+let selectedSeats = [];
+
+document.querySelectorAll('.seat-checkbox').forEach(cb => {
+  const label = cb.closest('label');
+  cb.addEventListener('change', function() {
+    const seat = this.value;
+    if (this.checked) {
+      if (selectedSeats.length >= maxSeats) {
+        this.checked = false;
+        return;
+      }
+      selectedSeats.push(seat);
+      label.style.background = '#f59e0b';
+      label.style.transform = 'scale(1.15)';
+    } else {
+      selectedSeats = selectedSeats.filter(s => s !== seat);
+      label.style.background = '#22c55e';
+      label.style.transform = '';
+    }
+    updateUI();
+  });
+});
+
+function updateUI() {
+  const disp = document.getElementById('selectedDisplay');
+  const count = document.getElementById('selectedCount');
+  const btn = document.getElementById('continueBtn');
+  disp.textContent = selectedSeats.length ? selectedSeats.join(', ') : 'None';
+  count.textContent = `${selectedSeats.length} / ${maxSeats}`;
+  count.className = selectedSeats.length === maxSeats ? 'badge bg-success' : 'badge bg-warning text-dark';
+  btn.disabled = selectedSeats.length < maxSeats;
+}
+</script>
+{% endblock %}

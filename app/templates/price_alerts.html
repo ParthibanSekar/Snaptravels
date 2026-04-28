@@ -1,0 +1,266 @@
+{% extends "layouts/base.html" %}
+{% block title %}Price Alerts — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f4f6fb; }
+
+.page-hero {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  padding: 36px 0 70px;
+  position: relative; overflow: hidden;
+}
+.page-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0; right: 0; height: 48px;
+  background: #f4f6fb;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+.page-hero-accent {
+  height: 3px;
+  background: linear-gradient(90deg, #e63950, #f97316, #facc15, #e63950);
+  background-size: 200% 100%;
+  animation: accentSlide 3s linear infinite;
+}
+@keyframes accentSlide {
+  0% { background-position: 0% 50% }
+  100% { background-position: 200% 50% }
+}
+
+/* Form card */
+.form-panel {
+  background: #fff; border-radius: 16px; border: 1px solid #e8edf5;
+  overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.05);
+}
+.form-panel-header {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  padding: 18px 22px;
+  font-size: .9rem; font-weight: 800; color: #fff;
+  display: flex; align-items: center; gap: 8px;
+}
+.form-panel-header i { color: #e63950; }
+.form-panel-body { padding: 22px; }
+
+.dark-label {
+  display: block; font-size: .78rem; font-weight: 700;
+  color: #475569; margin-bottom: 6px; letter-spacing: .02em;
+}
+.dark-input {
+  width: 100%; padding: 10px 14px; border-radius: 10px;
+  border: 1.5px solid #e2e8f0; background: #f8faff;
+  font-size: .86rem; color: #1e293b;
+  transition: border-color .15s, box-shadow .15s;
+  outline: none;
+}
+.dark-input:focus {
+  border-color: #e63950; box-shadow: 0 0 0 3px rgba(230,57,80,.1);
+  background: #fff;
+}
+.dark-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.btn-create-alert {
+  width: 100%; padding: 12px; border-radius: 11px;
+  font-size: .88rem; font-weight: 800;
+  background: linear-gradient(135deg, #e63950, #f97316);
+  color: #fff; border: none; cursor: pointer;
+  transition: all .2s; box-shadow: 0 4px 14px rgba(230,57,80,.25);
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.btn-create-alert:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(230,57,80,.35); }
+
+/* Alert list cards */
+.alert-card {
+  background: #fff; border-radius: 14px; border: 1px solid #e8edf5;
+  padding: 16px 20px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 14px;
+  transition: all .2s;
+}
+.alert-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+.alert-icon {
+  width: 42px; height: 42px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center; font-size: 1rem;
+  flex-shrink: 0;
+}
+.alert-icon-flight { background: rgba(37,99,235,.1); color: #2563eb; }
+.alert-icon-hotel  { background: rgba(5,150,105,.1);  color: #059669; }
+.alert-route { font-size: .9rem; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+.alert-target { font-size: .78rem; color: #64748b; }
+.alert-date   { font-size: .7rem; color: #94a3b8; margin-top: 1px; }
+
+.status-pill {
+  display: inline-flex; padding: 3px 10px; border-radius: 20px;
+  font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+}
+.status-active    { background: rgba(37,99,235,.1); color: #2563eb; border: 1px solid rgba(37,99,235,.2); }
+.status-triggered { background: rgba(5,150,105,.1); color: #059669; border: 1px solid rgba(5,150,105,.2); }
+
+.btn-delete-alert {
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(220,38,38,.07); color: #dc2626;
+  border: 1px solid rgba(220,38,38,.2); cursor: pointer;
+  transition: all .15s;
+}
+.btn-delete-alert:hover { background: rgba(220,38,38,.13); border-color: #dc2626; }
+
+.empty-card {
+  background: #fff; border-radius: 16px; border: 1px solid #e8edf5;
+  padding: 48px 24px; text-align: center;
+}
+.empty-card-icon { font-size: 3rem; margin-bottom: 10px; opacity: .3; }
+.empty-card h5 { color: #475569; font-size: .95rem; font-weight: 700; margin-bottom: 6px; }
+.empty-card p { color: #94a3b8; font-size: .82rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero-accent"></div>
+<div class="page-hero">
+  <div class="container" style="max-width:1200px">
+    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:#475569;font-weight:700;margin-bottom:6px">
+      My Account
+    </div>
+    <h1 style="font-size:1.8rem;font-weight:900;color:#fff;margin:0 0 4px">
+      <i class="bi bi-bell-fill me-2" style="color:#e63950"></i>Price Alerts
+    </h1>
+    <div style="font-size:.85rem;color:#64748b">
+      Get notified when prices drop to your target
+    </div>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:1200px">
+  <div class="row g-4">
+
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+      {% set active_page = 'price_alerts' %}
+      {% include '_user_sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-9">
+      <div class="row g-4">
+
+        <!-- New Alert Form -->
+        <div class="col-md-5">
+          <div class="form-panel">
+            <div class="form-panel-header">
+              <i class="bi bi-plus-circle-fill"></i> New Price Alert
+            </div>
+            <div class="form-panel-body">
+              <form method="POST" action="{{ url_for('user.add_price_alert') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div class="mb-3">
+                  <label class="dark-label">Alert For</label>
+                  <select name="alert_type" class="dark-input dark-select" id="alertType">
+                    <option value="FLIGHT">✈ Flight</option>
+                    <option value="HOTEL">🏨 Hotel</option>
+                  </select>
+                </div>
+
+                <div id="flightFields">
+                  <div class="mb-3">
+                    <label class="dark-label">From</label>
+                    <input type="text" name="origin" class="dark-input" placeholder="e.g. Mumbai">
+                  </div>
+                  <div class="mb-3">
+                    <label class="dark-label">To</label>
+                    <input type="text" name="destination" class="dark-input" placeholder="e.g. Goa">
+                  </div>
+                </div>
+
+                <div id="hotelFields" style="display:none">
+                  <div class="mb-3">
+                    <label class="dark-label">City</label>
+                    <input type="text" name="city" class="dark-input" placeholder="e.g. Goa">
+                  </div>
+                </div>
+
+                <div class="mb-4">
+                  <label class="dark-label">Alert when price drops below (₹)</label>
+                  <div style="position:relative">
+                    <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.9rem;font-weight:700">₹</span>
+                    <input type="number" name="target_price" class="dark-input" min="100"
+                           style="padding-left:30px" required placeholder="5000">
+                  </div>
+                </div>
+
+                <button type="submit" class="btn-create-alert">
+                  <i class="bi bi-bell"></i> Create Alert
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alerts List -->
+        <div class="col-md-7">
+          {% if alerts %}
+          <div style="font-size:.78rem;color:#94a3b8;font-weight:600;margin-bottom:12px">
+            {{ alerts|length }} active alert{{ 's' if alerts|length != 1 else '' }}
+          </div>
+          {% for a in alerts %}
+          <div class="alert-card">
+            <div class="alert-icon {{ 'alert-icon-flight' if a.alert_type == 'FLIGHT' else 'alert-icon-hotel' }}">
+              <i class="bi bi-{{ 'airplane-fill' if a.alert_type == 'FLIGHT' else 'building' }}"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div class="alert-route">
+                {% if a.alert_type == 'FLIGHT' %}
+                {{ a.origin }} → {{ a.destination }}
+                {% else %}
+                Hotels in {{ a.city }}
+                {% endif %}
+              </div>
+              <div class="alert-target">
+                <i class="bi bi-tag me-1"></i>Target: ₹{{ "{:,.0f}".format(a.target_price) }}
+              </div>
+              <div class="alert-date">
+                <i class="bi bi-clock me-1"></i>Created {{ a.created_at.strftime('%d %b %Y') }}
+              </div>
+            </div>
+            <div class="d-flex flex-column align-items-end gap-2">
+              <span class="status-pill {{ 'status-triggered' if a.triggered else 'status-active' }}">
+                {{ '✓ Triggered' if a.triggered else '● Active' }}
+              </span>
+              <form method="POST" action="{{ url_for('user.delete_price_alert', aid=a.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn-delete-alert" title="Remove alert">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="empty-card">
+            <div class="empty-card-icon">🔔</div>
+            <h5>No Alerts Set Yet</h5>
+            <p>Set a target price and we'll notify you when flights or hotels drop below it.</p>
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('alertType').addEventListener('change', function() {
+  document.getElementById('flightFields').style.display = this.value === 'FLIGHT' ? 'block' : 'none';
+  document.getElementById('hotelFields').style.display  = this.value === 'HOTEL'  ? 'block' : 'none';
+});
+</script>
+{% endblock %}

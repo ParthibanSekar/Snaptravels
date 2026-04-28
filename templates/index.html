@@ -1,0 +1,1921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SnapTravels">
+    <meta name="theme-color" content="#1D2C78">
+    <meta name="msapplication-TileColor" content="#1D2C78">
+    <meta name="msapplication-TileImage" content="/assets/images/icon-144.png">
+
+    <title>SnapTravels - Your Ultimate Travel Booking Platform</title>
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" sizes="57x57" href="/assets/images/icon-57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/assets/images/icon-60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/assets/images/icon-72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/assets/images/icon-76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/assets/images/icon-114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/assets/images/icon-120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/assets/images/icon-144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/assets/images/icon-152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/icon-180.png">
+
+    <!-- Regular Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/icon-32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/assets/images/icon-96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/icon-16.png">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SnapTravels">
+    <link rel="apple-touch-icon" href="/assets/images/icon-192.png">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1D2C78 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: #1D2C78;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #152256;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background-color: white;
+            color: #667eea;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23667eea" width="1200" height="600"/><polygon fill="%23764ba2" points="0,600 1200,0 1200,600"/></svg>');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            text-align: center;
+            padding: 4rem 0;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-section {
+            background: white;
+            padding: 2rem;
+            margin: -2rem auto 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 800px;
+        }
+
+        .search-tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .search-tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .search-tab.active {
+            border-bottom-color: #1D2C78;
+            color: #1D2C78;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #1D2C78;
+        }
+
+        .results-section {
+            padding: 2rem 0;
+        }
+
+        .results-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .flight-card {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .flight-info h3 {
+            color: #1D2C78;
+            margin-bottom: 0.5rem;
+        }
+
+        .flight-route {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        .flight-price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .hotel-card {
+            display: grid;
+            grid-template-columns: 200px 1fr auto;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .hotel-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .hotel-info h3 {
+            color: #007bff;
+            margin-bottom: 0.5rem;
+        }
+
+        .hotel-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+        }
+
+        .stars {
+            color: #ffc107;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .error {
+            color: #dc3545;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .success {
+            color: #28a745;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .dashboard-section {
+            padding: 2rem 0;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .dashboard-card h3 {
+            margin-bottom: 1rem;
+            color: #1D2C78;
+        }
+
+        .booking-item, .itinerary-item {
+            padding: 1rem;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+
+        .booking-page {
+            max-width: 600px;
+            margin: 2rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .booking-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #eee;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .step.active {
+            color: #1D2C78;
+        }
+
+        .step.completed {
+            color: #28a745;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.5rem;
+        }
+
+        .step.active .step-number {
+            background: #1D2C78;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #28a745;
+            color: white;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .payment-form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .card-input {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .booking-summary {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+
+        .booking-summary h4 {
+            margin-bottom: 0.5rem;
+            color: #1D2C78;
+        }
+
+        .booking-summary p {
+            margin: 0.25rem 0;
+        }
+
+        .back-btn {
+            background-color: #6c757d;
+            color: white;
+            margin-right: 1rem;
+        }
+
+        .back-btn:hover {
+            background-color: #545b62;
+        }
+
+        .breadcrumb {
+            background: white;
+            padding: 1rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .breadcrumb-item {
+            display: inline;
+            color: #1D2C78;
+            cursor: pointer;
+        }
+
+        .breadcrumb-item + .breadcrumb-item:before {
+            content: " > ";
+            color: #6c757d;
+            margin: 0 0.5rem;
+        }
+
+        .breadcrumb-item.active {
+            color: #6c757d;
+            cursor: default;
+        }
+
+        .special-requests-textarea {
+            resize: vertical;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        .special-requests-textarea:focus {
+            outline: none;
+            border-color: #1D2C78;
+        }
+
+        @media (max-width: 768px) {
+            .nav {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .search-form {
+                grid-template-columns: 1fr;
+            }
+
+            .flight-card, .hotel-card {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .card-input {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .booking-steps {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Main App Component
+        function App() {
+            const [user, setUser] = useState(null);
+            const [currentPage, setCurrentPage] = useState('home');
+            const [searchType, setSearchType] = useState('flights');
+            const [showModal, setShowModal] = useState(false);
+            const [modalContent, setModalContent] = useState('');
+            const [flights, setFlights] = useState([]);
+            const [hotels, setHotels] = useState([]);
+            const [bookings, setBookings] = useState([]);
+            const [itineraries, setItineraries] = useState([]);
+            const [isGuest, setIsGuest] = useState(false);
+            const [selectedItem, setSelectedItem] = useState(null);
+            const [bookingType, setBookingType] = useState('');
+
+            useEffect(() => {
+                checkAuth();
+                searchFlights({});
+                searchHotels({});
+            }, []);
+
+            const checkAuth = async () => {
+                try {
+                    const response = await fetch('/api/user', {
+                        credentials: 'same-origin'
+                    });
+                    if (response.ok) {
+                        const userData = await response.json();
+                        setUser(userData);
+                        if (userData.role === 'admin') {
+                            setCurrentPage('admin');
+                        }
+                    } else {
+                        setUser(null);
+                    }
+                } catch (error) {
+                    console.log('Not authenticated');
+                    setUser(null);
+                }
+            };
+
+            const login = async (email, password) => {
+                try {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        setUser(data);
+                        setShowModal(false);
+                        setIsGuest(false);
+                        if (data.role === 'admin') {
+                            setCurrentPage('admin');
+                        } else {
+                            setCurrentPage('home');
+                        }
+                        setTimeout(() => checkAuth(), 100);
+                        return { success: true };
+                    } else {
+                        return { success: false, error: data.error };
+                    }
+                } catch (error) {
+                    return { success: false, error: 'Network error' };
+                }
+            };
+
+            const signup = async (email, password) => {
+                try {
+                    const response = await fetch('/api/signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ email, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        setUser(data);
+                        setShowModal(false);
+                        setIsGuest(false);
+                        setCurrentPage('home');
+                        return { success: true };
+                    } else {
+                        return { success: false, error: data.error };
+                    }
+                } catch (error) {
+                    return { success: false, error: 'Network error' };
+                }
+            };
+
+            const logout = async () => {
+                await fetch('/api/logout', { 
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+                setUser(null);
+                setIsGuest(false);
+                setCurrentPage('home');
+            };
+
+            const searchFlights = async (params) => {
+                try {
+                    const query = new URLSearchParams(params).toString();
+                    const response = await fetch(`/api/flights?${query}`);
+                    const data = await response.json();
+                    setFlights(data);
+                } catch (error) {
+                    console.error('Error searching flights:', error);
+                }
+            };
+
+            const searchHotels = async (params) => {
+                try {
+                    const query = new URLSearchParams(params).toString();
+                    const response = await fetch(`/api/hotels?${query}`);
+                    const data = await response.json();
+                    setHotels(data);
+                } catch (error) {
+                    console.error('Error searching hotels:', error);
+                }
+            };
+
+            const openModal = (content, data = null) => {
+                setModalContent({ type: content, data });
+                setShowModal(true);
+            };
+
+            const closeModal = () => {
+                setShowModal(false);
+                setModalContent('');
+            };
+
+            const startBooking = (item, type) => {
+                if (!user) {
+                    if (isGuest) {
+                        openModal('login-required');
+                    } else {
+                        openModal('login');
+                    }
+                } else {
+                    setSelectedItem(item);
+                    setBookingType(type);
+                    setCurrentPage('booking-details');
+                }
+            };
+
+            return (
+                <div>
+                    <Header 
+                        user={user} 
+                        currentPage={currentPage} 
+                        setCurrentPage={setCurrentPage}
+                        openModal={openModal}
+                        logout={logout}
+                        isGuest={isGuest}
+                        setIsGuest={setIsGuest}
+                    />
+
+                    <Breadcrumb 
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                        selectedItem={selectedItem}
+                        bookingType={bookingType}
+                    />
+
+                    {currentPage === 'home' && (
+                        <HomePage 
+                            searchType={searchType}
+                            setSearchType={setSearchType}
+                            flights={flights}
+                            hotels={hotels}
+                            searchFlights={searchFlights}
+                            searchHotels={searchHotels}
+                            startBooking={startBooking}
+                            user={user}
+                            isGuest={isGuest}
+                        />
+                    )}
+
+                    {currentPage === 'booking-details' && selectedItem && (
+                        <BookingDetailsPage
+                            selectedItem={selectedItem}
+                            bookingType={bookingType}
+                            setCurrentPage={setCurrentPage}
+                        />
+                    )}
+
+                    {currentPage === 'payment' && selectedItem && (
+                        <PaymentPage
+                            selectedItem={selectedItem}
+                            bookingType={bookingType}
+                            setCurrentPage={setCurrentPage}
+                            user={user}
+                        />
+                    )}
+
+                    {currentPage === 'dashboard' && user && (
+                        <Dashboard user={user} setCurrentPage={setCurrentPage} />
+                    )}
+
+                    {currentPage === 'admin' && user && user.role === 'admin' && (
+                        <AdminDashboard />
+                    )}
+
+                    {showModal && (
+                        <Modal 
+                            content={modalContent}
+                            closeModal={closeModal}
+                            login={login}
+                            signup={signup}
+                            setIsGuest={setIsGuest}
+                            setCurrentPage={setCurrentPage}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        // Breadcrumb Component
+        function Breadcrumb({ currentPage, setCurrentPage, selectedItem, bookingType }) {
+            if (currentPage === 'home' || currentPage === 'admin') {
+                return null;
+            }
+
+            return (
+                <div className="breadcrumb">
+                    <div className="container">
+                        <span className="breadcrumb-item" onClick={() => setCurrentPage('home')}>
+                            Home
+                        </span>
+                        {currentPage === 'dashboard' && (
+                            <span className="breadcrumb-item active">My Bookings</span>
+                        )}
+                        {currentPage === 'booking-details' && (
+                            <span className="breadcrumb-item active">
+                                Book {bookingType === 'flight' ? 'Flight' : 'Hotel'}
+                            </span>
+                        )}
+                        {currentPage === 'payment' && (
+                            <>
+                                <span className="breadcrumb-item" onClick={() => setCurrentPage('booking-details')}>
+                                    Book {bookingType === 'flight' ? 'Flight' : 'Hotel'}
+                                </span>
+                                <span className="breadcrumb-item active">Payment</span>
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // Header Component
+        function Header({ user, currentPage, setCurrentPage, openModal, logout, isGuest, setIsGuest }) {
+            return (
+                <header className="header">
+                    <div className="container">
+                        <nav className="nav">
+                            <div className="logo" onClick={() => setCurrentPage('home')}>
+                                SnapTravels
+                            </div>
+
+                            <ul className="nav-links">
+                                <li><a onClick={() => setCurrentPage('home')}>Home</a></li>
+                                {(user || isGuest) && (
+                                    <>
+                                        <li><a onClick={() => { setCurrentPage('home'); document.getElementById('flights')?.scrollIntoView(); }}>Flights</a></li>
+                                        <li><a onClick={() => { setCurrentPage('home'); document.getElementById('hotels')?.scrollIntoView(); }}>Hotels</a></li>
+                                    </>
+                                )}
+                                {user && user.role === 'admin' && (
+                                    <li><a onClick={() => setCurrentPage('admin')}>Admin</a></li>
+                                )}
+                            </ul>
+
+                            <div className="auth-buttons">
+                                {!user && !isGuest ? (
+                                    <>
+                                        <button className="btn btn-secondary" onClick={() => openModal('login')}>
+                                            Login
+                                        </button>
+                                        <button className="btn btn-primary" onClick={() => openModal('signup')}>
+                                            Sign Up
+                                        </button>
+                                        <button className="btn btn-secondary" onClick={() => setIsGuest(true)}>
+                                            Continue as Guest
+                                        </button>
+                                    </>
+                                ) : user ? (
+                                    <>
+                                        <button className="btn btn-secondary" onClick={() => setCurrentPage('dashboard')}>
+                                            My Bookings
+                                        </button>
+                                        <button className="btn btn-danger" onClick={logout}>
+                                            Logout
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button className="btn btn-primary" onClick={() => openModal('login')}>
+                                        Login to Book
+                                    </button>
+                                )}
+                            </div>
+                        </nav>
+                    </div>
+                </header>
+            );
+        }
+
+        // HomePage Component
+        function HomePage({ searchType, setSearchType, flights, hotels, searchFlights, searchHotels, startBooking, user, isGuest }) {
+            const [searchParams, setSearchParams] = useState({
+                origin: '',
+                destination: '',
+                location: '',
+                departureDate: '',
+                checkIn: '',
+                checkOut: ''
+            });
+
+            const handleSearch = () => {
+                if (searchType === 'flights') {
+                    searchFlights({
+                        origin: searchParams.origin,
+                        destination: searchParams.destination
+                    });
+                } else {
+                    searchHotels({
+                        location: searchParams.location,
+                        checkIn: searchParams.checkIn,
+                        checkOut: searchParams.checkOut
+                    });
+                }
+            };
+
+            return (
+                <div>
+                    <section className="hero">
+                        <div className="container">
+                            <h1>Discover Your Next Adventure</h1>
+                            <p>Book flights and hotels at the best prices with SnapTravels</p>
+                        </div>
+                    </section>
+
+                    <div className="container">
+                        <section className="search-section">
+                            <div className="search-tabs">
+                                <div 
+                                    className={`search-tab ${searchType === 'flights' ? 'active' : ''}`}
+                                    onClick={() => setSearchType('flights')}
+                                >
+                                    Flights
+                                </div>
+                                <div 
+                                    className={`search-tab ${searchType === 'hotels' ? 'active' : ''}`}
+                                    onClick={() => setSearchType('hotels')}
+                                >
+                                    Hotels
+                                </div>
+                            </div>
+
+                            {searchType === 'flights' ? (
+                                <div className="search-form">
+                                    <div className="form-group">
+                                        <label>From</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="Origin city"
+                                            value={searchParams.origin}
+                                            onChange={(e) => setSearchParams({...searchParams, origin: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>To</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="Destination city"
+                                            value={searchParams.destination}
+                                            onChange={(e) => setSearchParams({...searchParams, destination: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Departure Date</label>
+                                        <input 
+                                            type="date"
+                                            value={searchParams.departureDate}
+                                            onChange={(e) => setSearchParams({...searchParams, departureDate: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <button className="btn btn-primary" onClick={handleSearch}>
+                                            Search Flights
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="search-form">
+                                    <div className="form-group">
+                                        <label>Location</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="City or hotel name"
+                                            value={searchParams.location}
+                                            onChange={(e) => setSearchParams({...searchParams, location: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Check-in</label>
+                                        <input 
+                                            type="date"
+                                            value={searchParams.checkIn}
+                                            onChange={(e) => setSearchParams({...searchParams, checkIn: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Check-out</label>
+                                        <input 
+                                            type="date"
+                                            value={searchParams.checkOut}
+                                            onChange={(e) => setSearchParams({...searchParams, checkOut: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <button className="btn btn-primary" onClick={handleSearch}>
+                                            Search Hotels
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+
+                        <section className="results-section" id={searchType === 'flights' ? 'flights' : 'hotels'}>
+                            <div className="results-grid">
+                                {searchType === 'flights' ? (
+                                    flights.map(flight => (
+                                        <div key={flight.id} className="result-card flight-card">
+                                            <div className="flight-info">
+                                                <h3>{flight.airline} {flight.flight_number}</h3>
+                                                <div className="flight-route">
+                                                    <span>{flight.origin}</span>
+                                                    <span>→</span>
+                                                    <span>{flight.destination}</span>
+                                                </div>
+                                                <div>{flight.departure_time} - {flight.arrival_time}</div>
+                                                <div>Duration: {flight.duration}</div>
+                                            </div>
+                                            <div className="flight-price">
+                                                ₹{flight.price}
+                                            </div>
+                                            <div>
+                                                <button 
+                                                    className="btn btn-primary"
+                                                    onClick={() => startBooking(flight, 'flight')}
+                                                >
+                                                    Book Flight
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    hotels.map(hotel => (
+                                        <div key={hotel.id} className="result-card hotel-card">
+                                            <img 
+                                                src={hotel.image_url || '/assets/images/default.jpg'} 
+                                                alt={hotel.name}
+                                                className="hotel-image"
+                                                onError={(e) => {
+                                                    e.target.src = '/assets/images/default.jpg';
+                                                }}
+                                            />
+                                            <div className="hotel-info">
+                                                <h3>{hotel.name}</h3>
+                                                <div className="hotel-rating">
+                                                    <span className="stars">★★★★★</span>
+                                                    <span>{hotel.rating}</span>
+                                                </div>
+                                                <div>{hotel.location}</div>
+                                                <div>{hotel.amenities}</div>
+                                                <div>{hotel.description}</div>
+                                            </div>
+                                            <div>
+                                                <div className="flight-price">₹{hotel.price_per_night}/night</div>
+                                                <button 
+                                                    className="btn btn-primary"
+                                                    onClick={() => startBooking(hotel, 'hotel')}
+                                                >
+                                                    Book Hotel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            );
+        }
+
+        // BookingDetailsPage Component
+        function BookingDetailsPage({ selectedItem, bookingType, setCurrentPage }) {
+            const [personalDetails, setPersonalDetails] = useState({
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
+                dateOfBirth: '',
+                nationality: '',
+                passportNumber: '',
+                emergencyContact: '',
+                specialRequests: ''
+            });
+            const [errors, setErrors] = useState({});
+
+            const validateForm = () => {
+                const newErrors = {};
+
+                if (!personalDetails.firstName.trim()) newErrors.firstName = 'First name is required';
+                if (!personalDetails.lastName.trim()) newErrors.lastName = 'Last name is required';
+                if (!personalDetails.email.trim()) newErrors.email = 'Email is required';
+                else if (!/\S+@\S+\.\S+/.test(personalDetails.email)) newErrors.email = 'Email is invalid';
+                if (!personalDetails.phone.trim()) newErrors.phone = 'Phone number is required';
+                if (!personalDetails.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
+
+                if (bookingType === 'flight') {
+                    if (!personalDetails.nationality.trim()) newErrors.nationality = 'Nationality is required';
+                    if (!personalDetails.passportNumber.trim()) newErrors.passportNumber = 'Passport number is required';
+                }
+
+                setErrors(newErrors);
+                return Object.keys(newErrors).length === 0;
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (validateForm()) {
+                    // Store personal details globally or pass to payment page
+                    setCurrentPage('payment');
+                }
+            };
+
+            return (
+                <div className="container">
+                    <div className="booking-page">
+                        <div className="booking-steps">
+                            <div className="step active">
+                                <div className="step-number">1</div>
+                                Personal Details
+                            </div>
+                            <div className="step">
+                                <div className="step-number">2</div>
+                                Payment
+                            </div>
+                            <div className="step">
+                                <div className="step-number">3</div>
+                                Confirmation
+                            </div>
+                        </div>
+
+                        <div className="booking-summary">
+                            <h4>Booking Summary</h4>
+                            {bookingType === 'flight' ? (
+                                <div>
+                                    <p><strong>Flight:</strong> {selectedItem?.airline} {selectedItem?.flight_number}</p>
+                                    <p><strong>Route:</strong> {selectedItem?.origin} → {selectedItem?.destination}</p>
+                                    <p><strong>Departure:</strong> {selectedItem?.departure_time}</p>
+                                    <p><strong>Duration:</strong> {selectedItem?.duration}</p>
+                                    <p><strong>Price:</strong> ₹{selectedItem?.price}</p>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p><strong>Hotel:</strong> {selectedItem?.name}</p>
+                                    <p><strong>Location:</strong> {selectedItem?.location}</p>
+                                    <p><strong>Rating:</strong> {selectedItem?.rating}★</p>
+                                    <p><strong>Price:</strong> ₹{selectedItem?.price_per_night}/night</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <form onSubmit={handleSubmit}>
+                            <h3>Personal Details</h3>
+
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>First Name *</label>
+                                    <input
+                                        type="text"
+                                        value={personalDetails.firstName}
+                                        onChange={(e) => setPersonalDetails({...personalDetails, firstName: e.target.value})}
+                                    />
+                                    {errors.firstName && <div className="error">{errors.firstName}</div>}
+                                </div>
+                                <div className="form-group">
+                                    <label>Last Name *</label>
+                                    <input
+                                        type="text"
+                                        value={personalDetails.lastName}
+                                        onChange={(e) => setPersonalDetails({...personalDetails, lastName: e.target.value})}
+                                    />
+                                    {errors.lastName && <div className="error">{errors.lastName}</div>}
+                                </div>
+                            </div>
+
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Email *</label>
+                                    <input
+                                        type="email"
+                                        value={personalDetails.email}
+                                        onChange={(e) => setPersonalDetails({...personalDetails, email: e.target.value})}
+                                    />
+                                    {errors.email && <div className="error">{errors.email}</div>}
+                                </div>
+                                <div className="form-group">
+                                    <label>Phone Number *</label>
+                                    <input
+                                        type="tel"
+                                        value={personalDetails.phone}
+                                        onChange={(e) => setPersonalDetails({...personalDetails, phone: e.target.value})}
+                                    />
+                                    {errors.phone && <div className="error">{errors.phone}</div>}
+                                </div>
+                            </div>
+
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Date of Birth *</label>
+                                    <input
+                                        type="date"
+                                        value={personalDetails.dateOfBirth}
+                                        onChange={(e) => setPersonalDetails({...personalDetails, dateOfBirth: e.target.value})}
+                                    />
+                                    {errors.dateOfBirth && <div className="error">{errors.dateOfBirth}</div>}
+                                </div>
+                                {bookingType === 'flight' && (
+                                    <div className="form-group">
+                                        <label>Nationality *</label>
+                                        <input
+                                            type="text"
+                                            value={personalDetails.nationality}
+                                            onChange={(e) => setPersonalDetails({...personalDetails, nationality: e.target.value})}
+                                        />
+                                        {errors.nationality && <div className="error">{errors.nationality}</div>}
+                                    </div>
+                                )}
+                            </div>
+
+                            {bookingType === 'flight' && (
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Passport Number *</label>
+                                        <input
+                                            type="text"
+                                            value={personalDetails.passportNumber}
+                                            onChange={(e) => setPersonalDetails({...personalDetails, passportNumber: e.target.value})}
+                                        />
+                                        {errors.passportNumber && <div className="error">{errors.passportNumber}</div>}
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Emergency Contact</label>
+                                        <input
+                                            type="tel"
+                                            value={personalDetails.emergencyContact}
+                                            onChange={(e) => setPersonalDetails({...personalDetails, emergencyContact: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="form-group">
+                                <label>Special Requests</label>
+                                <textarea
+                                    rows="3"
+                                    className="special-requests-textarea"
+                                    value={personalDetails.specialRequests}
+                                    onChange={(e) => setPersonalDetails({...personalDetails, specialRequests: e.target.value})}
+                                    placeholder="Any special dietary requirements, accessibility needs, etc."
+                                ></textarea>
+                            </div>
+
+                            <div style={ {display: 'flex', justifyContent: 'space-between', marginTop: '2rem'} }>
+                                <button 
+                                    type="button"
+                                    className="btn back-btn"
+                                    onClick={() => setCurrentPage('home')}
+                                >
+                                    Back to Search
+                                </button>
+                                <button type="submit" className="btn btn-primary">
+                                    Continue to Payment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // PaymentPage Component
+        function PaymentPage({ selectedItem, bookingType, setCurrentPage, user }) {
+            const [paymentDetails, setPaymentDetails] = useState({
+                cardNumber: '',
+                expiryDate: '',
+                cvv: '',
+                nameOnCard: '',
+                billingAddress: '',
+                city: '',
+                postalCode: ''
+            });
+            const [errors, setErrors] = useState({});
+            const [loading, setLoading] = useState(false);
+            const [success, setSuccess] = useState('');
+            const [error, setError] = useState('');
+
+            const validateForm = () => {
+                const newErrors = {};
+
+                if (!paymentDetails.cardNumber.replace(/\s/g, '')) newErrors.cardNumber = 'Card number is required';
+                if (!paymentDetails.expiryDate) newErrors.expiryDate = 'Expiry date is required';
+                if (!paymentDetails.cvv) newErrors.cvv = 'CVV is required';
+                if (!paymentDetails.nameOnCard.trim()) newErrors.nameOnCard = 'Name on card is required';
+
+                setErrors(newErrors);
+                return Object.keys(newErrors).length === 0;
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!validateForm()) return;
+
+                setLoading(true);
+                setError('');
+                setSuccess('');
+
+                try {
+                    const bookingData = {
+                        type: bookingType,
+                        amount: selectedItem?.price || selectedItem?.price_per_night,
+                        [bookingType === 'flight' ? 'flight_id' : 'hotel_id']: selectedItem?.id
+                    };
+
+                    const response = await fetch('/api/book', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify(bookingData)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        setSuccess('Booking confirmed! Payment processed successfully.');
+                        setTimeout(() => {
+                            setCurrentPage('dashboard');
+                        }, 2000);
+                    } else {
+                        setError(result.error || 'Booking failed');
+                    }
+                } catch (error) {
+                    setError('Network error during booking');
+                }
+                setLoading(false);
+            };
+
+            return (
+                <div className="container">
+                    <div className="booking-page">
+                        <div className="booking-steps">
+                            <div className="step completed">
+                                <div className="step-number">✓</div>
+                                Personal Details
+                            </div>
+                            <div className="step active">
+                                <div className="step-number">2</div>
+                                Payment
+                            </div>
+                            <div className="step">
+                                <div className="step-number">3</div>
+                                Confirmation
+                            </div>
+                        </div>
+
+                        <div className="booking-summary">
+                            <h4>Final Booking Summary</h4>
+                            {bookingType === 'flight' ? (
+                                <div>
+                                    <p><strong>Flight:</strong> {selectedItem?.airline} {selectedItem?.flight_number}</p>
+                                    <p><strong>Route:</strong> {selectedItem?.origin} → {selectedItem?.destination}</p>
+                                    <p><strong>Departure:</strong> {selectedItem?.departure_time}</p>
+                                    <p><strong>Total Amount:</strong> ₹{selectedItem?.price}</p>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p><strong>Hotel:</strong> {selectedItem?.name}</p>
+                                    <p><strong>Location:</strong> {selectedItem?.location}</p>
+                                    <p><strong>Rating:</strong> {selectedItem?.rating}★</p>
+                                    <p><strong>Total Amount:</strong> ₹{selectedItem?.price_per_night}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <form onSubmit={handleSubmit}>
+                            <h3>Payment Details</h3>
+
+                            <div className="form-group">
+                                <label>Name on Card *</label>
+                                <input
+                                    type="text"
+                                    value={paymentDetails.nameOnCard}
+                                    onChange={(e) => setPaymentDetails({...paymentDetails, nameOnCard: e.target.value})}
+                                />
+                                {errors.nameOnCard && <div className="error">{errors.nameOnCard}</div>}
+                            </div>
+
+                            <div className="card-input">
+                                <div className="form-group">
+                                    <label>Card Number *</label>
+                                    <input
+                                        type="text"
+                                        placeholder="1234 5678 9012 3456"
+                                        value={paymentDetails.cardNumber}
+                                        onChange={(e) => setPaymentDetails({...paymentDetails, cardNumber: e.target.value})}
+                                    />
+                                    {errors.cardNumber && <div className="error">{errors.cardNumber}</div>}
+                                </div>
+                                <div className="form-group">
+                                    <label>Expiry Date *</label>
+                                    <input
+                                        type="text"
+                                        placeholder="MM/YY"
+                                        value={paymentDetails.expiryDate}
+                                        onChange={(e) => setPaymentDetails({...paymentDetails, expiryDate: e.target.value})}
+                                    />
+                                    {errors.expiryDate && <div className="error">{errors.expiryDate}</div>}
+                                </div>
+                                <div className="form-group">
+                                    <label>CVV *</label>
+                                    <input
+                                        type="text"
+                                        placeholder="123"
+                                        value={paymentDetails.cvv}
+                                        onChange={(e) => setPaymentDetails({...paymentDetails, cvv: e.target.value})}
+                                    />
+                                    {errors.cvv && <div className="error">{errors.cvv}</div>}
+                                </div>
+                            </div>
+
+                            <h4 style={ {marginTop: '2rem', marginBottom: '1rem'} }>Billing Address</h4>
+
+                            <div className="form-group">
+                                <label>Address</label>
+                                <input
+                                    type="text"
+                                    value={paymentDetails.billingAddress}
+                                    onChange={(e) => setPaymentDetails({...paymentDetails, billingAddress: e.target.value})}
+                                />
+                            </div>
+
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>City</label>
+                                    <input
+                                        type="text"
+                                        value={paymentDetails.city}
+                                        onChange={(e) => setPaymentDetails({...paymentDetails, city: e.target.value})}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Postal Code</label>
+                                    <input
+                                        type="text"
+                                        value={paymentDetails.postalCode}
+                                        onChange={(e) => setPaymentDetails({...paymentDetails, postalCode: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+
+                            {error && <div className="error" style={ {marginTop: '1rem'} }>{error}</div>}
+                            {success && <div className="success" style={ {marginTop: '1rem'} }>{success}</div>}
+
+                            <div style={ {display: 'flex', justifyContent: 'space-between', marginTop: '2rem'} }>
+                                <button 
+                                    type="button"
+                                    className="btn back-btn"
+                                    onClick={() => setCurrentPage('booking-details')}
+                                >
+                                    Back to Details
+                                </button>
+                                <button type="submit" className="btn btn-success" disabled={loading}>
+                                    {loading ? 'Processing Payment...' : `Pay ₹${selectedItem?.price || selectedItem?.price_per_night}`}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // Dashboard Component
+        function Dashboard({ user, setCurrentPage }) {
+            const [bookings, setBookings] = useState([]);
+            const [itineraries, setItineraries] = useState([]);
+
+            useEffect(() => {
+                fetchBookings();
+                fetchItineraries();
+            }, []);
+
+            const fetchBookings = async () => {
+                try {
+                    const response = await fetch('/api/bookings', {
+                        credentials: 'same-origin'
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        setBookings(Array.isArray(data) ? data : []);
+                    } else {
+                        console.error('Failed to fetch bookings:', response.status);
+                        setBookings([]);
+                    }
+                } catch (error) {
+                    console.error('Error fetching bookings:', error);
+                    setBookings([]);
+                }
+            };
+
+            const fetchItineraries = async () => {
+                try {
+                    const response = await fetch('/api/itineraries', {
+                        credentials: 'same-origin'
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        setItineraries(Array.isArray(data) ? data : []);
+                    } else {
+                        console.error('Failed to fetch itineraries:', response.status);
+                        setItineraries([]);
+                    }
+                } catch (error) {
+                    console.error('Error fetching itineraries:', error);
+                    setItineraries([]);
+                }
+            };
+
+            return (
+                <div className="container">
+                    <section className="dashboard-section">
+                        <h2>Welcome back, {user.email}!</h2>
+
+                        <div style={ {marginBottom: '2rem'} }>
+                            <button 
+                                className="btn btn-primary"
+                                onClick={() => setCurrentPage('home')}
+                            >
+                                Book New Flight/Hotel
+                            </button>
+                        </div>
+
+                        <div className="dashboard-grid">
+                            <div className="dashboard-card">
+                                <h3>My Bookings</h3>
+                                {bookings.length === 0 ? (
+                                    <p>No bookings yet</p>
+                                ) : (
+                                    bookings.map(booking => (
+                                        <div key={booking.id} className="booking-item">
+                                            <div><strong>Type:</strong> {booking.type}</div>
+                                            <div><strong>Amount:</strong> ₹{booking.total_amount}</div>
+                                            <div><strong>Status:</strong> {booking.status}</div>
+                                            <div><strong>Date:</strong> {new Date(booking.booking_date).toLocaleDateString()}</div>
+                                            {booking.flight && (
+                                                <div><strong>Flight:</strong> {booking.flight.airline} {booking.flight.flight_number}</div>
+                                            )}
+                                            {booking.hotel && (
+                                                <div><strong>Hotel:</strong> {booking.hotel.name}</div>
+                                            )}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            <div className="dashboard-card">
+                                <h3>My Itineraries</h3>
+                                {itineraries.length === 0 ? (
+                                    <p>No itineraries yet</p>
+                                ) : (
+                                    itineraries.map(itinerary => (
+                                        <div key={itinerary.id} className="itinerary-item">
+                                            <div><strong>Name:</strong> {itinerary.name}</div>
+                                            <div><strong>Destination:</strong> {itinerary.destination}</div>
+                                            <div><strong>Dates:</strong> {itinerary.start_date} to {itinerary.end_date}</div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            );
+        }
+
+        // AdminDashboard Component
+        function AdminDashboard() {
+            const [activeTab, setActiveTab] = useState('flights');
+            const [flights, setFlights] = useState([]);
+            const [hotels, setHotels] = useState([]);
+            const [bookings, setBookings] = useState([]);
+
+            useEffect(() => {
+                fetchAdminData();
+            }, []);
+
+            const fetchAdminData = async () => {
+                try {
+                    const [flightsRes, hotelsRes, bookingsRes] = await Promise.all([
+                        fetch('/api/admin/flights', { credentials: 'same-origin' }),
+                        fetch('/api/admin/hotels', { credentials: 'same-origin' }),
+                        fetch('/api/admin/bookings', { credentials: 'same-origin' })
+                    ]);
+
+                    setFlights(await flightsRes.json());
+                    setHotels(await hotelsRes.json());
+                    setBookings(await bookingsRes.json());
+                } catch (error) {
+                    console.error('Error fetching admin data:', error);
+                }
+            };
+
+            return (
+                <div className="container">
+                    <section className="dashboard-section">
+                        <h2>Admin Dashboard</h2>
+
+                        <div className="search-tabs">
+                            <div 
+                                className={`search-tab ${activeTab === 'flights' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('flights')}
+                            >
+                                Manage Flights
+                            </div>
+                            <div 
+                                className={`search-tab ${activeTab === 'hotels' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('hotels')}
+                            >
+                                Manage Hotels
+                            </div>
+                            <div 
+                                className={`search-tab ${activeTab === 'bookings' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('bookings')}
+                            >
+                                View Bookings
+                            </div>
+                        </div>
+
+                        {activeTab === 'flights' && (
+                            <div className="dashboard-card">
+                                <h3>Flights Management</h3>
+                                <p>Total Flights: {flights.length}</p>
+                            </div>
+                        )}
+
+                        {activeTab === 'hotels' && (
+                            <div className="dashboard-card">
+                                <h3>Hotels Management</h3>
+                                <p>Total Hotels: {hotels.length}</p>
+                            </div>
+                        )}
+
+                        {activeTab === 'bookings' && (
+                            <div className="dashboard-card">
+                                <h3>All Bookings</h3>
+                                <p>Total Bookings: {bookings.length}</p>
+                                {bookings.map(booking => (
+                                    <div key={booking.id} className="booking-item">
+                                        <div><strong>User:</strong> {booking.user_email}</div>
+                                        <div><strong>Type:</strong> {booking.type}</div>
+                                        <div><strong>Amount:</strong> ₹{booking.total_amount}</div>
+                                        <div><strong>Status:</strong> {booking.status}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                </div>
+            );
+        }
+
+        // Modal Component
+        function Modal({ content, closeModal, login, signup, setIsGuest, setCurrentPage }) {
+            const [formData, setFormData] = useState({
+                email: '',
+                password: '',
+                confirmPassword: ''
+            });
+            const [error, setError] = useState('');
+            const [success, setSuccess] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const contentType = typeof content === 'string' ? content : content?.type;
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+                setSuccess('');
+
+                if (contentType === 'signup' && formData.password !== formData.confirmPassword) {
+                    setError('Passwords do not match');
+                    setLoading(false);
+                    return;
+                }
+
+                if (contentType === 'login' || contentType === 'signup') {
+                    const result = contentType === 'login' 
+                        ? await login(formData.email, formData.password)
+                        : await signup(formData.email, formData.password);
+
+                    if (!result.success) {
+                        setError(result.error);
+                    }
+                }
+                setLoading(false);
+            };
+
+            const renderContent = () => {
+                if (contentType === 'login' || contentType === 'signup') {
+                    return (
+                        <form onSubmit={handleSubmit}>
+                            <div className="form-group">
+                                <label>Email</label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Password</label>
+                                <input
+                                    type="password"
+                                    required
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                />
+                            </div>
+                            {contentType === 'signup' && (
+                                <div className="form-group">
+                                    <label>Confirm Password</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        value={formData.confirmPassword}
+                                        onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                                    />
+                                </div>
+                            )}
+                            {error && <div className="error">{error}</div>}
+                            {success && <div className="success">{success}</div>}
+                            <div className="form-group">
+                                <button type="submit" className="btn btn-primary" disabled={loading}>
+                                    {loading ? 'Processing...' : (contentType === 'login' ? 'Login' : 'Sign Up')}
+                                </button>
+                            </div>
+                            {contentType === 'login' && (
+                                <div className="form-group">
+                                    <button 
+                                        type="button" 
+                                        className="btn btn-secondary"
+                                        onClick={() => {
+                                            setIsGuest(true);
+                                            closeModal();
+                                        }}
+                                    >
+                                        Continue as Guest
+                                    </button>
+                                </div>
+                            )}
+                        </form>
+                    );
+                } else if (contentType === 'login-required') {
+                    return (
+                        <div>
+                            <p>Please login to complete your booking.</p>
+                            <div className="form-group">
+                                <button 
+                                    className="btn btn-primary"
+                                    onClick={() => {
+                                        closeModal();
+                                        setTimeout(() => {
+                                            setCurrentPage('home');
+                                        }, 100);
+                                    }}
+                                >
+                                    Go to Login
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+            };
+
+            return (
+                <div className="modal" onClick={closeModal}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>
+                                {contentType === 'login' ? 'Login' : 
+                                 contentType === 'signup' ? 'Sign Up' : 
+                                 'Login Required'}
+                            </h3>
+                            <button className="close-btn" onClick={closeModal}>×</button>
+                        </div>
+                        {renderContent()}
+                    </div>
+                </div>
+            );
+        }
+
+        // Render the app
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- PWA and Mobile App Support -->
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/manifest.json')
+                    .then(function(registration) {
+                        console.log('SW registered: ', registration);
+                    }).catch(function(registrationError) {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // Mobile App Detection and Install Banner
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallButton();
+        });
+
+        function showInstallButton() {
+            const installButton = document.createElement('button');
+            installButton.className = 'btn btn-primary position-fixed';
+            installButton.style.cssText = 'bottom: 20px; right: 20px; z-index: 1000; border-radius: 50px;';
+            installButton.innerHTML = '📱 Install App';
+            installButton.onclick = installApp;
+            document.body.appendChild(installButton);
+        }
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((result) => {
+                    if (result.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        // Mobile App Bridge Functions
+        window.SnapTravelsMobile = {
+            isNativeApp: function() {
+                return window.ReactNativeWebView !== undefined || 
+                       window.webkit?.messageHandlers?.ReactNativeWebView !== undefined ||
+                       window.Android !== undefined;
+            },
+
+            sendToNative: function(action, data) {
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({action, data}));
+                } else if (window.webkit?.messageHandlers?.ReactNativeWebView) {
+                    window.webkit.messageHandlers.ReactNativeWebView.postMessage({action, data});
+                } else if (window.Android) {
+                    window.Android.postMessage(JSON.stringify({action, data}));
+                }
+            },
+
+            getDeviceInfo: function() {
+                return {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    screenWidth: screen.width,
+                    screenHeight: screen.height,
+                    isOnline: navigator.onLine,
+                    isNative: this.isNativeApp()
+                };
+            }
+        };
+
+        // Push Notifications Support
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted');
+                        // Subscribe to push notifications
+                        subscribeUserToPush();
+                    }
+                });
+            }
+        }
+
+        function subscribeUserToPush() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array('YOUR_VAPID_PUBLIC_KEY_HERE')
+                    }).then(function(subscription) {
+                        // Send subscription to server
+                        fetch('/api/push-subscribe', {
+                            method: 'POST',
+                            body: JSON.stringify(subscription),
+                            headers: {
+                                'content-type': 'application/json'
+                            }
+                        });
+                    });
+                });
+            }
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        // Auto-request notification permission after page load
+        setTimeout(() => {
+            if (!window.SnapTravelsMobile.isNativeApp()) {
+                requestNotificationPermission();
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+{% extends "layouts/base.html" %}
+{% block title %}Notifications — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f4f6fb; }
+
+/* ── Hero ─────────────────────────────────── */
+.page-hero {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  padding: 36px 0 70px;
+  position: relative;
+  overflow: hidden;
+}
+.page-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0; right: 0; height: 48px;
+  background: #f4f6fb;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+.page-hero-accent {
+  height: 3px;
+  background: linear-gradient(90deg, #e63950, #f97316, #facc15, #e63950);
+  background-size: 200% 100%;
+  animation: accentSlide 3s linear infinite;
+}
+@keyframes accentSlide {
+  0% { background-position: 0% 50% }
+  100% { background-position: 200% 50% }
+}
+
+/* ── Notification Cards ───────────────────── */
+.notif-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e8edf5;
+  margin-bottom: 12px;
+  transition: all .2s;
+  overflow: hidden;
+}
+.notif-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.07); transform: translateY(-1px); }
+.notif-card.unread { border-left: 3px solid #e63950; }
+.notif-inner { display: flex; align-items: flex-start; gap: 14px; padding: 16px 20px; }
+
+.unread-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #e63950; flex-shrink: 0; margin-top: 6px;
+}
+
+.notif-icon {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; flex-shrink: 0;
+}
+.notif-icon.booking    { background: rgba(5,150,105,.1);  color: #059669; }
+.notif-icon.cancel     { background: rgba(220,38,38,.1);  color: #dc2626; }
+.notif-icon.promo      { background: rgba(245,158,11,.1); color: #d97706; }
+.notif-icon.info       { background: rgba(37,99,235,.1);  color: #2563eb; }
+.notif-icon.rewards    { background: rgba(124,58,237,.1); color: #7c3aed; }
+
+.notif-title  { font-size: .9rem; font-weight: 700; color: #1e293b; margin-bottom: 3px; }
+.notif-msg    { font-size: .82rem; color: #64748b; line-height: 1.5; margin-bottom: 6px; }
+.notif-time   { font-size: .72rem; color: #94a3b8; }
+.notif-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .75rem; font-weight: 700; color: #e63950;
+  text-decoration: none; margin-top: 6px;
+}
+.notif-link:hover { color: #c8293f; }
+.notif-link i { font-size: .7rem; }
+
+/* Empty state */
+.empty-card {
+  background: #fff; border-radius: 16px; border: 1px solid #e8edf5;
+  padding: 64px 24px; text-align: center;
+}
+.empty-card-icon { font-size: 3.5rem; margin-bottom: 12px; opacity: .3; }
+.empty-card h5 { color: #475569; font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.empty-card p  { color: #94a3b8; font-size: .84rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero-accent"></div>
+<div class="page-hero">
+  <div class="container" style="max-width:1200px">
+    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:#475569;font-weight:700;margin-bottom:6px">
+      My Account
+    </div>
+    <h1 style="font-size:1.8rem;font-weight:900;color:#fff;margin:0 0 4px">
+      <i class="bi bi-bell me-2" style="color:#e63950"></i>Notifications
+    </h1>
+    <div style="font-size:.85rem;color:#64748b">
+      Stay updated on your bookings and account activity
+    </div>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:1200px">
+  <div class="row g-4">
+
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+      {% set active_page = 'notifications' %}
+      {% include '_user_sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-9">
+
+      {% if notifications %}
+      <!-- Header row -->
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div style="font-size:.78rem;color:#94a3b8;font-weight:600">
+          {{ notifications|length }} notification{{ 's' if notifications|length != 1 else '' }}
+          &nbsp;·&nbsp; All marked as read
+        </div>
+      </div>
+
+      {% for n in notifications %}
+      {% set ntype = 'booking' if n.type == 'BOOKING' else ('cancel' if n.type == 'CANCELLATION' else ('rewards' if n.type == 'REWARDS' else ('promo' if n.type == 'PROMO' else 'info'))) %}
+      {% set nicon = 'check-circle-fill' if n.type == 'BOOKING' else ('x-circle-fill' if n.type == 'CANCELLATION' else ('star-fill' if n.type == 'REWARDS' else ('gift-fill' if n.type == 'PROMO' else 'info-circle-fill'))) %}
+      <div class="notif-card {{ 'unread' if not n.read else '' }}">
+        <div class="notif-inner">
+          {% if not n.read %}<div class="unread-dot"></div>{% endif %}
+          <div class="notif-icon {{ ntype }}">
+            <i class="bi bi-{{ nicon }}"></i>
+          </div>
+          <div class="flex-grow-1">
+            <div class="notif-title">{{ n.title }}</div>
+            <div class="notif-msg">{{ n.message }}</div>
+            <div class="notif-time">
+              <i class="bi bi-clock me-1"></i>{{ n.created_at.strftime('%d %b %Y, %I:%M %p') }}
+            </div>
+            {% if n.link %}
+            <a href="{{ n.link }}" class="notif-link">
+              View Details <i class="bi bi-arrow-right"></i>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% else %}
+      <div class="empty-card">
+        <div class="empty-card-icon">🔔</div>
+        <h5>No Notifications Yet</h5>
+        <p>Booking confirmations, price drops, and important updates will appear here.</p>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

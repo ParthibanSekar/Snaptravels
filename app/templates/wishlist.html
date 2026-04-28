@@ -1,0 +1,262 @@
+{% extends "layouts/base.html" %}
+{% block title %}My Wishlist — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f4f6fb; }
+
+.page-hero {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  padding: 36px 0 70px;
+  position: relative; overflow: hidden;
+}
+.page-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0; right: 0; height: 48px;
+  background: #f4f6fb;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+.page-hero-accent {
+  height: 3px;
+  background: linear-gradient(90deg, #e63950, #f97316, #facc15, #e63950);
+  background-size: 200% 100%;
+  animation: accentSlide 3s linear infinite;
+}
+@keyframes accentSlide {
+  0% { background-position: 0% 50% }
+  100% { background-position: 200% 50% }
+}
+
+/* Wishlist Cards */
+.wishlist-card { transition: opacity .3s, transform .3s; }
+.wishlist-card.removing { opacity: 0; transform: scale(.95); pointer-events: none; }
+
+.wl-card {
+  background: #fff; border-radius: 16px;
+  border: 1px solid #e8edf5; border-top: 3px solid #e63950;
+  overflow: hidden; height: 100%;
+  transition: all .2s;
+}
+.wl-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.08); transform: translateY(-2px); }
+
+.wl-card-body { padding: 18px 18px 14px; }
+.wl-icon-wrap {
+  width: 46px; height: 46px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; flex-shrink: 0;
+}
+.wl-icon-flight   { background: rgba(37,99,235,.1);  color: #2563eb; }
+.wl-icon-hotel    { background: rgba(5,150,105,.1);   color: #059669; }
+.wl-icon-activity { background: rgba(245,158,11,.1);  color: #d97706; }
+.wl-icon-package  { background: rgba(124,58,237,.1);  color: #7c3aed; }
+
+.wl-title { font-size: .9rem; font-weight: 700; color: #1e293b; margin-bottom: 3px; }
+.wl-sub   { font-size: .78rem; color: #64748b; }
+.wl-type-pill {
+  display: inline-flex; padding: 2px 9px; border-radius: 20px;
+  font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+  background: rgba(230,57,80,.08); color: #e63950;
+  border: 1px solid rgba(230,57,80,.2);
+  margin-top: 6px;
+}
+
+.wl-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 18px; border-top: 1px solid #f1f5f9;
+}
+.btn-view {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: 9px;
+  font-size: .78rem; font-weight: 700;
+  background: rgba(37,99,235,.08); color: #2563eb;
+  border: 1px solid rgba(37,99,235,.2); text-decoration: none;
+  transition: all .15s;
+}
+.btn-view:hover { background: rgba(37,99,235,.15); border-color: #2563eb; color: #2563eb; }
+.btn-remove-wl {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: 9px;
+  font-size: .78rem; font-weight: 700;
+  background: rgba(220,38,38,.07); color: #dc2626;
+  border: 1px solid rgba(220,38,38,.2);
+  transition: all .15s; cursor: pointer;
+}
+.btn-remove-wl:hover { background: rgba(220,38,38,.13); border-color: #dc2626; }
+
+/* Empty state */
+.empty-card {
+  background: #fff; border-radius: 16px; border: 1px solid #e8edf5;
+  padding: 64px 24px; text-align: center;
+}
+.empty-card-icon { font-size: 3.5rem; margin-bottom: 12px; opacity: .3; }
+.empty-card h5 { color: #475569; font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.empty-card p { color: #94a3b8; font-size: .84rem; margin-bottom: 20px; }
+.btn-explore {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 20px; border-radius: 11px;
+  font-size: .85rem; font-weight: 800;
+  background: linear-gradient(135deg, #e63950, #f97316);
+  color: #fff; border: none; text-decoration: none;
+  transition: all .2s; box-shadow: 0 4px 14px rgba(230,57,80,.25);
+}
+.btn-explore:hover { color: #fff; transform: translateY(-1px); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero-accent"></div>
+<div class="page-hero">
+  <div class="container" style="max-width:1200px">
+    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:#475569;font-weight:700;margin-bottom:6px">
+      My Account
+    </div>
+    <h1 style="font-size:1.8rem;font-weight:900;color:#fff;margin:0 0 4px">
+      <i class="bi bi-heart-fill me-2" style="color:#e63950"></i>My Wishlist
+    </h1>
+    <div style="font-size:.85rem;color:#64748b">
+      Flights, hotels, and experiences you've saved for later
+    </div>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:1200px">
+  <div class="row g-4">
+
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+      {% set active_page = 'wishlist' %}
+      {% include '_user_sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-9">
+
+      {% if items %}
+      <div style="font-size:.78rem;color:#94a3b8;font-weight:600;margin-bottom:12px">
+        {{ items|length }} saved item{{ 's' if items|length != 1 else '' }}
+      </div>
+      <div class="row g-3" id="wishlistGrid">
+        {% for w in items %}
+        {% set obj = w.obj %}
+        {% set item_type = w.wishlist.item_type %}
+        {% set icon_cls = 'wl-icon-flight' if item_type == 'FLIGHT' else ('wl-icon-hotel' if item_type == 'HOTEL' else ('wl-icon-activity' if item_type == 'ACTIVITY' else 'wl-icon-package')) %}
+        {% set icon_name = 'airplane-fill' if item_type == 'FLIGHT' else ('building' if item_type == 'HOTEL' else ('stars' if item_type == 'ACTIVITY' else 'gift-fill')) %}
+        <div class="col-md-6 col-xl-4 wishlist-card" id="wcard-{{ item_type }}-{{ obj.id }}">
+          <div class="wl-card">
+            <div class="wl-card-body">
+              <div class="d-flex align-items-start gap-12" style="gap:12px">
+                <div class="wl-icon-wrap {{ icon_cls }}">
+                  <i class="bi bi-{{ icon_name }}"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="wl-title">
+                    {% if item_type == 'FLIGHT' %}{{ obj.airline }} · {{ obj.origin }} → {{ obj.destination }}
+                    {% elif item_type == 'HOTEL' %}{{ obj.name }}
+                    {% elif item_type == 'ACTIVITY' %}{{ obj.name }}
+                    {% elif item_type == 'PACKAGE' %}{{ obj.name }}
+                    {% endif %}
+                  </div>
+                  <div class="wl-sub">
+                    {% if item_type == 'FLIGHT' %}₹{{ "{:,.0f}".format(obj.price) }} · {{ obj.cabin_class }}
+                    {% elif item_type == 'HOTEL' %}{{ obj.city }} · ₹{{ "{:,.0f}".format(obj.price_per_night) }}/night
+                    {% elif item_type == 'ACTIVITY' %}{{ obj.city }} · ₹{{ "{:,.0f}".format(obj.price_per_person) }}/person
+                    {% elif item_type == 'PACKAGE' %}{{ obj.destination }} · ₹{{ "{:,.0f}".format(obj.base_price) }}/person
+                    {% endif %}
+                  </div>
+                  <div class="wl-type-pill">{{ item_type | title }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="wl-card-footer">
+              {% if item_type == 'HOTEL' %}
+              <a href="{{ url_for('reviews.hotel_detail', hotel_id=obj.id) }}" class="btn-view">
+                <i class="bi bi-eye"></i> View
+              </a>
+              {% elif item_type == 'PACKAGE' %}
+              <a href="{{ url_for('packages.detail', slug=obj.slug) }}" class="btn-view">
+                <i class="bi bi-eye"></i> View
+              </a>
+              {% elif item_type == 'ACTIVITY' %}
+              <a href="{{ url_for('activities.detail', activity_id=obj.id) }}" class="btn-view">
+                <i class="bi bi-eye"></i> View
+              </a>
+              {% else %}
+              <a href="{{ url_for('public.flights') }}" class="btn-view">
+                <i class="bi bi-eye"></i> View
+              </a>
+              {% endif %}
+              <button class="btn-remove-wl wishlist-remove-btn"
+                      data-type="{{ item_type }}" data-id="{{ obj.id }}">
+                <i class="bi bi-heart-fill"></i> Remove
+              </button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div id="wishlistGrid"></div>
+      {% endif %}
+
+      <!-- Empty state -->
+      <div id="emptyState" style="display:{% if not items %}block{% else %}none{% endif %}">
+        <div class="empty-card">
+          <div class="empty-card-icon">❤️</div>
+          <h5>Your Wishlist is Empty</h5>
+          <p>Save flights, hotels, packages, and activities to plan your dream trip.</p>
+          <a href="{{ url_for('public.home') }}" class="btn-explore">
+            <i class="bi bi-compass"></i> Start Exploring
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.wishlist-remove-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    const type = this.dataset.type;
+    const id   = this.dataset.id;
+    const card = document.getElementById(`wcard-${type}-${id}`);
+
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    fetch('/wishlist/toggle', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify({ item_type: type, ref_id: parseInt(id) })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.wishlisted === false) {
+        card.classList.add('removing');
+        setTimeout(() => {
+          card.remove();
+          const remaining = document.querySelectorAll('.wishlist-card');
+          if (remaining.length === 0) {
+            document.getElementById('emptyState').style.display = 'block';
+          }
+        }, 320);
+      } else {
+        this.disabled = false;
+        this.innerHTML = '<i class="bi bi-heart-fill"></i> Remove';
+      }
+    })
+    .catch(() => {
+      this.disabled = false;
+      this.innerHTML = '<i class="bi bi-heart-fill"></i> Remove';
+      alert('Could not remove item. Please try again.');
+    });
+  });
+});
+</script>
+{% endblock %}

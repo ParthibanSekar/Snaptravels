@@ -1,0 +1,484 @@
+{% extends "layouts/base.html" %}
+{% block title %}Search Hotels — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Page shell ─────────────────────────────────── */
+body { background: #f0fdf4; }
+.hotels-page { min-height: 100vh; }
+
+/* ── Hero ───────────────────────────────────────── */
+.hotel-hero {
+  background: linear-gradient(135deg, rgba(6,78,59,.78), rgba(4,120,87,.65)), url('/static/images/hero/hotels-search.jpg') center/cover no-repeat;
+  padding: 32px 0 40px;
+  position: relative; overflow: hidden;
+}
+.hotel-hero::before {
+  content: '';
+  position: absolute; top: -30%; right: -10%; width: 60%; height: 200%;
+  background: radial-gradient(ellipse, rgba(255,255,255,.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+.search-card {
+  background: #fff; border-radius: 18px;
+  padding: 24px 28px; box-shadow: 0 8px 40px rgba(0,0,0,.18);
+}
+.search-card .form-control,
+.search-card .form-select {
+  border-radius: 10px; border: 1.5px solid #d1fae5;
+  padding: 10px 14px; font-size: .92rem;
+  transition: border-color .2s, box-shadow .2s;
+}
+.search-card .form-control:focus,
+.search-card .form-select:focus {
+  border-color: #059669; box-shadow: 0 0 0 3px rgba(5,150,105,.12);
+}
+.btn-search {
+  background: linear-gradient(135deg, #047857, #059669);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 11px; font-weight: 700; font-size: .9rem;
+  width: 100%; transition: all .2s;
+  box-shadow: 0 4px 14px rgba(5,150,105,.3);
+}
+.btn-search:hover { background: linear-gradient(135deg, #065f46, #047857); transform: translateY(-1px); }
+
+/* ── Filter panel ───────────────────────────────── */
+.filter-panel {
+  background: #fff; border-radius: 16px;
+  padding: 20px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
+  position: sticky; top: 80px;
+}
+.filter-panel h6 { font-weight: 700; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
+.filter-section { border-bottom: 1px solid #f3f4f6; padding-bottom: 16px; margin-bottom: 16px; }
+.filter-section:last-child { border-bottom: none; margin-bottom: 0; }
+.star-btn { border: 1.5px solid #d1fae5; background: #fff; border-radius: 8px; padding: 5px 10px; font-size: .8rem; cursor: pointer; transition: all .15s; color: #047857; font-weight: 600; }
+.star-btn:hover, .star-btn.active { background: #059669; color: #fff; border-color: #059669; }
+.amenity-cb { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: .88rem; }
+.amenity-cb input[type="checkbox"] { width: 16px; height: 16px; accent-color: #059669; }
+.price-range input[type="range"] { accent-color: #059669; width: 100%; }
+.sort-btn-side { border: 1.5px solid #d1fae5; background: #fff; border-radius: 8px; padding: 6px 12px; font-size: .82rem; cursor: pointer; transition: all .15s; color: #374151; font-weight: 500; width: 100%; text-align: left; margin-bottom: 6px; }
+.sort-btn-side:hover, .sort-btn-side.active { background: #ecfdf5; border-color: #6ee7b7; color: #047857; }
+
+/* ── Hotel cards ────────────────────────────────── */
+.hotel-card {
+  background: #fff; border-radius: 18px;
+  border: 1.5px solid #d1fae5;
+  box-shadow: 0 2px 14px rgba(5,150,105,.06);
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  overflow: hidden; height: 100%;
+}
+.hotel-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 36px rgba(5,150,105,.16);
+  border-color: #6ee7b7;
+}
+.hotel-img {
+  height: 200px; background-size: cover; background-position: center;
+  position: relative;
+}
+.hotel-img-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,.4) 100%);
+}
+.hotel-rating-chip {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(255,255,255,.95); border-radius: 20px;
+  padding: 3px 10px; font-weight: 700; font-size: .8rem; color: #111;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.hotel-city-chip {
+  position: absolute; bottom: 10px; left: 12px;
+  color: #fff; font-size: .8rem; font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.best-deal-ribbon {
+  position: absolute; top: 12px; left: -2px;
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #fff; font-size: .68rem; font-weight: 700;
+  padding: 3px 12px 3px 10px; border-radius: 0 4px 4px 0;
+  letter-spacing: .04em;
+  box-shadow: 2px 2px 8px rgba(0,0,0,.2);
+}
+.amenity-pill {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;
+  border-radius: 6px; padding: 2px 8px; font-size: .72rem; font-weight: 600;
+  margin: 2px;
+}
+.urgency-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: #b91c1c; font-size: .77rem; font-weight: 700;
+}
+.price-night { font-size: 1.25rem; font-weight: 900; color: #059669; line-height: 1; }
+.price-night-sub { font-size: .7rem; color: #9ca3af; margin-top: 2px; }
+.btn-details { border: 1.5px solid #d1fae5; color: #047857; background: #fff; border-radius: 10px; padding: 6px 14px; font-size: .82rem; font-weight: 600; transition: all .15s; }
+.btn-details:hover { background: #f0fdf4; }
+.btn-book-hotel {
+  background: linear-gradient(135deg, #047857, #059669);
+  color: #fff; border: none; border-radius: 10px;
+  padding: 8px 18px; font-size: .82rem; font-weight: 700;
+  transition: all .2s; box-shadow: 0 3px 10px rgba(5,150,105,.25);
+}
+.btn-book-hotel:hover { background: linear-gradient(135deg, #065f46, #047857); color: #fff; }
+
+/* Sort bar */
+.sort-bar {
+  background: #fff; border-radius: 12px; padding: 12px 18px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.06);
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<div class="hotel-hero">
+  <div class="container">
+    <div class="d-flex align-items-center gap-3 mb-4 text-white">
+      <div style="width:52px;height:52px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🏨</div>
+      <div>
+        <h1 class="fw-black mb-0" style="font-size:1.9rem;letter-spacing:-.01em">Hotel Search</h1>
+        <p class="mb-0 opacity-75" style="font-size:.88rem">Find the best stays across India — handpicked &amp; verified.</p>
+      </div>
+    </div>
+    <div class="search-card">
+      <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-geo-alt text-success me-1"></i>City / Destination
+            </label>
+            {{ form.city(class_="form-control st-ac-city", placeholder="Goa, Mumbai, Jaipur, Delhi…", autocomplete="off") }}
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-calendar3 text-success me-1"></i>Check-in
+            </label>
+            {{ form.checkin(class="form-control") }}
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-calendar-check text-success me-1"></i>Check-out
+            </label>
+            {{ form.checkout(class="form-control") }}
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-people text-success me-1"></i>Guests
+            </label>
+            {{ form.guests(class="form-control") }}
+          </div>
+          <div class="col-md-1">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">Rooms</label>
+            {{ form.rooms(class="form-control") }}
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1">&nbsp;</label>
+            <button type="submit" class="btn-search btn">
+              <i class="bi bi-search me-1"></i>Search
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULTS ════════════════════════════════════════════════════════════ -->
+<div class="hotels-page">
+<div class="container py-4">
+{% if hotels %}
+<div class="row g-3">
+
+  <!-- ── Filter sidebar ── -->
+  <div class="col-lg-3 d-none d-lg-block">
+    <div class="filter-panel">
+
+      <div class="filter-section">
+        <h6 class="mb-3">Sort By</h6>
+        <button class="sort-btn-side active" onclick="sortHotels('price',this)">
+          <i class="bi bi-currency-rupee me-1"></i>Price: Low to High
+        </button>
+        <button class="sort-btn-side" onclick="sortHotels('rating',this)">
+          <i class="bi bi-star me-1"></i>Guest Rating
+        </button>
+        <button class="sort-btn-side" onclick="sortHotels('name',this)">
+          <i class="bi bi-sort-alpha-down me-1"></i>Name A-Z
+        </button>
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Star Rating</h6>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="star-btn" onclick="filterStars(0,this)">All</button>
+          <button class="star-btn" onclick="filterStars(3,this)">⭐⭐⭐</button>
+          <button class="star-btn" onclick="filterStars(4,this)">⭐⭐⭐⭐</button>
+          <button class="star-btn" onclick="filterStars(5,this)">⭐⭐⭐⭐⭐</button>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Price Per Night</h6>
+        <div class="price-range">
+          <div class="d-flex justify-content-between mb-1" style="font-size:.8rem;color:#374151">
+            <span>₹0</span>
+            <span id="priceRangeVal" class="fw-bold" style="color:#059669">Any</span>
+          </div>
+          <input type="range" min="0" max="20000" step="500" value="20000"
+                 id="priceRange" oninput="filterByPrice(this.value)">
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Room Type</h6>
+        {% for rt in ['Standard', 'Deluxe', 'Suite', 'Dorm'] %}
+        <label class="amenity-cb">
+          <input type="checkbox" checked onchange="filterRoomTypes()" data-rt="{{ rt }}">
+          {{ rt }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Amenities</h6>
+        {% for a in ['Pool', 'Spa', 'Free Wi-Fi', 'Gym', 'Restaurant', 'Parking'] %}
+        <label class="amenity-cb">
+          <input type="checkbox" onchange="filterAmenities()" data-amenity="{{ a }}">
+          {{ a }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <button onclick="resetFilters()" class="btn btn-outline-secondary btn-sm w-100" style="border-radius:8px">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset All
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Hotel grid ── -->
+  <div class="col-lg-9">
+
+    <!-- Filter chips -->
+    {% if search_performed %}
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      {% if form.city.data %}
+      <span class="badge" style="background:#ecfdf5;color:#047857;border:1px solid #6ee7b7;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        <i class="bi bi-geo-alt me-1"></i>{{ form.city.data }}
+      </span>
+      {% endif %}
+      {% if form.checkin.data %}
+      <span class="badge" style="background:#fef9c3;color:#92400e;border:1px solid #fde68a;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        <i class="bi bi-calendar3 me-1"></i>{{ form.checkin.data.strftime('%d %b') }} – {{ form.checkout.data.strftime('%d %b %Y') if form.checkout.data else '?' }}
+      </span>
+      {% endif %}
+      {% if form.guests.data %}
+      <span class="badge" style="background:#f5f3ff;color:#5b21b6;border:1px solid #ddd6fe;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        <i class="bi bi-people me-1"></i>{{ form.guests.data }} guests · {{ form.rooms.data or 1 }} room
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Sort bar -->
+    <div class="sort-bar">
+      <div class="fw-bold" style="color:#111;font-size:.95rem">
+        <span id="hotelCount">{{ hotels|length }}</span>
+        {{ 'Search Result' if search_performed else 'Featured Hotel' }}{{ 's' if hotels|length != 1 }}
+      </div>
+      <div class="text-muted small">
+        <i class="bi bi-shield-check text-success me-1"></i>Free cancellation available on most hotels
+      </div>
+    </div>
+
+    <!-- Hotel cards -->
+    <div class="row g-4" id="hotelResults">
+      {% for hotel in hotels %}
+      <div class="col-md-6 col-xl-4 hotel-item"
+           data-price="{{ hotel.price_per_night }}"
+           data-rating="{{ hotel.rating }}"
+           data-name="{{ hotel.name }}"
+           data-stars="{{ hotel.rating|int }}">
+        <div class="hotel-card">
+          <!-- Image -->
+          <div class="hotel-img"
+               style="background-image: url('{{ hotel.image_path or '' }}'), linear-gradient(135deg, #{{ ['047857','0f766e','1d4ed8','7c3aed','d97706','dc2626'][loop.index0 % 6] }} 0%, #{{ ['059669','0d9488','2563eb','8b5cf6','f59e0b','ef4444'][loop.index0 % 6] }} 100%);">
+            <div class="hotel-img-overlay"></div>
+            {% if loop.first and search_performed %}
+            <div class="best-deal-ribbon">⭐ TOP PICK</div>
+            {% endif %}
+            <div class="hotel-rating-chip">⭐ {{ hotel.rating }}</div>
+            <div class="hotel-city-chip">
+              <i class="bi bi-geo-alt-fill"></i> {{ hotel.city }}
+            </div>
+          </div>
+
+          <div class="card-body d-flex flex-column p-3">
+            <h6 class="fw-bold mb-1" style="font-size:.94rem;line-height:1.3;color:#111">{{ hotel.name }}</h6>
+
+            <!-- Amenity pills -->
+            {% if hotel.amenities %}
+            <div class="mb-2">
+              {% for amenity in hotel.amenities[:4] %}
+                <span class="amenity-pill">
+                  {% if 'Pool' in amenity %}🏊{% elif 'Spa' in amenity %}💆{% elif 'Wi-Fi' in amenity or 'Wifi' in amenity %}📶{% elif 'Gym' in amenity %}🏋{% elif 'Restaurant' in amenity %}🍽{% elif 'Park' in amenity %}🅿{% else %}✓{% endif %}
+                  {{ amenity }}
+                </span>
+              {% endfor %}
+              {% if hotel.amenities|length > 4 %}
+                <span class="amenity-pill" style="background:#f9fafb;color:#9ca3af;border-color:#e5e7eb">+{{ hotel.amenities|length - 4 }}</span>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Urgency -->
+            <div class="urgency-tag mb-2">
+              <i class="bi bi-fire" style="color:#ef4444"></i>
+              Only {{ 2 + hotel.id % 7 }} rooms left at this rate!
+            </div>
+
+            <!-- Price & CTA -->
+            <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+              <div>
+                <div class="price-night">₹{{ "{:,.0f}".format(hotel.price_per_night) }}</div>
+                <div class="price-night-sub">per night · incl. taxes</div>
+              </div>
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('reviews.hotel_detail', hotel_id=hotel.id) }}"
+                   class="btn-details btn">View</a>
+                <a href="{{ url_for('public.hotel_room_select', hotel_id=hotel.id) }}"
+                   class="btn-book-hotel btn">
+                  <i class="bi bi-door-open me-1"></i>Rooms
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+{# ── No results ── #}
+{% if search_performed and not hotels and not search_error %}
+<div style="text-align:center;padding:60px 20px;">
+  <div style="font-size:3.5rem;margin-bottom:16px;opacity:.8">🏨</div>
+  <h4 style="font-weight:700;color:#1e293b;margin-bottom:8px">No hotels found</h4>
+  <p style="color:#64748b;max-width:420px;margin:0 auto 20px">
+    We couldn't find any hotels matching your search. Try different dates, a nearby city, or adjust guest count.
+  </p>
+  <a href="{{ url_for('public.hotels') }}" class="btn btn-success" style="border-radius:10px;padding:10px 24px">
+    <i class="bi bi-arrow-counterclockwise me-1"></i>New Search
+  </a>
+</div>
+{% endif %}
+
+{# ── Search error ── #}
+{% if search_performed and search_error %}
+<div style="text-align:center;padding:60px 20px;">
+  <div style="font-size:3.5rem;margin-bottom:16px;opacity:.8">⚠️</div>
+  <h4 style="font-weight:700;color:#dc2626;margin-bottom:8px">Search Failed</h4>
+  <p style="color:#64748b;max-width:480px;margin:0 auto 20px">{{ search_error }}</p>
+  <div class="d-flex justify-content-center gap-2">
+    <a href="{{ url_for('public.hotels') }}" class="btn btn-outline-secondary" style="border-radius:10px;padding:10px 24px">
+      <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+    </a>
+    <button onclick="document.querySelector('form').submit()" class="btn btn-success" style="border-radius:10px;padding:10px 24px">
+      <i class="bi bi-arrow-repeat me-1"></i>Retry Search
+    </button>
+  </div>
+</div>
+{% endif %}
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Date setup
+document.addEventListener('DOMContentLoaded', function() {
+  const today = new Date().toISOString().split('T')[0];
+  const checkin = document.querySelector('input[name="checkin"]');
+  const checkout = document.querySelector('input[name="checkout"]');
+  if (checkin) {
+    checkin.min = today;
+    checkin.addEventListener('change', function() {
+      if (checkout) {
+        checkout.min = this.value;
+        if (!checkout.value || checkout.value <= this.value) {
+          const next = new Date(this.value);
+          next.setDate(next.getDate() + 1);
+          checkout.value = next.toISOString().split('T')[0];
+        }
+      }
+    });
+  }
+  if (checkout) checkout.min = today;
+});
+
+// ── Sort ─────────────────────────────────────────────────────────────────
+function sortHotels(key, btn) {
+  const container = document.getElementById('hotelResults');
+  const items = [...container.querySelectorAll('.hotel-item')];
+  items.sort((a, b) => {
+    if (key === 'price') return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+    if (key === 'rating') return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+    if (key === 'name') return a.dataset.name.localeCompare(b.dataset.name);
+    return 0;
+  });
+  items.forEach(i => container.appendChild(i));
+  document.querySelectorAll('.sort-btn-side').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+// ── Filters ──────────────────────────────────────────────────────────────
+let maxPrice = Infinity;
+let minStars = 0;
+
+function applyFilters() {
+  const items = document.querySelectorAll('.hotel-item');
+  let visible = 0;
+  items.forEach(item => {
+    const price = parseFloat(item.dataset.price);
+    const stars = parseInt(item.dataset.stars);
+    let show = price <= maxPrice && (minStars === 0 || stars >= minStars);
+    item.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  document.getElementById('hotelCount').textContent = visible;
+}
+
+function filterByPrice(val) {
+  maxPrice = val >= 20000 ? Infinity : parseFloat(val);
+  document.getElementById('priceRangeVal').textContent = val >= 20000 ? 'Any' : '₹' + parseInt(val).toLocaleString('en-IN');
+  applyFilters();
+}
+
+function filterStars(stars, btn) {
+  minStars = stars;
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  applyFilters();
+}
+
+function filterRoomTypes() { applyFilters(); }
+function filterAmenities() { applyFilters(); }
+
+function resetFilters() {
+  maxPrice = Infinity;
+  minStars = 0;
+  document.getElementById('priceRange').value = 20000;
+  document.getElementById('priceRangeVal').textContent = 'Any';
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.star-btn').classList.add('active');
+  document.querySelectorAll('.amenity-cb input').forEach(cb => cb.checked = false);
+  applyFilters();
+}
+</script>
+<script>stAC(['city']);</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ trip.name }} — SnapTravels{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-map-fill text-primary me-2"></i>{{ trip.name }}</h2>
+      {% if trip.destination %}<div class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ trip.destination }}</div>{% endif %}
+      {% if trip.start_date and trip.end_date %}
+      <div class="text-muted small">
+        <i class="bi bi-calendar me-1"></i>
+        {{ trip.start_date.strftime('%d %b') }} – {{ trip.end_date.strftime('%d %b %Y') }}
+      </div>
+      {% endif %}
+    </div>
+    <a href="{{ url_for('trips.listing') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> My Trips
+    </a>
+  </div>
+
+  <div class="row g-4">
+    <!-- Add Item form -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm sticky-top" style="top:80px">
+        <div class="card-header bg-primary text-white fw-semibold">
+          <i class="bi bi-plus-circle me-1"></i> Add Item
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('trips.add_item', trip_id=trip.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="mb-3">
+              <label class="form-label small">Type</label>
+              <select name="item_type" class="form-select">
+                {% for t in ['FLIGHT','HOTEL','ACTIVITY','CAB','TRAIN','BUS','NOTE'] %}
+                <option value="{{ t }}">{{ t.title() }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small">Day #</label>
+              <input type="number" name="day_number" class="form-control" value="1" min="1">
+            </div>
+            <div class="mb-3">
+              <label class="form-label small">Title *</label>
+              <input type="text" name="title" class="form-control" placeholder="e.g. IndiGo flight to Goa" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small">Notes</label>
+              <textarea name="notes" class="form-control" rows="2"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Add to Trip</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Itinerary -->
+    <div class="col-lg-8">
+      {% if days %}
+        {% for day_num in days.keys()|sort %}
+        <div class="mb-4">
+          <h5 class="fw-bold text-primary border-bottom pb-2">Day {{ day_num }}</h5>
+          {% for item in days[day_num] %}
+          <div class="card border-0 shadow-sm mb-2">
+            <div class="card-body py-2 px-3">
+              <div class="d-flex justify-content-between align-items-start">
+                <div class="d-flex gap-2">
+                  <div class="mt-1">
+                    <i class="bi bi-{{ icons.get(item.item_type, 'journal-text') }} text-primary"></i>
+                  </div>
+                  <div>
+                    <div class="fw-semibold">{{ item.title }}</div>
+                    {% if item.notes %}<div class="text-muted small">{{ item.notes }}</div>{% endif %}
+                  </div>
+                </div>
+                <form method="POST" action="{{ url_for('trips.delete_item', trip_id=trip.id, item_id=item.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Remove">
+                    <i class="bi bi-x"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-calendar-plus" style="font-size:3rem"></i>
+        <p class="mt-2">Add your first item using the form on the left.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,294 @@
+{% extends "layouts/base.html" %}
+{% block title %}Refund Management — SnapTravels Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #0f1117 !important; color: #e2e8f0; }
+@keyframes accentSlide { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+.admin-accent-bar { height:3px; background:linear-gradient(90deg,#e63950,#f97316,#facc15,#e63950); background-size:200% 100%; animation:accentSlide 3s linear infinite; }
+.admin-topbar { background:#1a1f2e; border-bottom:1px solid #1e2433; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; }
+.admin-breadcrumb { display:flex; align-items:center; gap:8px; font-size:.82rem; color:#64748b; }
+.admin-breadcrumb a { color:#64748b; text-decoration:none; }
+.admin-breadcrumb a:hover { color:#e63950; }
+.admin-breadcrumb .sep { color:#334155; }
+.admin-breadcrumb .current { color:#e2e8f0; font-weight:600; }
+.admin-nav-links { display:flex; gap:6px; }
+.admin-nav-links a { padding:6px 14px; border-radius:8px; font-size:.78rem; font-weight:600; color:#94a3b8; text-decoration:none; transition:all .2s; border:1px solid transparent; }
+.admin-nav-links a:hover { background:#1e2433; color:#e2e8f0; }
+.admin-nav-links a.active { background:rgba(230,57,80,.12); color:#e63950; border-color:rgba(230,57,80,.25); }
+
+/* ── Auto-approve Toggle Card ─────────────────────── */
+.toggle-card {
+  background: #1a1f2e; border: 1px solid #1e2433; border-radius: 16px;
+  padding: 20px 24px; margin-bottom: 28px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+}
+.toggle-card.on  { border-color: rgba(34,197,94,.25); background: rgba(34,197,94,.03); }
+.toggle-card.off { border-color: rgba(100,116,139,.2); }
+.toggle-indicator {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
+  50%      { box-shadow: 0 0 0 4px rgba(34,197,94,.1); }
+}
+.toggle-indicator.on  { background: #4ade80; }
+.toggle-indicator.off { background: #475569; animation: none; }
+.toggle-title { font-size: .95rem; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; gap: 8px; }
+.toggle-sub   { font-size: .78rem; color: #64748b; margin-top: 4px; }
+.toggle-sub .on-text  { color: #4ade80; font-weight: 600; }
+.toggle-sub .off-text { color: #94a3b8; }
+
+/* Custom toggle switch */
+.custom-switch-wrap { cursor: pointer; }
+.custom-switch {
+  position: relative; display: inline-block;
+  width: 56px; height: 28px;
+}
+.custom-switch input { opacity: 0; width: 0; height: 0; }
+.switch-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: #1e2433; border: 1px solid #2d3748; border-radius: 28px;
+  transition: all .3s;
+}
+.switch-slider::before {
+  position: absolute; content: '';
+  height: 20px; width: 20px; left: 3px; bottom: 3px;
+  background: #475569; border-radius: 50%; transition: all .3s;
+}
+input:checked + .switch-slider { background: rgba(34,197,94,.2); border-color: rgba(34,197,94,.5); }
+input:checked + .switch-slider::before { transform: translateX(28px); background: #4ade80; }
+
+/* ── Pending count badge ──────────────────────────── */
+.count-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700;
+  background: rgba(239,68,68,.12); color: #f87171; border: 1px solid rgba(239,68,68,.2);
+}
+
+.section-title { font-size: 1rem; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+
+.data-panel { background:#1a1f2e; border:1px solid #1e2433; border-radius:16px; overflow:hidden; margin-bottom:28px; }
+.data-panel-header { padding:16px 22px; border-bottom:1px solid #1e2433; display:flex; align-items:center; justify-content:space-between; }
+.data-panel-title { font-size:.9rem; font-weight:700; color:#e2e8f0; }
+
+.dark-table { width:100%; border-collapse:collapse; }
+.dark-table thead tr { background:#141824; }
+.dark-table thead th { padding:12px 18px; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#64748b; border-bottom:1px solid #1e2433; white-space:nowrap; }
+.dark-table tbody tr { border-bottom:1px solid #1e2433; transition:background .15s; }
+.dark-table tbody tr:last-child { border-bottom:none; }
+.dark-table tbody tr:hover { background:rgba(255,255,255,.025); }
+.dark-table tbody td { padding:14px 18px; font-size:.84rem; color:#cbd5e1; vertical-align:middle; }
+
+.booking-code { font-family:'Courier New',monospace; font-size:.78rem; font-weight:700; color:#a78bfa; background:rgba(139,92,246,.1); padding:3px 8px; border-radius:6px; border:1px solid rgba(139,92,246,.2); }
+
+.st-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.st-badge.refunded  { background:rgba(34,197,94,.12);  color:#4ade80; border:1px solid rgba(34,197,94,.2); }
+.st-badge.cancelled { background:rgba(239,68,68,.12);  color:#f87171; border:1px solid rgba(239,68,68,.2); }
+.st-badge.rejected  { background:rgba(100,116,139,.1); color:#94a3b8; border:1px solid rgba(100,116,139,.2); }
+
+.btn-approve {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 8px; font-size: .74rem; font-weight: 700;
+  background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); color: #4ade80;
+  cursor: pointer; transition: all .15s;
+}
+.btn-approve:hover { background: rgba(34,197,94,.2); }
+.btn-reject {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 8px; font-size: .74rem; font-weight: 700;
+  background: transparent; border: 1px solid rgba(239,68,68,.3); color: #f87171;
+  cursor: pointer; transition: all .15s;
+}
+.btn-reject:hover { background: rgba(239,68,68,.1); }
+
+.no-pending {
+  padding: 20px 24px; display: flex; align-items: center; gap: 12px;
+  color: #4ade80; font-size: .84rem; font-weight: 600;
+  background: rgba(34,197,94,.05); border: 1px solid rgba(34,197,94,.15); border-radius: 12px;
+  margin-bottom: 28px;
+}
+.empty-processed {
+  padding: 28px 24px; text-align: center; color: #475569; font-size: .82rem;
+}
+
+.btn-ghost { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:10px; font-size:.8rem; font-weight:600; background:transparent; border:1px solid #1e2433; color:#94a3b8; text-decoration:none; transition:all .2s; }
+.btn-ghost:hover { background:#1e2433; color:#e2e8f0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-accent-bar"></div>
+
+<div class="admin-topbar">
+  <div class="admin-breadcrumb">
+    <i class="bi bi-speedometer2" style="color:#e63950"></i>
+    <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+    <span class="sep">›</span>
+    <span class="current">↩ Refund Management</span>
+  </div>
+  <div class="admin-nav-links">
+    <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap me-1"></i>Dashboard</a>
+    <a href="{{ url_for('admin.manage_flights') }}"><i class="bi bi-airplane me-1"></i>Flights</a>
+    <a href="{{ url_for('admin.manage_bookings') }}"><i class="bi bi-receipt me-1"></i>Bookings</a>
+    <a href="{{ url_for('admin_ext.hotels') }}"><i class="bi bi-building me-1"></i>Hotels</a>
+    <a href="{{ url_for('admin_ext.users') }}"><i class="bi bi-people me-1"></i>Users</a>
+    <a href="{{ url_for('admin_ext.refunds') }}" class="active"><i class="bi bi-arrow-counterclockwise me-1"></i>Refunds</a>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4" style="max-width:1200px;margin:0 auto">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#64748b;font-weight:700">Cancellations & Refunds</div>
+      <h2 style="font-size:1.5rem;font-weight:900;color:#e2e8f0;margin:4px 0 0">Refund Management</h2>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn-ghost"><i class="bi bi-arrow-left"></i> Dashboard</a>
+  </div>
+
+  <!-- Auto-approve Toggle -->
+  <div class="toggle-card {{ 'on' if auto_approve else 'off' }}">
+    <div class="d-flex align-items-center gap-3">
+      <div class="toggle-indicator {{ 'on' if auto_approve else 'off' }}"></div>
+      <div>
+        <div class="toggle-title">
+          <i class="bi bi-lightning-charge-fill" style="color:{{ '#4ade80' if auto_approve else '#475569' }}"></i>
+          Auto-Approve Refunds
+        </div>
+        <div class="toggle-sub">
+          {% if auto_approve %}
+          Cancellations are <span class="on-text">instantly refunded</span> — no manual review needed.
+          <br><span style="font-size:.72rem;color:#64748b">Note: Existing pending requests still need manual action.</span>
+          {% else %}
+          Cancellations require <span class="off-text">manual admin approval</span> before refund is issued.
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <form method="POST" action="{{ url_for('admin_ext.toggle_auto_approve') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="custom-switch-wrap" title="{{ 'Disable auto-approve' if auto_approve else 'Enable auto-approve' }}">
+        <span class="custom-switch">
+          <input type="checkbox" {% if auto_approve %}checked{% endif %} onchange="this.form.submit()">
+          <span class="switch-slider"></span>
+        </span>
+      </label>
+    </form>
+  </div>
+
+  <!-- Pending Requests -->
+  <div class="section-title">
+    ⏳ Pending Cancellation Requests
+    <span class="count-badge">{{ pending|length }} pending</span>
+  </div>
+
+  {% if pending %}
+  <div class="data-panel">
+    <div class="table-responsive">
+      <table class="dark-table">
+        <thead>
+          <tr>
+            <th>Booking Code</th>
+            <th>Customer</th>
+            <th>Refund Amount</th>
+            <th>Requested</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bk in pending %}
+          <tr>
+            <td><span class="booking-code">{{ bk.booking_code }}</span></td>
+            <td>
+              <div style="font-weight:600;color:#e2e8f0">{{ bk.customer_name or '—' }}</div>
+              <div style="font-size:.72rem;color:#64748b">{{ bk.customer_email }}</div>
+            </td>
+            <td>
+              <div style="font-weight:700;color:#fb923c;font-size:.9rem">₹{{ "{:,.0f}".format(bk.total_amount) }}</div>
+            </td>
+            <td>
+              <div style="font-size:.8rem;color:#94a3b8">{{ bk.created_at.strftime('%d %b %Y') }}</div>
+            </td>
+            <td style="text-align:right">
+              <div class="d-flex gap-2 justify-content-end">
+                <form method="POST" action="{{ url_for('admin_ext.approve_refund', booking_id=bk.id) }}" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn-approve">
+                    <i class="bi bi-check-circle"></i> Approve Refund
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('admin_ext.reject_refund', booking_id=bk.id) }}" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn-reject">
+                    <i class="bi bi-x-circle"></i> Reject
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="no-pending">
+    <i class="bi bi-check-circle-fill" style="font-size:1.2rem"></i>
+    No pending cancellation requests — you're all caught up!
+  </div>
+  {% endif %}
+
+  <!-- Processed Refunds -->
+  <div class="section-title">📋 Processed Refunds</div>
+
+  {% if processed %}
+  <div class="data-panel">
+    <div class="table-responsive">
+      <table class="dark-table">
+        <thead>
+          <tr>
+            <th>Booking Code</th>
+            <th>Customer</th>
+            <th>Amount</th>
+            <th>Outcome</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bk in processed %}
+          <tr>
+            <td><span class="booking-code">{{ bk.booking_code }}</span></td>
+            <td>
+              <div style="font-size:.84rem;color:#94a3b8">{{ bk.customer_name or bk.customer_email }}</div>
+            </td>
+            <td>
+              <div style="font-weight:700;color:#e2e8f0">₹{{ "{:,.0f}".format(bk.total_amount) }}</div>
+            </td>
+            <td>
+              {% set s = bk.status|lower %}
+              <span class="st-badge {{ 'refunded' if s == 'refunded' else ('rejected' if s == 'rejected' else 'cancelled') }}">
+                {{ bk.status }}
+              </span>
+            </td>
+            <td>
+              <div style="font-size:.8rem;color:#64748b">{{ bk.created_at.strftime('%d %b %Y') }}</div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="data-panel">
+    <div class="empty-processed">
+      <div style="font-size:2rem;margin-bottom:8px;opacity:.3">📋</div>
+      No processed refunds yet.
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

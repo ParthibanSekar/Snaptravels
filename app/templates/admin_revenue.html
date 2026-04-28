@@ -1,0 +1,274 @@
+{% extends "layouts/base.html" %}
+{% block title %}Revenue Dashboard — SnapTravels Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #0f1117 !important; color: #e2e8f0; }
+@keyframes accentSlide { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+.admin-accent-bar { height:3px; background:linear-gradient(90deg,#e63950,#f97316,#facc15,#e63950); background-size:200% 100%; animation:accentSlide 3s linear infinite; }
+.admin-topbar { background:#1a1f2e; border-bottom:1px solid #1e2433; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; }
+.admin-breadcrumb { display:flex; align-items:center; gap:8px; font-size:.82rem; color:#64748b; }
+.admin-breadcrumb a { color:#64748b; text-decoration:none; }
+.admin-breadcrumb a:hover { color:#e63950; }
+.admin-breadcrumb .sep { color:#334155; }
+.admin-breadcrumb .current { color:#e2e8f0; font-weight:600; }
+.admin-nav-links { display:flex; gap:6px; }
+.admin-nav-links a { padding:6px 14px; border-radius:8px; font-size:.78rem; font-weight:600; color:#94a3b8; text-decoration:none; transition:all .2s; border:1px solid transparent; }
+.admin-nav-links a:hover { background:#1e2433; color:#e2e8f0; }
+.admin-nav-links a.active { background:rgba(230,57,80,.12); color:#e63950; border-color:rgba(230,57,80,.25); }
+
+/* ── KPI Cards ───────────────────────────────────── */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:28px; }
+.kpi-card {
+  background: #1a1f2e; border: 1px solid #1e2433; border-radius: 14px;
+  padding: 20px; position: relative; overflow: hidden;
+}
+.kpi-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+}
+.kpi-green::before { background: linear-gradient(90deg,#059669,#10b981); }
+.kpi-blue::before  { background: linear-gradient(90deg,#2563eb,#38bdf8); }
+.kpi-amber::before { background: linear-gradient(90deg,#d97706,#fbbf24); }
+.kpi-red::before   { background: linear-gradient(90deg,#dc2626,#f87171); }
+.kpi-icon { font-size:1.4rem; margin-bottom:10px; }
+.kpi-value { font-size:1.6rem; font-weight:900; line-height:1; margin-bottom:4px; }
+.kpi-label { font-size:.72rem; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+.kpi-green .kpi-value { color:#4ade80; }
+.kpi-blue  .kpi-value { color:#38bdf8; }
+.kpi-amber .kpi-value { color:#fbbf24; }
+.kpi-red   .kpi-value { color:#f87171; }
+
+/* ── Dark panels ─────────────────────────────────── */
+.dark-panel { background:#1a1f2e; border:1px solid #1e2433; border-radius:16px; overflow:hidden; }
+.dark-panel-header { padding:16px 20px; border-bottom:1px solid #1e2433; font-size:.88rem; font-weight:700; color:#e2e8f0; display:flex; align-items:center; gap:8px; }
+.dark-panel-body { padding:20px; }
+
+/* ── Bookings by type bars ───────────────────────── */
+.type-bar-row { margin-bottom:16px; }
+.type-bar-row:last-child { margin-bottom:0; }
+.type-bar-label { display:flex; justify-content:space-between; font-size:.78rem; margin-bottom:6px; }
+.type-bar-name  { color:#94a3b8; }
+.type-bar-count { font-weight:700; color:#e2e8f0; }
+.type-bar-track { height:8px; background:#141824; border-radius:4px; overflow:hidden; }
+.type-bar-fill  { height:100%; border-radius:4px; transition:width .6s ease; }
+
+/* ── Top hotels list ─────────────────────────────── */
+.hotel-rank-item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #1e2433; }
+.hotel-rank-item:last-child { border-bottom:none; padding-bottom:0; }
+.hotel-rank-num { width:24px; height:24px; border-radius:6px; background:#141824; display:flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:800; color:#64748b; flex-shrink:0; }
+.hotel-rank-num.top { background:rgba(251,191,36,.15); color:#fbbf24; }
+.hotel-rank-name { flex:1; font-size:.82rem; color:#e2e8f0; font-weight:600; }
+.hotel-rank-badge { padding:2px 8px; border-radius:10px; font-size:.7rem; font-weight:700; background:rgba(56,189,248,.1); color:#38bdf8; }
+
+/* ── Recent bookings table ───────────────────────── */
+.dark-table { width:100%; border-collapse:collapse; }
+.dark-table thead tr { background:#141824; }
+.dark-table thead th { padding:10px 16px; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#64748b; border-bottom:1px solid #1e2433; }
+.dark-table tbody tr { border-bottom:1px solid #1e2433; }
+.dark-table tbody tr:last-child { border-bottom:none; }
+.dark-table tbody tr:hover { background:rgba(255,255,255,.02); }
+.dark-table tbody td { padding:12px 16px; font-size:.82rem; color:#cbd5e1; }
+.booking-code { font-family:monospace; color:#a78bfa; font-weight:700; font-size:.78rem; }
+
+/* Chart container */
+.chart-container { position:relative; }
+canvas { max-height:240px; }
+
+.btn-ghost { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:10px; font-size:.8rem; font-weight:600; background:transparent; border:1px solid #1e2433; color:#94a3b8; text-decoration:none; transition:all .2s; }
+.btn-ghost:hover { background:#1e2433; color:#e2e8f0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-accent-bar"></div>
+
+<div class="admin-topbar">
+  <div class="admin-breadcrumb">
+    <i class="bi bi-speedometer2" style="color:#e63950"></i>
+    <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+    <span class="sep">›</span>
+    <span class="current">📊 Revenue Dashboard</span>
+  </div>
+  <div class="admin-nav-links">
+    <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap me-1"></i>Dashboard</a>
+    <a href="{{ url_for('admin.manage_flights') }}"><i class="bi bi-airplane me-1"></i>Flights</a>
+    <a href="{{ url_for('admin.manage_bookings') }}"><i class="bi bi-receipt me-1"></i>Bookings</a>
+    <a href="{{ url_for('admin_ext.revenue') }}" class="active"><i class="bi bi-bar-chart me-1"></i>Revenue</a>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4" style="max-width:1400px;margin:0 auto">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#64748b;font-weight:700">Analytics & Financials</div>
+      <h2 style="font-size:1.5rem;font-weight:900;color:#e2e8f0;margin:4px 0 0">Revenue Dashboard</h2>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn-ghost"><i class="bi bi-arrow-left"></i> Dashboard</a>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-green">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-value">₹{{ "{:,.0f}".format(total_revenue) }}</div>
+      <div class="kpi-label">Total Revenue (Confirmed)</div>
+    </div>
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-icon">🧾</div>
+      <div class="kpi-value">{{ total_bookings }}</div>
+      <div class="kpi-label">Total Bookings</div>
+    </div>
+    <div class="kpi-card kpi-amber">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-value">{{ total_users }}</div>
+      <div class="kpi-label">Registered Users</div>
+    </div>
+    <div class="kpi-card kpi-red">
+      <div class="kpi-icon">✕</div>
+      <div class="kpi-value">{{ cancelled }}</div>
+      <div class="kpi-label">Cancellations</div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-8">
+      <div class="dark-panel">
+        <div class="dark-panel-header"><i class="bi bi-bar-chart-fill" style="color:#4ade80"></i>Monthly Revenue (Last 6 Months)</div>
+        <div class="dark-panel-body chart-container">
+          <canvas id="revenueChart" height="100"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="dark-panel" style="height:100%">
+        <div class="dark-panel-header"><i class="bi bi-pie-chart-fill" style="color:#38bdf8"></i>Bookings by Type</div>
+        <div class="dark-panel-body">
+          {% set bar_colors = ['#38bdf8','#4ade80','#a78bfa','#fbbf24','#fb923c'] %}
+          {% set total_type = type_data.values()|sum %}
+          {% for i, (type_name, count) in enumerate(type_data.items()) %}
+          <div class="type-bar-row">
+            <div class="type-bar-label">
+              <span class="type-bar-name">{{ type_name }}</span>
+              <span class="type-bar-count">{{ count }}</span>
+            </div>
+            <div class="type-bar-track">
+              <div class="type-bar-fill"
+                   style="width:{{ ((count / total_type * 100)|int) if total_type > 0 else 0 }}%;background:{{ bar_colors[loop.index0 % bar_colors|length] }}">
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hotels & Recent Bookings -->
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="dark-panel">
+        <div class="dark-panel-header"><i class="bi bi-trophy-fill" style="color:#fbbf24"></i>Top Booked Hotels</div>
+        <div class="dark-panel-body" style="padding:16px 20px">
+          {% for idx, (name, cnt) in enumerate(top_hotels) %}
+          <div class="hotel-rank-item">
+            <div class="hotel-rank-num {{ 'top' if loop.index <= 3 else '' }}">{{ loop.index }}</div>
+            <span class="hotel-rank-name">{{ name }}</span>
+            <span class="hotel-rank-badge">{{ cnt }}</span>
+          </div>
+          {% endfor %}
+          {% if not top_hotels %}
+          <div style="text-align:center;color:#475569;font-size:.82rem;padding:16px">No hotel bookings yet</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="dark-panel">
+        <div class="dark-panel-header"><i class="bi bi-clock-history" style="color:#a78bfa"></i>Recent Confirmed Bookings</div>
+        <div class="table-responsive">
+          <table class="dark-table">
+            <thead>
+              <tr>
+                <th>Booking Code</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for bk in recent %}
+              <tr>
+                <td><span class="booking-code">{{ bk.booking_code }}</span></td>
+                <td style="color:#94a3b8">{{ bk.customer_name or bk.customer_email }}</td>
+                <td style="font-weight:700;color:#4ade80">₹{{ "{:,.0f}".format(bk.total_amount) }}</td>
+                <td style="font-size:.78rem;color:#64748b">{{ bk.created_at.strftime('%d %b %Y') }}</td>
+              </tr>
+              {% endfor %}
+              {% if not recent %}
+              <tr><td colspan="4" style="text-align:center;color:#475569;padding:24px">No confirmed bookings yet</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+Chart.defaults.color = '#64748b';
+Chart.defaults.borderColor = '#1e2433';
+
+const ctx = document.getElementById('revenueChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: {{ monthly | map(attribute='month') | list | tojson }},
+    datasets: [{
+      label: 'Revenue (₹)',
+      data: {{ monthly | map(attribute='revenue') | list | tojson }},
+      backgroundColor: 'rgba(74,222,128,.65)',
+      borderColor: '#4ade80',
+      borderWidth: 1,
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1a1f2e',
+        borderColor: '#1e2433',
+        borderWidth: 1,
+        titleColor: '#e2e8f0',
+        bodyColor: '#94a3b8',
+        callbacks: {
+          label: ctx => ' ₹' + ctx.raw.toLocaleString('en-IN')
+        }
+      }
+    },
+    scales: {
+      x: { grid: { color: '#1e2433' }, ticks: { color: '#64748b' } },
+      y: {
+        beginAtZero: true,
+        grid: { color: '#1e2433' },
+        ticks: {
+          color: '#64748b',
+          callback: v => '₹' + (v >= 100000 ? (v/100000).toFixed(1)+'L' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v)
+        }
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

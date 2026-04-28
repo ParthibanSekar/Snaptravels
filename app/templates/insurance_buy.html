@@ -1,0 +1,466 @@
+{% extends "layouts/base.html" %}
+{% block title %}Buy {{ plan.name }} Insurance — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f0f4ff; }
+
+/* ── Hero strip ──────────────────────────────── */
+.ins-hero {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5a 40%, #0ea5e9 100%);
+  padding: 24px 0 30px;
+}
+
+/* Steps */
+.step-indicator { display: flex; align-items: center; gap: 0; }
+.step { display: flex; align-items: center; gap: 6px; }
+.step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; }
+.step-dot-done { background: #e0f2fe; color: #0369a1; }
+.step-dot-active { background: #0ea5e9; color: #fff; }
+.step-dot-pending { background: rgba(255,255,255,.2); color: rgba(255,255,255,.5); }
+.step-label { font-size: .75rem; color: rgba(255,255,255,.75); font-weight: 600; }
+.step-label.fw-bold { color: #fff; }
+.step-line { flex: 1; height: 2px; background: rgba(255,255,255,.25); margin: 0 6px; min-width: 20px; }
+.step-line-done { background: #7dd3fc; }
+
+/* Plan hero card */
+.plan-hero-card {
+  background: #fff; border-radius: 18px;
+  padding: 22px 28px; box-shadow: 0 8px 36px rgba(0,0,0,.16);
+}
+
+/* Plan badge */
+.plan-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 8px; padding: 5px 14px; font-weight: 700; font-size: .8rem;
+}
+.plan-basic    { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+.plan-standard { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+.plan-premium  { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+
+/* Coverage pills */
+.cov-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 20px;
+  padding: 4px 12px; font-size: .74rem; font-weight: 600; color: #166534;
+  margin: 3px 4px 3px 0;
+}
+.cov-pill.off { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.cov-pill.off i { color: #ef4444; }
+
+/* Summary panel */
+.summary-panel { background: #fff; border-radius: 18px; box-shadow: 0 2px 16px rgba(0,0,0,.07); position: sticky; top: 80px; overflow: hidden; }
+.panel-header { background: linear-gradient(135deg, #0369a1, #0ea5e9); color: #fff; padding: 18px 22px; }
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: .83rem; }
+.info-row:last-child { border-bottom: none; }
+.info-label { color: #6b7280; }
+.info-val { font-weight: 700; color: #111; }
+.price-total { display: flex; justify-content: space-between; padding: 14px 0; font-weight: 900; font-size: 1.1rem; color: #111; border-top: 2px solid #e5e7eb; margin-top: 4px; }
+
+/* Form card */
+.form-card { background: #fff; border-radius: 18px; box-shadow: 0 2px 16px rgba(0,0,0,.07); overflow: hidden; margin-bottom: 18px; }
+.form-card-header { padding: 16px 22px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 10px; }
+.form-card-header .icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.form-card-body { padding: 22px; }
+.form-label { font-weight: 600; font-size: .84rem; color: #374151; margin-bottom: 6px; }
+.form-control, .form-select {
+  border-radius: 10px; border: 1.5px solid #e0e7ff;
+  padding: 10px 14px; font-size: .9rem;
+  transition: border-color .2s, box-shadow .2s;
+}
+.form-control:focus, .form-select:focus {
+  border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,.12); outline: none;
+}
+
+/* Payment method tabs */
+.pay-tab { border: 2px solid #e0e7ff; border-radius: 12px; padding: 12px 16px; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 10px; flex: 1; }
+.pay-tab:hover { border-color: #7dd3fc; background: #f0f9ff; }
+.pay-tab.active { border-color: #0ea5e9; background: #f0f9ff; }
+.pay-tab-icon { font-size: 1.4rem; }
+.pay-tab-label { font-weight: 700; font-size: .82rem; color: #374151; }
+.pay-tab-sub { font-size: .7rem; color: #9ca3af; }
+
+/* Card input styling */
+.card-input-wrap { position: relative; }
+.card-input-wrap input { padding-left: 44px; }
+.card-input-wrap .card-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; pointer-events: none; }
+
+/* Submit button */
+.btn-confirm {
+  background: linear-gradient(135deg, #0369a1, #0ea5e9);
+  color: #fff; border: none; border-radius: 14px;
+  padding: 16px; font-weight: 800; font-size: 1rem;
+  width: 100%; transition: all .2s;
+  box-shadow: 0 4px 18px rgba(14,165,233,.3);
+}
+.btn-confirm:hover { background: linear-gradient(135deg, #075985, #0369a1); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(14,165,233,.4); }
+
+/* Trust badge row */
+.trust-row { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.trust-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;
+  padding: 6px 12px; font-size: .72rem; font-weight: 600; color: #0369a1;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ══ HERO ══════════════════════════════════════════════════════════════ -->
+<div class="ins-hero">
+  <div class="container">
+    <div class="step-indicator mb-4">
+      <div class="step"><div class="step-dot step-dot-done"><i class="bi bi-check"></i></div><span class="step-label">Choose Plan</span></div>
+      <div class="step-line step-line-done"></div>
+      <div class="step"><div class="step-dot step-dot-active">2</div><span class="step-label fw-bold">Trip Details & Payment</span></div>
+      <div class="step-line"></div>
+      <div class="step"><div class="step-dot step-dot-pending">3</div><span class="step-label">Confirmation</span></div>
+    </div>
+
+    <div class="plan-hero-card">
+      <div class="row align-items-center g-3">
+        <div class="col-auto">
+          <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);display:flex;align-items:center;justify-content:center;font-size:1.8rem">
+            <i class="bi bi-shield-check" style="color:#0ea5e9"></i>
+          </div>
+        </div>
+        <div class="col">
+          <div style="font-weight:800;font-size:1rem;color:#111">{{ plan.name }} Plan</div>
+          {% if plan.tagline %}<div style="font-size:.78rem;color:#6b7280;margin-top:2px">{{ plan.tagline }}</div>{% endif %}
+          <span class="plan-badge plan-{{ plan.name|lower }} mt-2">
+            <i class="bi bi-shield-fill-check"></i>{{ plan.name }} Coverage
+          </span>
+        </div>
+        <div class="col-auto text-end">
+          <div style="font-size:.72rem;color:#6b7280;font-weight:600">Starting from</div>
+          <div style="font-size:1.4rem;font-weight:900;color:#0ea5e9">₹{{ plan.price_per_person_per_day }}<span style="font-size:.72rem;color:#6b7280;font-weight:500">/person/day</span></div>
+        </div>
+      </div>
+      <!-- Coverage pills -->
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
+        {% if plan.coverage %}
+          {% for c in plan.coverage %}
+          <span class="cov-pill">
+            <i class="bi bi-check-circle-fill" style="color:#16a34a;font-size:.7rem"></i>
+            {{ c.get('label', c) if c is mapping else c }}
+            {% if c is mapping and c.get('limit') %}<strong>{{ c.limit }}</strong>{% endif %}
+          </span>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN CONTENT ════════════════════════════════════════════════════════ -->
+<div class="container py-4">
+  <form method="POST" id="insuranceForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" id="paymentMethodField" name="payment_method" value="card">
+    <div class="row g-4">
+
+      <!-- ── LEFT: Form ──────────────────────────────────────────── -->
+      <div class="col-lg-7">
+
+        <!-- Trip Details Card -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="icon" style="background:#f0f9ff;color:#0ea5e9"><i class="bi bi-geo-alt-fill"></i></div>
+            <div>
+              <div style="font-weight:700;font-size:.9rem;color:#111">Trip Details</div>
+              <div style="font-size:.72rem;color:#9ca3af">Where and when are you travelling?</div>
+            </div>
+          </div>
+          <div class="form-card-body">
+            <div class="row g-3 mb-3">
+              <div class="col-6">
+                <label class="form-label">Trip Start Date <span style="color:#ef4444">*</span></label>
+                <input type="date" name="start_date" class="form-control" id="startDate" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Trip End Date <span style="color:#ef4444">*</span></label>
+                <input type="date" name="end_date" class="form-control" id="endDate" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Destination</label>
+              <div style="position:relative">
+                <i class="bi bi-pin-map-fill" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9ca3af"></i>
+                <input type="text" name="destination" class="form-control" placeholder="e.g. Goa, Thailand, Europe" style="padding-left:40px">
+              </div>
+            </div>
+            <div class="row g-3">
+              <div class="col-6">
+                <label class="form-label">Duration (days)</label>
+                <input type="number" name="days" class="form-control" id="daysInput" min="1" max="365" value="{{ trip_days }}" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Travellers</label>
+                <select name="persons" class="form-select" id="personsInput">
+                  {% for i in range(1,9) %}
+                  <option value="{{ i }}" {% if i==persons %}selected{% endif %}>{{ i }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Traveller Info Card -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="icon" style="background:#fef3c7;color:#d97706"><i class="bi bi-person-fill"></i></div>
+            <div>
+              <div style="font-weight:700;font-size:.9rem;color:#111">Traveller Information</div>
+              <div style="font-size:.72rem;color:#9ca3af">Primary policyholder details</div>
+            </div>
+          </div>
+          <div class="form-card-body">
+            <div class="mb-3">
+              <label class="form-label">Full Name <span style="color:#ef4444">*</span></label>
+              <div style="position:relative">
+                <i class="bi bi-person" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9ca3af"></i>
+                <input type="text" name="customer_name" class="form-control" style="padding-left:40px"
+                       value="{{ user.email.split('@')[0].replace('.',' ').title() if user else '' }}" required>
+              </div>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Email <span style="color:#ef4444">*</span></label>
+                <div style="position:relative">
+                  <i class="bi bi-envelope" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9ca3af"></i>
+                  <input type="email" name="customer_email" class="form-control" style="padding-left:40px"
+                         value="{{ user.email if user else '' }}" required>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone</label>
+                <div style="position:relative">
+                  <i class="bi bi-telephone" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9ca3af"></i>
+                  <input type="tel" name="customer_phone" class="form-control" style="padding-left:40px" placeholder="+91 XXXXX XXXXX">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Card -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-credit-card-fill"></i></div>
+            <div>
+              <div style="font-weight:700;font-size:.9rem;color:#111">Payment</div>
+              <div style="font-size:.72rem;color:#9ca3af">Secure payment processing</div>
+            </div>
+          </div>
+          <div class="form-card-body">
+            <!-- Payment method tabs -->
+            <div class="d-flex gap-2 mb-3">
+              <div class="pay-tab active" onclick="switchPay(this,'card')">
+                <div class="pay-tab-icon"><i class="bi bi-credit-card-2-front"></i></div>
+                <div><div class="pay-tab-label">Card</div><div class="pay-tab-sub">Visa, Mastercard</div></div>
+              </div>
+              <div class="pay-tab" onclick="switchPay(this,'upi')">
+                <div class="pay-tab-icon"><i class="bi bi-phone"></i></div>
+                <div><div class="pay-tab-label">UPI</div><div class="pay-tab-sub">GPay, PhonePe</div></div>
+              </div>
+              <div class="pay-tab" onclick="switchPay(this,'nb')">
+                <div class="pay-tab-icon"><i class="bi bi-bank"></i></div>
+                <div><div class="pay-tab-label">Net Banking</div><div class="pay-tab-sub">All banks</div></div>
+              </div>
+            </div>
+
+            <!-- Card fields -->
+            <div id="payCard">
+              <div class="mb-3 card-input-wrap">
+                <span class="card-icon"><i class="bi bi-credit-card"></i></span>
+                <input type="text" class="form-control" placeholder="Card number" maxlength="19"
+                       oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(.{4})/g,'$1 ').trim()">
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-4">
+                  <input type="text" class="form-control" placeholder="MM/YY" maxlength="5"
+                         oninput="this.value=this.value.replace(/[^0-9\/]/g,'');if(this.value.length===2&&!this.value.includes('/'))this.value+='/'">
+                </div>
+                <div class="col-4">
+                  <input type="text" class="form-control" placeholder="CVV" maxlength="4"
+                         oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="letter-spacing:4px">
+                </div>
+                <div class="col-4">
+                  <input type="text" class="form-control" placeholder="Name on card">
+                </div>
+              </div>
+            </div>
+
+            <!-- UPI fields -->
+            <div id="payUpi" style="display:none">
+              <div class="mb-3">
+                <div style="position:relative">
+                  <i class="bi bi-at" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:1.1rem"></i>
+                  <input type="text" class="form-control" placeholder="yourname@upi" style="padding-left:40px">
+                </div>
+              </div>
+            </div>
+
+            <!-- Net Banking fields -->
+            <div id="payNb" style="display:none">
+              <div class="mb-3">
+                <select class="form-select">
+                  <option value="">Select your bank</option>
+                  <option>State Bank of India</option>
+                  <option>HDFC Bank</option>
+                  <option>ICICI Bank</option>
+                  <option>Axis Bank</option>
+                  <option>Kotak Mahindra Bank</option>
+                  <option>Punjab National Bank</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Trust badges -->
+            <div class="trust-row">
+              <span class="trust-chip"><i class="bi bi-lock-fill"></i>256-bit SSL</span>
+              <span class="trust-chip"><i class="bi bi-shield-check"></i>PCI DSS Compliant</span>
+              <span class="trust-chip"><i class="bi bi-arrow-counterclockwise"></i>Full Refund</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit (mobile only — desktop has it in sidebar) -->
+        <div class="d-lg-none">
+          <button type="submit" class="btn-confirm">
+            <i class="bi bi-shield-check me-2"></i>Buy Insurance — ₹<span class="btn-amount">{{ "{:,.0f}".format(premium) }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── RIGHT: Summary Panel ────────────────────────────────── -->
+      <div class="col-lg-5">
+        <div class="summary-panel">
+          <div class="panel-header">
+            <div style="display:flex;align-items:center;gap:10px">
+              <i class="bi bi-shield-fill-check" style="font-size:1.2rem"></i>
+              <div>
+                <div style="font-weight:800;font-size:.9rem">{{ plan.name }} Plan</div>
+                <div style="font-size:.72rem;opacity:.8">Travel Insurance</div>
+              </div>
+            </div>
+          </div>
+          <div style="padding:18px 22px">
+            <!-- Coverage summary -->
+            {% if plan.coverage %}
+            <div style="font-size:.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Coverage Included</div>
+            {% for c in plan.coverage %}
+            <div class="info-row">
+              <span class="info-label">
+                <i class="bi bi-check-circle-fill" style="color:#16a34a;font-size:.7rem;margin-right:4px"></i>
+                {{ c.get('label', c) if c is mapping else c }}
+              </span>
+              {% if c is mapping and c.get('limit') %}
+              <span class="info-val" style="color:#0ea5e9">{{ c.limit }}</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <div style="margin:14px 0 8px;border-top:1px solid #f3f4f6;padding-top:14px;font-size:.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em">Price Breakdown</div>
+
+            <div class="info-row">
+              <span class="info-label">Rate per person/day</span>
+              <span class="info-val">₹{{ plan.price_per_person_per_day }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Duration</span>
+              <span class="info-val" id="summaryDays">{{ trip_days }} days</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Travellers</span>
+              <span class="info-val" id="summaryPersons">{{ persons }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Subtotal</span>
+              <span class="info-val" id="summaryCalc">₹{{ plan.price_per_person_per_day }} × {{ trip_days }} × {{ persons }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">GST (18%)</span>
+              <span class="info-val" id="summaryGst">₹{{ "{:,.0f}".format(premium * 0.18) }}</span>
+            </div>
+
+            <div class="price-total">
+              <span>Total Premium</span>
+              <span style="color:#0ea5e9" id="premiumDisplay">₹{{ "{:,.0f}".format(premium * 1.18) }}</span>
+            </div>
+
+            <!-- Desktop submit -->
+            <div class="d-none d-lg-block">
+              <button type="submit" class="btn-confirm">
+                <i class="bi bi-shield-check me-2"></i>Buy Insurance — ₹<span class="btn-amount">{{ "{:,.0f}".format(premium * 1.18) }}</span>
+              </button>
+            </div>
+
+            <div style="margin-top:12px;text-align:center;font-size:.72rem;color:#9ca3af">
+              <i class="bi bi-lock-fill me-1"></i>Payments are secure and encrypted
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+/* ── Date pickers: min = today ────────────────────────────────────────── */
+const today = new Date().toISOString().split('T')[0];
+document.querySelectorAll('input[type="date"]').forEach(i => i.min = today);
+
+/* ── Auto-calculate duration from date range ─────────────────────────── */
+const startEl = document.getElementById('startDate');
+const endEl   = document.getElementById('endDate');
+const daysEl  = document.getElementById('daysInput');
+
+function syncDuration() {
+  if (startEl.value && endEl.value) {
+    const diff = Math.ceil((new Date(endEl.value) - new Date(startEl.value)) / 86400000);
+    if (diff > 0) { daysEl.value = diff; recalc(); }
+  }
+}
+startEl.addEventListener('change', syncDuration);
+endEl.addEventListener('change', syncDuration);
+
+/* ── Premium recalculation ───────────────────────────────────────────── */
+const RATE = {{ plan.price_per_person_per_day }};
+
+function recalc() {
+  const days    = parseInt(daysEl.value) || 1;
+  const persons = parseInt(document.getElementById('personsInput').value) || 1;
+  const sub     = Math.round(RATE * days * persons);
+  const gst     = Math.round(sub * 0.18);
+  const total   = sub + gst;
+  const fmt     = n => n.toLocaleString('en-IN');
+
+  document.getElementById('premiumDisplay').textContent = '₹' + fmt(total);
+  document.getElementById('summaryDays').textContent    = days + ' days';
+  document.getElementById('summaryPersons').textContent = persons;
+  document.getElementById('summaryCalc').textContent    = '₹' + RATE + ' × ' + days + ' × ' + persons;
+  document.getElementById('summaryGst').textContent     = '₹' + fmt(gst);
+  document.querySelectorAll('.btn-amount').forEach(el => el.textContent = fmt(total));
+}
+
+daysEl.addEventListener('input', recalc);
+document.getElementById('personsInput').addEventListener('change', recalc);
+
+/* ── Payment method tabs ─────────────────────────────────────────────── */
+function switchPay(el, method) {
+  document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('payCard').style.display = method === 'card' ? '' : 'none';
+  document.getElementById('payUpi').style.display  = method === 'upi'  ? '' : 'none';
+  document.getElementById('payNb').style.display   = method === 'nb'   ? '' : 'none';
+  var pmf = document.getElementById('paymentMethodField');
+  if (pmf) pmf.value = method === 'nb' ? 'netbanking' : method;
+}
+</script>
+{% endblock %}

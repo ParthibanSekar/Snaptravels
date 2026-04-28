@@ -1,0 +1,177 @@
+{% extends "layouts/base.html" %}
+{% block title %}Manage Activities — SnapTravels Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #0f1117 !important; color: #e2e8f0; }
+@keyframes accentSlide { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+.admin-accent-bar { height:3px; background:linear-gradient(90deg,#e63950,#f97316,#facc15,#e63950); background-size:200% 100%; animation:accentSlide 3s linear infinite; }
+.admin-topbar { background:#1a1f2e; border-bottom:1px solid #1e2433; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; }
+.admin-breadcrumb { display:flex; align-items:center; gap:8px; font-size:.82rem; color:#64748b; }
+.admin-breadcrumb a { color:#64748b; text-decoration:none; }
+.admin-breadcrumb a:hover { color:#e63950; }
+.admin-breadcrumb .sep { color:#334155; }
+.admin-breadcrumb .current { color:#e2e8f0; font-weight:600; }
+.admin-nav-links { display:flex; gap:6px; }
+.admin-nav-links a { padding:6px 14px; border-radius:8px; font-size:.78rem; font-weight:600; color:#94a3b8; text-decoration:none; transition:all .2s; border:1px solid transparent; }
+.admin-nav-links a:hover { background:#1e2433; color:#e2e8f0; }
+.admin-nav-links a.active { background:rgba(230,57,80,.12); color:#e63950; border-color:rgba(230,57,80,.25); }
+
+.data-panel { background:#1a1f2e; border:1px solid #1e2433; border-radius:16px; overflow:hidden; }
+.data-panel-header { padding:20px 24px; border-bottom:1px solid #1e2433; display:flex; align-items:center; justify-content:space-between; }
+.data-panel-title { font-size:1rem; font-weight:700; color:#e2e8f0; }
+.data-panel-sub { font-size:.75rem; color:#64748b; margin-top:2px; }
+
+.dark-table { width:100%; border-collapse:collapse; }
+.dark-table thead tr { background:#141824; }
+.dark-table thead th { padding:12px 18px; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#64748b; border-bottom:1px solid #1e2433; white-space:nowrap; }
+.dark-table tbody tr { border-bottom:1px solid #1e2433; transition:background .15s; }
+.dark-table tbody tr:last-child { border-bottom:none; }
+.dark-table tbody tr:hover { background:rgba(255,255,255,.025); }
+.dark-table tbody td { padding:14px 18px; font-size:.84rem; color:#cbd5e1; vertical-align:middle; }
+
+.category-badge {
+  display:inline-flex; padding:3px 10px; border-radius:20px; font-size:.7rem; font-weight:700;
+  background:rgba(251,191,36,.12); color:#fbbf24; border:1px solid rgba(251,191,36,.2);
+}
+.status-badge {
+  display:inline-flex; align-items:center; gap:4px; padding:3px 10px;
+  border-radius:20px; font-size:.7rem; font-weight:700;
+}
+.status-active   { background:rgba(34,197,94,.12);  color:#4ade80; border:1px solid rgba(34,197,94,.2); }
+.status-inactive { background:rgba(100,116,139,.1); color:#64748b; border:1px solid rgba(100,116,139,.2); }
+
+.star-rating { display:flex; align-items:center; gap:3px; }
+.star-fill { color:#fbbf24; font-size:.74rem; }
+.star-empty { color:#334155; font-size:.74rem; }
+.star-val { font-size:.78rem; color:#fbbf24; font-weight:700; margin-left:4px; }
+
+.btn-action { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; border:1px solid; font-size:.85rem; text-decoration:none; transition:all .15s; cursor:pointer; background:transparent; }
+.btn-action.edit   { color:#38bdf8; border-color:rgba(56,189,248,.3); }
+.btn-action.edit:hover  { background:rgba(56,189,248,.12); border-color:#38bdf8; }
+.btn-action.del    { color:#fb923c; border-color:rgba(251,146,60,.3); }
+.btn-action.del:hover   { background:rgba(251,146,60,.12); border-color:#fb923c; }
+.btn-action-add { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:10px; font-size:.82rem; font-weight:700; background:linear-gradient(135deg,#d97706,#f59e0b); color:#000; border:none; text-decoration:none; transition:all .2s; box-shadow:0 4px 14px rgba(245,158,11,.3); }
+.btn-action-add:hover { color:#000; transform:translateY(-1px); box-shadow:0 6px 20px rgba(245,158,11,.4); }
+.btn-ghost { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:10px; font-size:.8rem; font-weight:600; background:transparent; border:1px solid #1e2433; color:#94a3b8; text-decoration:none; transition:all .2s; }
+.btn-ghost:hover { background:#1e2433; color:#e2e8f0; }
+.empty-state { text-align:center; padding:64px 24px; color:#475569; }
+.empty-state-icon { font-size:4rem; margin-bottom:16px; opacity:.4; }
+.empty-state h4 { color:#64748b; font-size:1rem; font-weight:600; margin-bottom:6px; }
+.empty-state p  { font-size:.82rem; margin-bottom:20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-accent-bar"></div>
+
+<div class="admin-topbar">
+  <div class="admin-breadcrumb">
+    <i class="bi bi-speedometer2" style="color:#e63950"></i>
+    <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+    <span class="sep">›</span>
+    <span class="current">🎯 Manage Activities</span>
+  </div>
+  <div class="admin-nav-links">
+    <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap me-1"></i>Dashboard</a>
+    <a href="{{ url_for('admin.manage_flights') }}"><i class="bi bi-airplane me-1"></i>Flights</a>
+    <a href="{{ url_for('admin.manage_bookings') }}"><i class="bi bi-receipt me-1"></i>Bookings</a>
+    <a href="{{ url_for('admin_ext.hotels') }}"><i class="bi bi-building me-1"></i>Hotels</a>
+    <a href="{{ url_for('admin_ext.activities') }}" class="active"><i class="bi bi-stars me-1"></i>Activities</a>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4" style="max-width:1400px;margin:0 auto">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#64748b;font-weight:700">Experiences & Tours</div>
+      <h2 style="font-size:1.5rem;font-weight:900;color:#e2e8f0;margin:4px 0 0">Manage Activities</h2>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('admin.dashboard') }}" class="btn-ghost"><i class="bi bi-arrow-left"></i> Dashboard</a>
+      <a href="{{ url_for('admin_ext.new_activity') }}" class="btn-action-add"><i class="bi bi-plus-lg"></i> Add Activity</a>
+    </div>
+  </div>
+
+  {% if activities.items %}
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div>
+        <div class="data-panel-title">🎯 Activity Catalogue</div>
+        <div class="data-panel-sub">{{ activities.total }} activities total</div>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="dark-table">
+        <thead>
+          <tr>
+            <th>Activity</th>
+            <th>City</th>
+            <th>Category</th>
+            <th>Price / Person</th>
+            <th>Rating</th>
+            <th>Status</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in activities.items %}
+          <tr>
+            <td>
+              <div style="font-weight:700;color:#e2e8f0">{{ a.name }}</div>
+              <div style="font-size:.72rem;color:#64748b;margin-top:2px">
+                <i class="bi bi-clock me-1"></i>{{ a.duration_hours }}h
+              </div>
+            </td>
+            <td><span style="color:#94a3b8"><i class="bi bi-geo-alt me-1" style="color:#e63950"></i>{{ a.city }}</span></td>
+            <td><span class="category-badge">{{ a.category }}</span></td>
+            <td>
+              <div style="font-weight:700;color:#4ade80;font-size:.9rem">₹{{ "{:,.0f}".format(a.price_per_person) }}</div>
+              <div style="font-size:.7rem;color:#475569">per person</div>
+            </td>
+            <td>
+              <div class="star-rating">
+                {% for i in range(5) %}
+                  <span class="{{ 'star-fill' if i < a.rating|int else 'star-empty' }}">★</span>
+                {% endfor %}
+                <span class="star-val">{{ a.rating }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="status-badge {{ 'status-active' if a.active else 'status-inactive' }}">
+                {{ '● Active' if a.active else '○ Inactive' }}
+              </span>
+            </td>
+            <td>
+              <div class="d-flex gap-2 justify-content-end">
+                <a href="{{ url_for('admin_ext.edit_activity', act_id=a.id) }}" class="btn-action edit" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <form method="POST" action="{{ url_for('admin_ext.delete_activity', act_id=a.id) }}" class="d-inline"
+                      onsubmit="return confirm('Deactivate {{ a.name }}?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn-action del" title="Deactivate"><i class="bi bi-slash-circle"></i></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="data-panel">
+    <div class="empty-state">
+      <div class="empty-state-icon">🎯</div>
+      <h4>No Activities Yet</h4>
+      <p>Start adding tours, experiences and activities for travellers.</p>
+      <a href="{{ url_for('admin_ext.new_activity') }}" class="btn-action-add" style="display:inline-flex">
+        <i class="bi bi-plus-lg"></i> Add First Activity
+      </a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

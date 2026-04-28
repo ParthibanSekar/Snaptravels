@@ -1,0 +1,44 @@
+{% extends "layouts/base.html" %}
+{% block title %}Page Not Found — SnapTravels{% endblock %}
+{% block extra_head %}
+<style>
+.error-page { background: #f8fafc; min-height: 80vh; display: flex; align-items: center; }
+.error-code { font-size: 7rem; font-weight: 900; color: #e2e8f0; line-height: 1; }
+.error-icon { font-size: 3.5rem; }
+.error-card { border-radius: 20px; border: none; box-shadow: 0 4px 32px rgba(0,0,0,.08); padding: 3rem 2.5rem; text-align: center; }
+.search-suggest { background: #f1f5f9; border-radius: 12px; padding: 1.2rem 1.5rem; margin-top: 1.5rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="error-page">
+<div class="container py-5">
+<div class="row justify-content-center">
+<div class="col-lg-6">
+  <div class="error-card bg-white">
+    <div class="error-code">404</div>
+    <div class="error-icon mb-3">🗺️</div>
+    <h2 class="fw-bold mb-2">Page Not Found</h2>
+    <p class="text-muted mb-0">Looks like this destination doesn't exist on our map. The page may have been moved, deleted, or the URL might be wrong.</p>
+
+    <div class="search-suggest">
+      <p class="small text-muted mb-2 fw-semibold">WHERE WOULD YOU LIKE TO GO?</p>
+      <div class="d-flex flex-wrap gap-2 justify-content-center">
+        <a href="{{ url_for('public.flights') }}" class="btn btn-sm btn-outline-primary rounded-pill">✈ Flights</a>
+        <a href="{{ url_for('public.hotels') }}" class="btn btn-sm btn-outline-success rounded-pill">🏨 Hotels</a>
+        <a href="{{ url_for('trains.search') }}" class="btn btn-sm btn-outline-info rounded-pill">🚂 Trains</a>
+        <a href="{{ url_for('buses.search') }}" class="btn btn-sm btn-outline-secondary rounded-pill">🚌 Buses</a>
+        <a href="{{ url_for('cabs.search') }}" class="btn btn-sm btn-outline-warning rounded-pill">🚕 Cabs</a>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <a href="{{ url_for('public.home') }}" class="btn btn-primary rounded-pill px-4">
+        <i class="bi bi-house me-1"></i> Back to Home
+      </a>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}

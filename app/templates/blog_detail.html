@@ -1,0 +1,506 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ post.title }} — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+  :root {
+    --primary-dark: #0f172a;
+    --secondary-dark: #1e293b;
+    --accent-teal: #10b981;
+    --light-bg: #f0fdf4;
+    --accent-blue: #3b82f6;
+    --accent-amber: #f59e0b;
+  }
+
+  .hero-detail-section {
+    background: linear-gradient(135deg, #064e3b 0%, #0f172a 100%);
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    color: #fff;
+  }
+
+  .hero-detail-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: 1;
+  }
+
+  .hero-detail-content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-detail-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+  }
+
+  .hero-detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .hero-detail-meta i {
+    color: #10b981;
+    font-size: 1.1rem;
+  }
+
+  .hero-detail-section h1 {
+    color: #fff;
+    font-size: 2.4rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+
+  .content-wrapper {
+    background: #fff;
+    padding: 40px 0;
+  }
+
+  .content-row {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 40px;
+  }
+
+  /* Main Content Area */
+  .main-content {
+    max-width: 100%;
+  }
+
+  .featured-image {
+    width: 100%;
+    border-radius: 16px;
+    max-height: 420px;
+    object-fit: cover;
+    margin-bottom: 32px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  .excerpt-box {
+    border-left: 4px solid #10b981;
+    background: #f0fdf4;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 32px;
+    font-size: 1.05rem;
+    font-style: italic;
+    color: #2d5c47;
+    line-height: 1.6;
+  }
+
+  .blog-content {
+    color: #334155;
+    font-size: 1rem;
+    line-height: 1.8;
+    margin-bottom: 32px;
+  }
+
+  .blog-content p {
+    margin-bottom: 20px;
+  }
+
+  .blog-content h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 32px;
+    margin-bottom: 16px;
+  }
+
+  .blog-content h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-top: 24px;
+    margin-bottom: 14px;
+  }
+
+  .blog-content ul,
+  .blog-content ol {
+    margin-bottom: 20px;
+    padding-left: 24px;
+  }
+
+  .blog-content li {
+    margin-bottom: 8px;
+  }
+
+  .blog-content strong {
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  .blog-content a {
+    color: #10b981;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .blog-content a:hover {
+    text-decoration: underline;
+  }
+
+  .tags-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+    margin-bottom: 24px;
+  }
+
+  .tag-badge {
+    display: inline-block;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid #cbd5e1;
+    transition: all 0.3s ease;
+  }
+
+  .tag-badge:hover {
+    background: #10b981;
+    color: #fff;
+    border-color: #10b981;
+  }
+
+  .admin-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 8px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .admin-edit-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: #94a3b8;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    position: sticky;
+    top: 80px;
+  }
+
+  .sidebar-card {
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    margin-bottom: 24px;
+    border: 1px solid #f1f5f9;
+  }
+
+  .sidebar-card-header {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #fff;
+    padding: 16px 20px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sidebar-card-body {
+    padding: 16px 20px;
+  }
+
+  .related-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .related-list li {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .related-list li:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .related-link {
+    color: #0f172a;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: block;
+    transition: all 0.3s ease;
+    line-height: 1.4;
+  }
+
+  .related-link:hover {
+    color: #10b981;
+  }
+
+  .related-meta {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    margin-top: 4px;
+  }
+
+  .booking-cta-header {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #fff;
+    padding: 18px 20px;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .booking-cta-body {
+    padding: 20px;
+  }
+
+  .booking-cta-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .cta-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cta-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .cta-flights {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+  }
+
+  .cta-flights:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+  }
+
+  .cta-hotels {
+    background: linear-gradient(135deg, #10b981, #059669);
+  }
+
+  .cta-hotels:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+  }
+
+  .cta-activities {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+  }
+
+  .cta-activities:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+  }
+
+  @media (max-width: 992px) {
+    .content-row {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+      position: static;
+      top: auto;
+    }
+
+    .hero-detail-section h1 {
+      font-size: 2rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-detail-section h1 {
+      font-size: 1.6rem;
+    }
+
+    .hero-detail-meta {
+      flex-wrap: wrap;
+    }
+
+    .content-wrapper {
+      padding: 24px 0;
+    }
+
+    .content-row {
+      gap: 24px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Dark Hero Section -->
+<section class="hero-detail-section">
+  <div class="container">
+    <div class="hero-detail-content">
+      <span class="hero-detail-badge">{{ post.category }}</span>
+
+      <div class="hero-detail-meta">
+        {% if post.destination %}
+        <span><i class="bi bi-geo-alt"></i> {{ post.destination }}</span>
+        {% endif %}
+        <span><i class="bi bi-person"></i> {{ post.author }}</span>
+        {% if post.published_at %}
+        <span><i class="bi bi-calendar"></i> {{ post.published_at.strftime('%d %b %Y') }}</span>
+        {% endif %}
+        <span><i class="bi bi-eye"></i> {{ post.views }} views</span>
+      </div>
+
+      <h1>{{ post.title }}</h1>
+    </div>
+  </div>
+</section>
+
+<!-- Main Content -->
+<section class="content-wrapper">
+  <div class="container">
+    <div class="content-row">
+      <!-- Left Column: Main Content -->
+      <div class="main-content">
+        {% if post.featured_image %}
+        <img src="{{ post.featured_image }}" alt="{{ post.title }}" class="featured-image">
+        {% endif %}
+
+        {% if post.excerpt %}
+        <div class="excerpt-box">
+          {{ post.excerpt }}
+        </div>
+        {% endif %}
+
+        <div class="blog-content">
+          {{ post.content | safe }}
+        </div>
+
+        {% if post.tags %}
+        <div class="tags-section">
+          {% for tag in post.tags %}
+          <span class="tag-badge">{{ tag }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if user and user.is_admin() %}
+        <div style="margin-top: 24px;">
+          <a href="{{ url_for('blog.admin_edit', post_id=post.id) }}" class="admin-edit-btn">
+            <i class="bi bi-pencil"></i> Edit Post
+          </a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Right Column: Sticky Sidebar -->
+      <aside class="sidebar">
+        {% if related %}
+        <!-- Related Guides Card -->
+        <div class="sidebar-card">
+          <div class="sidebar-card-header">
+            <i class="bi bi-compass"></i>
+            Related Guides
+          </div>
+          <div class="sidebar-card-body">
+            <ul class="related-list">
+              {% for r in related %}
+              <li>
+                <a href="{{ url_for('blog.detail', slug=r.slug) }}" class="related-link">
+                  {{ r.title }}
+                </a>
+                <div class="related-meta">
+                  {{ r.category }} • {{ r.destination }}
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Booking CTA Card -->
+        <div class="sidebar-card">
+          <div class="sidebar-card-header">
+            <i class="bi bi-map"></i>
+            Ready to Explore?
+          </div>
+          <div class="booking-cta-body">
+            <p class="booking-cta-title" style="font-size: 0.95rem; color: #475569;">
+              {{ post.destination or 'This destination' }}
+            </p>
+            <div class="cta-buttons">
+              <a href="{{ url_for('public.flights') }}" class="cta-btn cta-flights">
+                <i class="bi bi-airplane"></i> Flights
+              </a>
+              <a href="{{ url_for('public.hotels') }}" class="cta-btn cta-hotels">
+                <i class="bi bi-building"></i> Hotels
+              </a>
+              <a href="{{ url_for('activities.listing', city=post.destination or '') }}" class="cta-btn cta-activities">
+                <i class="bi bi-stars"></i> Activities
+              </a>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+{% block extra_scripts %}
+{% endblock %}
+{% endblock %}

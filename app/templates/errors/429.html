@@ -1,0 +1,58 @@
+{% extends "layouts/base.html" %}
+{% block title %}Too Many Requests — SnapTravels{% endblock %}
+{% block extra_head %}
+<style>
+.error-page { background: #f5f3ff; min-height: 80vh; display: flex; align-items: center; }
+.error-code { font-size: 7rem; font-weight: 900; color: #ddd6fe; line-height: 1; }
+.error-icon { font-size: 3.5rem; }
+.error-card { border-radius: 20px; border: none; border-top: 4px solid #7c3aed; box-shadow: 0 4px 32px rgba(124,58,237,.1); padding: 3rem 2.5rem; text-align: center; }
+.countdown { font-size: 2.5rem; font-weight: 800; color: #7c3aed; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="error-page">
+<div class="container py-5">
+<div class="row justify-content-center">
+<div class="col-lg-6">
+  <div class="error-card bg-white">
+    <div class="error-code" style="color:#ddd6fe;">429</div>
+    <div class="error-icon mb-3">⏱️</div>
+    <h2 class="fw-bold mb-2">Slow Down!</h2>
+    <p class="text-muted">You've made too many requests in a short time. Please wait a moment before trying again.</p>
+
+    {% if retry_after %}
+    <div class="my-3">
+      <div class="text-muted small mb-1">Try again in</div>
+      <div class="countdown" id="countdown">{{ retry_after }}s</div>
+    </div>
+    {% endif %}
+
+    <div class="alert alert-info border-0 rounded-3 mt-3" style="font-size:.85rem;">
+      <i class="bi bi-info-circle me-1"></i>
+      This limit exists to protect the platform. Normal usage is never affected.
+    </div>
+
+    <div class="mt-4">
+      <a href="{{ url_for('public.home') }}" class="btn btn-outline-secondary rounded-pill px-4">
+        <i class="bi bi-house me-1"></i> Back to Home
+      </a>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+{% if retry_after %}
+<script>
+let secs = {{ retry_after }};
+const el = document.getElementById('countdown');
+const t = setInterval(() => {
+  secs--;
+  if (secs <= 0) { clearInterval(t); el.textContent = 'Now!'; }
+  else { el.textContent = secs + 's'; }
+}, 1000);
+</script>
+{% endif %}
+{% endblock %}

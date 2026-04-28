@@ -1,0 +1,683 @@
+{% extends "layouts/base.html" %}
+{% block title %}Search Flights — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Page shell ─────────────────────────────────── */
+.flights-page { background: #f0f4ff; min-height: 100vh; }
+
+/* ── Hero search bar ───────────────────────────── */
+.flight-hero {
+  background: linear-gradient(135deg, rgba(15,45,135,.78), rgba(29,78,216,.68)), url('/static/images/hero/flights-search.jpg') center/cover no-repeat;
+  padding: 32px 0 40px;
+  position: relative;
+  overflow: hidden;
+}
+.flight-hero::before {
+  content:'';
+  position:absolute; top:-40%; left:-10%; width:70%; height:200%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,.06) 0%, transparent 70%);
+  pointer-events:none;
+}
+.search-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px 28px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.18);
+}
+.search-card .form-control,
+.search-card .form-select {
+  border-radius: 10px;
+  border: 1.5px solid #e0e7ff;
+  padding: 10px 14px;
+  font-size: .92rem;
+  transition: border-color .2s, box-shadow .2s;
+}
+.search-card .form-control:focus,
+.search-card .form-select:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29,78,216,.12);
+}
+.trip-toggle .btn-check + label {
+  font-size: .82rem; font-weight: 600; padding: 5px 16px; border-radius: 20px;
+  border: 1.5px solid #c7d2fe; color: #4b5563;
+}
+.trip-toggle .btn-check:checked + label {
+  background: #1d4ed8; color: #fff; border-color: #1d4ed8;
+}
+.swap-btn {
+  width: 38px; height: 38px; border-radius: 50%; background: #eef2ff;
+  border: 1.5px solid #c7d2fe; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background .2s; color: #4338ca;
+}
+.swap-btn:hover { background: #e0e7ff; }
+
+/* ── Filter sidebar ─────────────────────────────── */
+.filter-panel {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.06);
+  position: sticky; top: 80px;
+}
+.filter-panel h6 { font-weight: 700; font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
+.filter-section { border-bottom: 1px solid #f3f4f6; padding-bottom: 16px; margin-bottom: 16px; }
+.filter-section:last-child { border-bottom: none; margin-bottom: 0; }
+.airline-filter-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: .88rem; }
+.airline-filter-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: #1d4ed8; }
+.time-chip { border: 1.5px solid #e0e7ff; border-radius: 10px; padding: 6px 10px; font-size: .78rem; cursor: pointer; text-align: center; transition: all .15s; }
+.time-chip:hover, .time-chip.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+.price-range input[type="range"] { accent-color: #1d4ed8; width: 100%; }
+
+/* ── Result cards ───────────────────────────────── */
+.flight-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1.5px solid #e0e7ff;
+  box-shadow: 0 2px 12px rgba(29,78,216,.06);
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+  overflow: hidden;
+  margin-bottom: 14px;
+  position: relative;
+}
+.flight-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 32px rgba(29,78,216,.14);
+  border-color: #a5b4fc;
+}
+.flight-card-accent { height: 4px; background: linear-gradient(90deg, #1d4ed8, #60a5fa); }
+.fc-badge {
+  position: absolute; top: 0; left: 20px;
+  background: #16a34a; color: #fff;
+  font-size: .68rem; font-weight: 700; letter-spacing: .04em;
+  padding: 3px 12px; border-radius: 0 0 8px 8px;
+}
+.fc-badge-red { background: #dc2626; }
+.airline-logo {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: 800; color: #1d4ed8;
+}
+.airline-name { font-weight: 700; font-size: .92rem; color: #111; }
+.flight-no { font-size: .72rem; color: #9ca3af; }
+.cabin-badge {
+  border-radius: 6px; padding: 2px 9px; font-size: .7rem; font-weight: 600;
+  background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe;
+}
+
+/* Route visual */
+.route-wrap { display: flex; align-items: center; gap: 12px; }
+.route-time { font-size: 1.35rem; font-weight: 900; line-height: 1; color: #0f172a; }
+.route-city { font-size: .7rem; color: #9ca3af; margin-top: 4px; font-weight: 500; letter-spacing: .02em; }
+.route-mid { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.route-dur { font-size: .72rem; color: #6b7280; font-weight: 700; letter-spacing: .03em; }
+.route-line-wrap { width: 100%; display: flex; align-items: center; }
+.route-dot { width: 8px; height: 8px; border-radius: 50%; background: #1d4ed8; flex-shrink: 0; }
+.route-bar { flex: 1; height: 2px; background: linear-gradient(90deg, #1d4ed8, #93c5fd, #1d4ed8); }
+.route-plane { font-size: .9rem; color: #2563eb; margin: 0 6px; flex-shrink: 0; }
+.route-tag {
+  font-size: .68rem; font-weight: 700; letter-spacing: .03em;
+  padding: 2px 9px; border-radius: 20px; margin-top: 2px;
+}
+.tag-nonstop { background: #dcfce7; color: #16a34a; }
+.tag-oneStop { background: #fef9c3; color: #a16207; }
+
+/* Features row */
+.feat-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.feat-pill {
+  display: flex; align-items: center; gap: 4px;
+  background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 6px; padding: 3px 9px;
+  font-size: .72rem; color: #4b5563; font-weight: 500;
+}
+
+/* Price & CTA */
+.price-section { text-align: right; }
+.price-main { font-size: 1.5rem; font-weight: 900; color: #1d4ed8; line-height: 1; }
+.price-sub { font-size: .72rem; color: #9ca3af; margin-top: 3px; }
+.price-total { font-size: .78rem; color: #6b7280; margin-top: 2px; }
+.btn-select {
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 10px 24px; font-weight: 700; font-size: .88rem;
+  transition: all .2s; white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(29,78,216,.25);
+}
+.btn-select:hover {
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  color: #fff; transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(29,78,216,.35);
+}
+.seats-indicator { display: flex; align-items: center; gap: 5px; justify-content: flex-end; margin-top: 6px; }
+.seats-dot { width: 7px; height: 7px; border-radius: 50%; }
+.seats-dot-green { background: #16a34a; }
+.seats-dot-amber { background: #f59e0b; }
+.seats-dot-red { background: #dc2626; }
+
+/* Sort bar */
+.sort-bar {
+  background: #fff; border-radius: 12px; padding: 12px 18px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.06);
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+}
+.sort-btn { border: 1.5px solid #e0e7ff; background: #fff; border-radius: 8px; padding: 5px 14px; font-size: .82rem; cursor: pointer; transition: all .15s; color: #374151; font-weight: 500; }
+.sort-btn:hover, .sort-btn.active { background: #eef2ff; border-color: #a5b4fc; color: #1d4ed8; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 60px 0; color: #9ca3af; }
+.empty-state .icon { font-size: 4rem; margin-bottom: 16px; opacity: .5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ══ HERO / SEARCH ══════════════════════════════════════════════════════ -->
+<div class="flight-hero">
+  <div class="container">
+    <div class="d-flex align-items-center gap-3 mb-4 text-white">
+      <div style="width:52px;height:52px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;">✈️</div>
+      <div>
+        <h1 class="fw-black mb-0" style="font-size:1.9rem;letter-spacing:-.01em">Flight Search</h1>
+        <p class="mb-0 opacity-75" style="font-size:.88rem">Find the best fares across all airlines — India &amp; international.</p>
+      </div>
+    </div>
+
+    <!-- Search card -->
+    <div class="search-card">
+      <form method="POST" id="flightSearchForm">
+        {{ form.hidden_tag() }}
+
+        <!-- Trip type toggle -->
+        <div class="trip-toggle btn-group mb-3" role="group">
+          <input type="radio" class="btn-check" name="trip_type" id="one_way" value="one_way"
+                 {% if not form.trip_type.data or form.trip_type.data == 'one_way' %}checked{% endif %}>
+          <label class="btn" for="one_way"><i class="bi bi-arrow-right me-1"></i>One Way</label>
+          <input type="radio" class="btn-check" name="trip_type" id="round_trip" value="round_trip"
+                 {% if form.trip_type.data == 'round_trip' %}checked{% endif %}>
+          <label class="btn" for="round_trip"><i class="bi bi-arrow-left-right me-1"></i>Round Trip</label>
+        </div>
+
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-geo-alt text-primary me-1"></i>From
+            </label>
+            {{ form.origin(class_="form-control st-ac-city", placeholder="Chennai, Delhi, Mumbai…", autocomplete="off") }}
+          </div>
+
+          <div class="col-auto d-flex align-items-end pb-1">
+            <button type="button" id="swapBtn" class="swap-btn" title="Swap cities">
+              <i class="bi bi-arrow-left-right" style="font-size:.9rem"></i>
+            </button>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-geo-alt-fill text-danger me-1"></i>To
+            </label>
+            {{ form.destination(class_="form-control st-ac-city", placeholder="Bangalore, Hyderabad…", autocomplete="off") }}
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-calendar3 text-primary me-1"></i>Departure
+            </label>
+            {{ form.depart_date(class="form-control") }}
+          </div>
+
+          <div class="col-md-2" id="returnDateWrap"
+               style="display:{% if form.trip_type.data == 'round_trip' %}block{% else %}none{% endif %}">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-calendar-check text-success me-1"></i>Return
+            </label>
+            {{ form.return_date(class="form-control") }}
+          </div>
+
+          <div class="col-md-1">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">Pax</label>
+            {{ form.passengers(class="form-control") }}
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">Class</label>
+            {{ form.cabin_class(class="form-select") }}
+          </div>
+
+          <div class="col-md-1 d-flex align-items-end">
+            <button type="submit" class="btn w-100 btn-select" style="padding:10px 0">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULTS ═══════════════════════════════════════════════════════════ -->
+<div class="flights-page">
+<div class="container py-4">
+  {% if flights %}
+  <div class="row g-3">
+
+    <!-- ── Left: Filters ── -->
+    <div class="col-lg-3 d-none d-lg-block">
+      <div class="filter-panel">
+
+        <div class="filter-section">
+          <h6 class="mb-3">Sort By</h6>
+          <div class="d-flex flex-column gap-2">
+            <button class="sort-btn active" data-sort="price" onclick="sortFlights('price',this)">
+              <i class="bi bi-currency-rupee me-1"></i>Cheapest First
+            </button>
+            <button class="sort-btn" data-sort="duration" onclick="sortFlights('duration',this)">
+              <i class="bi bi-clock me-1"></i>Shortest Duration
+            </button>
+            <button class="sort-btn" data-sort="depart" onclick="sortFlights('depart',this)">
+              <i class="bi bi-sunrise me-1"></i>Earliest Departure
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <h6 class="mb-3">Departure Time</h6>
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="time-chip" onclick="toggleTimeChip(this,'00:00','06:00')">
+                <div style="font-size:.9rem">🌙</div>
+                <div>Night</div>
+                <div style="font-size:.65rem;color:#9ca3af">12am–6am</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="time-chip" onclick="toggleTimeChip(this,'06:00','12:00')">
+                <div style="font-size:.9rem">🌅</div>
+                <div>Morning</div>
+                <div style="font-size:.65rem;color:#9ca3af">6am–12pm</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="time-chip" onclick="toggleTimeChip(this,'12:00','18:00')">
+                <div style="font-size:.9rem">☀️</div>
+                <div>Afternoon</div>
+                <div style="font-size:.65rem;color:#9ca3af">12pm–6pm</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="time-chip" onclick="toggleTimeChip(this,'18:00','24:00')">
+                <div style="font-size:.9rem">🌆</div>
+                <div>Evening</div>
+                <div style="font-size:.65rem;color:#9ca3af">6pm–12am</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <h6 class="mb-3">Price Range</h6>
+          <div class="price-range">
+            <div class="d-flex justify-content-between mb-1" style="font-size:.8rem;color:#374151">
+              <span>₹0</span>
+              <span id="priceRangeVal" class="fw-bold text-primary">Any</span>
+            </div>
+            <input type="range" min="0" max="50000" step="500" value="50000"
+                   id="priceRange" oninput="filterByPrice(this.value)">
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <h6 class="mb-3">Stops</h6>
+          <div class="d-flex flex-column gap-2">
+            <label class="airline-filter-item">
+              <input type="checkbox" checked onchange="filterStops()" data-stop="nonstop">
+              Non-stop
+            </label>
+            <label class="airline-filter-item">
+              <input type="checkbox" checked onchange="filterStops()" data-stop="1stop">
+              1 Stop
+            </label>
+          </div>
+        </div>
+
+        {% if flights %}
+        <div class="filter-section">
+          <h6 class="mb-3">Airlines</h6>
+          <div id="airlineFilters">
+            {% set airlines = [] %}
+            {% for f in flights %}{% if f.airline not in airlines %}{% if airlines.append(f.airline) %}{% endif %}{% endif %}{% endfor %}
+            {% for airline in airlines[:8] %}
+            <label class="airline-filter-item">
+              <input type="checkbox" checked onchange="filterAirlines()" data-airline="{{ airline }}">
+              {{ airline }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <button onclick="resetFilters()" class="btn btn-outline-secondary btn-sm w-100" style="border-radius:8px">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Right: Results ── -->
+    <div class="col-lg-9">
+
+      <!-- Active filter chips -->
+      {% if search_performed %}
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        {% if form.origin.data %}
+        <span class="badge" style="background:#eef2ff;color:#1d4ed8;border:1px solid #c7d2fe;font-size:.8rem;padding:5px 12px;border-radius:20px">
+          <i class="bi bi-geo-alt me-1"></i>{{ form.origin.data }}
+        </span>
+        {% endif %}
+        {% if form.destination.data %}
+        <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:.8rem;padding:5px 12px;border-radius:20px">
+          <i class="bi bi-geo-alt-fill me-1"></i>{{ form.destination.data }}
+        </span>
+        {% endif %}
+        {% if form.depart_date.data %}
+        <span class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:.8rem;padding:5px 12px;border-radius:20px">
+          <i class="bi bi-calendar3 me-1"></i>{{ form.depart_date.data.strftime('%d %b %Y') }}
+        </span>
+        {% endif %}
+        {% if form.cabin_class.data and form.cabin_class.data != 'any' %}
+        <span class="badge" style="background:#f5f3ff;color:#5b21b6;border:1px solid #ddd6fe;font-size:.8rem;padding:5px 12px;border-radius:20px">
+          <i class="bi bi-person-check me-1"></i>{{ form.cabin_class.data }}
+        </span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Sort bar + count (mobile-friendly) -->
+      <div class="sort-bar">
+        <div class="fw-bold" style="color:#111;font-size:.95rem">
+          {% if search_performed %}
+          <span id="resultsCount">{{ flights|length }}</span> flight{{ 's' if flights|length != 1 }} found
+          {% else %}
+          <i class="bi bi-star-fill text-warning me-1"></i>Featured Flights
+          {% endif %}
+        </div>
+        <div class="d-flex gap-2 align-items-center d-lg-none">
+          <span class="text-muted small">Sort:</span>
+          <select class="form-select form-select-sm w-auto" id="mobileSortSelect" onchange="sortFlights(this.value)">
+            <option value="price">Price</option>
+            <option value="duration">Duration</option>
+            <option value="depart">Departure</option>
+          </select>
+        </div>
+        <div class="text-muted small d-none d-lg-block">
+          <i class="bi bi-info-circle me-1"></i>Prices per person, incl. taxes
+        </div>
+      </div>
+
+      <!-- Flight cards -->
+      <div id="flightResults">
+        {% for flight in flights %}
+        {% set urgency = flight.seats_left <= 5 %}
+        {% set is_cheapest = loop.first and search_performed %}
+        {% set passengers = form.passengers.data or 1 %}
+        <div class="flight-card"
+             data-price="{{ flight.price }}"
+             data-duration="{{ flight.duration_mins }}"
+             data-depart="{{ flight.depart_time }}"
+             data-airline="{{ flight.airline }}"
+             data-stop="nonstop">
+
+          <div class="flight-card-accent"></div>
+
+          {% if is_cheapest %}
+          <div class="fc-badge"><i class="bi bi-star-fill me-1"></i>BEST PRICE</div>
+          {% endif %}
+          {% if urgency %}
+          <div class="fc-badge fc-badge-red" style="left:auto;right:100px;">
+            <i class="bi bi-lightning-fill me-1"></i>{{ flight.seats_left }} LEFT
+          </div>
+          {% endif %}
+
+          <div class="p-3 pt-4">
+            <div class="row align-items-center g-3">
+
+              <!-- Airline info -->
+              <div class="col-md-2 d-flex align-items-center gap-2">
+                <div class="airline-logo">{{ flight.airline[:2].upper() }}</div>
+                <div>
+                  <div class="airline-name">{{ flight.airline }}</div>
+                  <div class="flight-no">{{ flight.flight_no }}</div>
+                  <span class="cabin-badge mt-1 d-inline-block">{{ flight.cabin_class }}</span>
+                </div>
+              </div>
+
+              <!-- Route -->
+              <div class="col-md-4">
+                <div class="route-wrap">
+                  <div class="text-center">
+                    <div class="route-time">{{ flight.depart_time }}</div>
+                    <div class="route-city">{{ flight.origin }}</div>
+                  </div>
+                  <div class="route-mid">
+                    <div class="route-dur">
+                      {{ flight.duration_mins // 60 }}h {{ flight.duration_mins % 60 }}m
+                    </div>
+                    <div class="route-line-wrap">
+                      <div class="route-dot"></div>
+                      <div class="route-bar"></div>
+                      <span class="route-plane">✈</span>
+                      <div class="route-bar"></div>
+                      <div class="route-dot"></div>
+                    </div>
+                    <span class="route-tag tag-nonstop">Non-stop</span>
+                  </div>
+                  <div class="text-center">
+                    <div class="route-time">{{ flight.arrive_time }}</div>
+                    <div class="route-city">{{ flight.destination }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Features -->
+              <div class="col-md-2">
+                <div class="feat-row">
+                  <div class="feat-pill"><i class="bi bi-briefcase" style="color:#1d4ed8"></i> 15 kg</div>
+                  <div class="feat-pill"><i class="bi bi-cup-hot" style="color:#f59e0b"></i> Meal</div>
+                  <div class="feat-pill"><i class="bi bi-wifi" style="color:#10b981"></i> Wi-Fi</div>
+                </div>
+                <div class="seats-indicator mt-2">
+                  {% if flight.seats_left > 10 %}
+                  <div class="seats-dot seats-dot-green"></div>
+                  <span style="font-size:.72rem;color:#16a34a;font-weight:600">{{ flight.seats_left }} seats</span>
+                  {% elif flight.seats_left > 3 %}
+                  <div class="seats-dot seats-dot-amber"></div>
+                  <span style="font-size:.72rem;color:#d97706;font-weight:600">{{ flight.seats_left }} seats left</span>
+                  {% else %}
+                  <div class="seats-dot seats-dot-red"></div>
+                  <span style="font-size:.72rem;color:#dc2626;font-weight:600">Only {{ flight.seats_left }} left!</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Price & CTA -->
+              <div class="col-md-4 d-flex align-items-center justify-content-end gap-3">
+                <div class="price-section">
+                  <div class="price-main">₹{{ "{:,.0f}".format(flight.price) }}</div>
+                  <div class="price-sub">per person</div>
+                  {% if passengers > 1 %}
+                  <div class="price-total text-muted">Total: ₹{{ "{:,.0f}".format(flight.price * passengers) }}</div>
+                  {% endif %}
+                </div>
+                <a href="{{ url_for('public.flight_seat_select', flight_id=flight.id) }}"
+                   class="btn btn-select">
+                  Select Seats <i class="bi bi-grid-3x3 ms-1"></i>
+                </a>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+    </div><!-- /col-lg-9 -->
+  </div><!-- /row -->
+  {% endif %}
+
+  {# ── Search performed but no results ── #}
+  {% if search_performed and not flights and not search_error %}
+  <div style="text-align:center;padding:60px 20px;">
+    <div style="font-size:3.5rem;margin-bottom:16px;opacity:.8">✈️</div>
+    <h4 style="font-weight:700;color:#1e293b;margin-bottom:8px">No flights found</h4>
+    <p style="color:#64748b;max-width:420px;margin:0 auto 20px">
+      We couldn't find any flights matching your search. Try adjusting your dates, cities, or cabin class.
+    </p>
+    <div class="d-flex justify-content-center gap-2">
+      <a href="{{ url_for('public.flights') }}" class="btn btn-primary" style="border-radius:10px;padding:10px 24px">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>New Search
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Search failed (chaos or internal error) ── #}
+  {% if search_performed and search_error %}
+  <div style="text-align:center;padding:60px 20px;">
+    <div style="font-size:3.5rem;margin-bottom:16px;opacity:.8">⚠️</div>
+    <h4 style="font-weight:700;color:#dc2626;margin-bottom:8px">Search Failed</h4>
+    <p style="color:#64748b;max-width:480px;margin:0 auto 20px">
+      {{ search_error }}
+    </p>
+    <div class="d-flex justify-content-center gap-2">
+      <a href="{{ url_for('public.flights') }}" class="btn btn-outline-secondary" style="border-radius:10px;padding:10px 24px">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+      </a>
+      <button onclick="document.getElementById('flightSearchForm').submit()" class="btn btn-primary" style="border-radius:10px;padding:10px 24px">
+        <i class="bi bi-arrow-repeat me-1"></i>Retry Search
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const today = new Date().toISOString().split('T')[0];
+document.querySelectorAll('input[type="date"]').forEach(i => i.min = today);
+
+// Round-trip toggle
+document.querySelectorAll('input[name="trip_type"]').forEach(r => {
+  r.addEventListener('change', function() {
+    document.getElementById('returnDateWrap').style.display =
+      this.value === 'round_trip' ? 'block' : 'none';
+  });
+});
+
+// Swap origin/destination
+document.getElementById('swapBtn').addEventListener('click', function() {
+  const o = document.querySelector('input[name="origin"]');
+  const d = document.querySelector('input[name="destination"]');
+  [o.value, d.value] = [d.value, o.value];
+  this.style.transform = 'rotate(180deg)';
+  setTimeout(() => this.style.transform = '', 300);
+});
+
+// ── Sort ──────────────────────────────────────────────────────────────
+function sortFlights(key, btn) {
+  const container = document.getElementById('flightResults');
+  if (!container) return;
+  const cards = [...container.querySelectorAll('.flight-card')];
+  cards.sort((a, b) => {
+    if (key === 'price')    return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+    if (key === 'duration') return parseInt(a.dataset.duration) - parseInt(b.dataset.duration);
+    if (key === 'depart')   return a.dataset.depart.localeCompare(b.dataset.depart);
+    return 0;
+  });
+  cards.forEach(c => container.appendChild(c));
+  if (btn) {
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+}
+
+// ── Filter helpers ────────────────────────────────────────────────────
+let activeTimeRange = null;
+let maxPriceFilter = Infinity;
+let hiddenAirlines = new Set();
+let activeStops = new Set(['nonstop', '1stop']);
+
+function applyFilters() {
+  const cards = document.querySelectorAll('.flight-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const price = parseFloat(card.dataset.price);
+    const depart = card.dataset.depart;
+    const airline = card.dataset.airline;
+    const stop = card.dataset.stop;
+
+    let show = true;
+    if (price > maxPriceFilter) show = false;
+    if (activeTimeRange) {
+      const [s, e] = activeTimeRange;
+      if (depart < s || depart >= e) show = false;
+    }
+    if (hiddenAirlines.has(airline)) show = false;
+    if (!activeStops.has(stop)) show = false;
+
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const cnt = document.getElementById('resultsCount');
+  if (cnt) cnt.textContent = visible;
+}
+
+function toggleTimeChip(el, start, end) {
+  const chips = document.querySelectorAll('.time-chip');
+  if (el.classList.contains('active')) {
+    el.classList.remove('active');
+    activeTimeRange = null;
+  } else {
+    chips.forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    activeTimeRange = [start, end];
+  }
+  applyFilters();
+}
+
+function filterByPrice(val) {
+  maxPriceFilter = val >= 50000 ? Infinity : parseFloat(val);
+  document.getElementById('priceRangeVal').textContent = val >= 50000 ? 'Any' : '₹' + parseInt(val).toLocaleString('en-IN');
+  applyFilters();
+}
+
+function filterAirlines() {
+  hiddenAirlines = new Set();
+  document.querySelectorAll('#airlineFilters input:not(:checked)').forEach(cb => {
+    hiddenAirlines.add(cb.dataset.airline);
+  });
+  applyFilters();
+}
+
+function filterStops() {
+  activeStops = new Set();
+  document.querySelectorAll('input[data-stop]:checked').forEach(cb => activeStops.add(cb.dataset.stop));
+  applyFilters();
+}
+
+function resetFilters() {
+  activeTimeRange = null;
+  maxPriceFilter = Infinity;
+  hiddenAirlines = new Set();
+  activeStops = new Set(['nonstop', '1stop']);
+  document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('priceRange').value = 50000;
+  document.getElementById('priceRangeVal').textContent = 'Any';
+  document.querySelectorAll('#airlineFilters input').forEach(cb => cb.checked = true);
+  document.querySelectorAll('input[data-stop]').forEach(cb => cb.checked = true);
+  applyFilters();
+}
+</script>
+<script>stAC(['origin','destination']);</script>
+{% endblock %}

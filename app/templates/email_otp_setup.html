@@ -1,0 +1,87 @@
+{% extends "layouts/base.html" %}
+{% block title %}Verify Email OTP — SnapTravels{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+
+      <div class="card border-0 shadow" style="border-radius:20px;overflow:hidden">
+
+        <!-- Header -->
+        <div class="card-body text-center pt-5 pb-3"
+             style="background:linear-gradient(135deg,#2563eb,#6366f1)">
+          <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+               style="width:72px;height:72px;background:rgba(255,255,255,.18)">
+            <i class="bi bi-envelope-arrow-down-fill text-white" style="font-size:2rem"></i>
+          </div>
+          <h4 class="text-white fw-bold mb-1">Check your email</h4>
+          <p class="mb-0" style="color:#c7d2fe;font-size:.9rem">
+            We sent a 6-digit code to <strong>{{ user.email }}</strong>
+          </p>
+        </div>
+
+        <!-- Body -->
+        <div class="card-body px-4 py-4">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for cat, msg in messages %}
+            <div class="alert alert-{{ 'danger' if cat == 'danger' else 'info' }} py-2 px-3 mb-3" style="font-size:.85rem">
+              {{ msg }}
+            </div>
+            {% endfor %}
+          {% endwith %}
+
+          <p class="text-muted small text-center mb-3">
+            Enter the code below to activate Email OTP on your account.
+            The code expires in <strong>{{ expires_minutes }} minutes</strong>.
+          </p>
+
+          <form method="POST" action="{{ url_for('twofa.confirm_email_otp_setup') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <!-- OTP input -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold small">Verification Code</label>
+              <input type="text" name="otp" class="form-control form-control-lg text-center fw-bold"
+                     inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
+                     placeholder="• • • • • •"
+                     style="font-size:1.6rem;letter-spacing:.3rem;border-radius:12px;border:2px solid #e5e7eb"
+                     autofocus required>
+              <div class="form-text text-center mt-1">6-digit code from your email</div>
+            </div>
+
+            <div class="d-grid mb-3">
+              <button type="submit" class="btn btn-primary btn-lg fw-semibold"
+                      style="border-radius:30px;background:linear-gradient(135deg,#2563eb,#6366f1);border:none">
+                <i class="bi bi-envelope-check me-2"></i>Verify & Enable
+              </button>
+            </div>
+          </form>
+
+          <!-- Resend / cancel -->
+          <div class="text-center">
+            <form method="POST" action="{{ url_for('twofa.enable_email_otp') }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-link btn-sm text-decoration-none p-0" style="color:#6366f1">
+                <i class="bi bi-arrow-clockwise me-1"></i>Resend code
+              </button>
+            </form>
+            <span class="text-muted mx-2">·</span>
+            <a href="{{ url_for('twofa.security') }}" class="btn btn-link btn-sm text-decoration-none p-0 text-muted">
+              Cancel
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Hint -->
+      <p class="text-center text-muted small mt-3">
+        <i class="bi bi-info-circle me-1"></i>
+        Can't find the email? Check your spam folder.
+      </p>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

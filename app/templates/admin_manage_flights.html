@@ -1,0 +1,316 @@
+{% extends "layouts/base.html" %}
+{% block title %}Manage Flights — SnapTravels Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Dark Admin Base ─────────────────────────────── */
+body { background: #0f1117 !important; color: #e2e8f0; }
+
+@keyframes accentSlide {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.admin-accent-bar {
+  height: 3px;
+  background: linear-gradient(90deg, #e63950, #f97316, #facc15, #e63950);
+  background-size: 200% 100%;
+  animation: accentSlide 3s linear infinite;
+}
+
+/* ── Admin Topbar ────────────────────────────────── */
+.admin-topbar {
+  background: #1a1f2e;
+  border-bottom: 1px solid #1e2433;
+  padding: 14px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.admin-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: #64748b; }
+.admin-breadcrumb a { color: #64748b; text-decoration: none; }
+.admin-breadcrumb a:hover { color: #e63950; }
+.admin-breadcrumb .sep { color: #334155; }
+.admin-breadcrumb .current { color: #e2e8f0; font-weight: 600; }
+.admin-nav-links { display: flex; gap: 6px; }
+.admin-nav-links a {
+  padding: 6px 14px; border-radius: 8px; font-size: .78rem; font-weight: 600;
+  color: #94a3b8; text-decoration: none; transition: all .2s;
+  border: 1px solid transparent;
+}
+.admin-nav-links a:hover { background: #1e2433; color: #e2e8f0; }
+.admin-nav-links a.active { background: rgba(230,57,80,.12); color: #e63950; border-color: rgba(230,57,80,.25); }
+
+/* ── Data Panel ──────────────────────────────────── */
+.data-panel {
+  background: #1a1f2e;
+  border: 1px solid #1e2433;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.data-panel-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #1e2433;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.data-panel-title { font-size: 1rem; font-weight: 700; color: #e2e8f0; }
+.data-panel-sub { font-size: .75rem; color: #64748b; margin-top: 2px; }
+
+/* ── Dark Table ──────────────────────────────────── */
+.dark-table { width: 100%; border-collapse: collapse; }
+.dark-table thead tr { background: #141824; }
+.dark-table thead th {
+  padding: 12px 18px; font-size: .72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; color: #64748b;
+  border-bottom: 1px solid #1e2433; white-space: nowrap;
+}
+.dark-table tbody tr { border-bottom: 1px solid #1e2433; transition: background .15s; }
+.dark-table tbody tr:last-child { border-bottom: none; }
+.dark-table tbody tr:hover { background: rgba(255,255,255,.025); }
+.dark-table tbody td { padding: 14px 18px; font-size: .84rem; color: #cbd5e1; vertical-align: middle; }
+
+/* ── Route Timeline ──────────────────────────────── */
+.route-timeline { display: flex; align-items: center; gap: 8px; }
+.route-city { font-size: .82rem; font-weight: 700; color: #e2e8f0; }
+.route-line {
+  flex: 1; height: 1px; background: #2d3748; position: relative;
+  min-width: 36px; max-width: 60px;
+}
+.route-line::after {
+  content: '✈'; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); font-size: .7rem; color: #e63950;
+  background: #1a1f2e; padding: 0 4px;
+}
+
+/* ── Badges ──────────────────────────────────────── */
+.st-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700;
+}
+.st-badge.economy   { background: rgba(14,165,233,.15); color: #38bdf8; border: 1px solid rgba(14,165,233,.2); }
+.st-badge.business  { background: rgba(139,92,246,.15); color: #a78bfa; border: 1px solid rgba(139,92,246,.2); }
+.st-badge.first     { background: rgba(251,191,36,.15); color: #fbbf24; border: 1px solid rgba(251,191,36,.2); }
+.st-badge.premium   { background: rgba(16,185,129,.15); color: #34d399; border: 1px solid rgba(16,185,129,.2); }
+.st-badge.default   { background: rgba(100,116,139,.12); color: #94a3b8; border: 1px solid rgba(100,116,139,.2); }
+
+/* ── Seats pill ──────────────────────────────────── */
+.seats-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 6px; font-size: .74rem; font-weight: 600;
+}
+.seats-low  { background: rgba(239,68,68,.12);  color: #f87171;  }
+.seats-mid  { background: rgba(251,146,60,.12);  color: #fb923c;  }
+.seats-good { background: rgba(34,197,94,.12);   color: #4ade80;  }
+
+/* ── Action Buttons ──────────────────────────────── */
+.btn-action {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid;
+  font-size: .85rem; text-decoration: none; transition: all .15s; cursor: pointer;
+  background: transparent;
+}
+.btn-action.edit   { color: #38bdf8; border-color: rgba(56,189,248,.3); }
+.btn-action.edit:hover  { background: rgba(56,189,248,.12); border-color: #38bdf8; }
+.btn-action.del    { color: #f87171; border-color: rgba(248,113,113,.3); }
+.btn-action.del:hover   { background: rgba(248,113,113,.12); border-color: #f87171; }
+.btn-action-add {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: 10px; font-size: .82rem; font-weight: 700;
+  background: linear-gradient(135deg,#e63950,#f97316);
+  color: #fff; border: none; text-decoration: none; transition: all .2s;
+  box-shadow: 0 4px 14px rgba(230,57,80,.3);
+}
+.btn-action-add:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(230,57,80,.4); }
+
+/* ── Secondary button ────────────────────────────── */
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: 10px; font-size: .8rem; font-weight: 600;
+  background: transparent; border: 1px solid #1e2433; color: #94a3b8;
+  text-decoration: none; transition: all .2s;
+}
+.btn-ghost:hover { background: #1e2433; color: #e2e8f0; border-color: #2d3748; }
+
+/* ── Pagination ──────────────────────────────────── */
+.dark-pagination { display: flex; align-items: center; gap: 4px; justify-content: center; padding: 16px; }
+.pg-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; height: 34px; border-radius: 8px; font-size: .8rem; font-weight: 600;
+  border: 1px solid #1e2433; background: transparent; color: #94a3b8;
+  text-decoration: none; transition: all .15s; cursor: pointer;
+}
+.pg-btn:hover { background: #1e2433; color: #e2e8f0; }
+.pg-btn.active { background: #e63950; border-color: #e63950; color: #fff; }
+.pg-btn.disabled { opacity: .35; pointer-events: none; }
+
+/* ── Empty state ─────────────────────────────────── */
+.empty-state {
+  text-align: center; padding: 64px 24px; color: #475569;
+}
+.empty-state-icon { font-size: 4rem; margin-bottom: 16px; opacity: .4; }
+.empty-state h4 { color: #64748b; font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+.empty-state p  { font-size: .82rem; margin-bottom: 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-accent-bar"></div>
+
+<!-- Admin Topbar -->
+<div class="admin-topbar">
+  <div class="admin-breadcrumb">
+    <i class="bi bi-speedometer2" style="color:#e63950"></i>
+    <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+    <span class="sep">›</span>
+    <span class="current">✈ Manage Flights</span>
+  </div>
+  <div class="admin-nav-links">
+    <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap me-1"></i>Dashboard</a>
+    <a href="{{ url_for('admin.manage_flights') }}" class="active"><i class="bi bi-airplane me-1"></i>Flights</a>
+    <a href="{{ url_for('admin.manage_bookings') }}"><i class="bi bi-receipt me-1"></i>Bookings</a>
+    <a href="{{ url_for('admin_ext.hotels') }}"><i class="bi bi-building me-1"></i>Hotels</a>
+    <a href="{{ url_for('admin_ext.users') }}"><i class="bi bi-people me-1"></i>Users</a>
+    <a href="{{ url_for('admin_ext.refunds') }}"><i class="bi bi-arrow-counterclockwise me-1"></i>Refunds</a>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4" style="max-width:1400px;margin:0 auto">
+
+  <!-- Page Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#64748b;font-weight:700">Flight Inventory</div>
+      <h2 style="font-size:1.5rem;font-weight:900;color:#e2e8f0;margin:4px 0 0">Manage Flights</h2>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('admin.dashboard') }}" class="btn-ghost"><i class="bi bi-arrow-left"></i> Dashboard</a>
+      <a href="{{ url_for('admin.new_flight') }}" class="btn-action-add"><i class="bi bi-plus-lg"></i> Add Flight</a>
+    </div>
+  </div>
+
+  {% if flights.items %}
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div>
+        <div class="data-panel-title">✈ Flight Inventory</div>
+        <div class="data-panel-sub">{{ flights.total }} flights total · Page {{ flights.page }} of {{ flights.pages }}</div>
+      </div>
+      <div style="font-size:.78rem;color:#64748b">
+        <i class="bi bi-funnel me-1"></i>All Classes
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="dark-table">
+        <thead>
+          <tr>
+            <th>Airline & Flight</th>
+            <th>Route</th>
+            <th>Schedule</th>
+            <th>Duration</th>
+            <th>Price</th>
+            <th>Seats</th>
+            <th>Class</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for flight in flights.items %}
+          <tr>
+            <td>
+              <div style="font-weight:700;color:#e2e8f0">{{ flight.airline }}</div>
+              <div style="font-family:monospace;font-size:.72rem;color:#e63950;margin-top:2px">{{ flight.flight_no }}</div>
+            </td>
+            <td>
+              <div class="route-timeline">
+                <span class="route-city">{{ flight.origin }}</span>
+                <div class="route-line"></div>
+                <span class="route-city">{{ flight.destination }}</span>
+              </div>
+            </td>
+            <td>
+              <div style="font-weight:600;color:#e2e8f0;font-size:.82rem">{{ flight.depart_time }}</div>
+              <div style="font-size:.72rem;color:#64748b;margin-top:2px">→ {{ flight.arrive_time }}</div>
+            </td>
+            <td>
+              <div style="font-size:.8rem;color:#94a3b8">
+                <i class="bi bi-clock me-1"></i>{{ flight.duration_mins }}m
+              </div>
+            </td>
+            <td>
+              <div style="font-weight:700;color:#4ade80;font-size:.9rem">₹{{ "%.0f"|format(flight.price) }}</div>
+            </td>
+            <td>
+              {% set s = flight.seats_left %}
+              <span class="seats-pill {{ 'seats-low' if s < 10 else ('seats-mid' if s < 30 else 'seats-good') }}">
+                <i class="bi bi-person-fill"></i> {{ s }}
+              </span>
+            </td>
+            <td>
+              {% set cc = flight.cabin_class|lower %}
+              <span class="st-badge {{ 'business' if 'business' in cc else ('first' if 'first' in cc else ('premium' if 'premium' in cc else 'economy')) }}">
+                {{ flight.cabin_class }}
+              </span>
+            </td>
+            <td>
+              <div class="d-flex gap-2 justify-content-end">
+                <a href="{{ url_for('admin.edit_flight', flight_id=flight.id) }}" class="btn-action edit" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <form method="POST" action="{{ url_for('admin.delete_flight', flight_id=flight.id) }}"
+                      class="d-inline" onsubmit="return confirm('Delete flight {{ flight.flight_no }}?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                  <button type="submit" class="btn-action del" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if flights.pages > 1 %}
+    <div class="dark-pagination">
+      {% if flights.has_prev %}
+      <a href="{{ url_for('admin.manage_flights', page=flights.prev_num) }}" class="pg-btn">
+        <i class="bi bi-chevron-left"></i>
+      </a>
+      {% else %}
+      <span class="pg-btn disabled"><i class="bi bi-chevron-left"></i></span>
+      {% endif %}
+
+      {% for page_num in flights.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if page_num %}
+          <a href="{{ url_for('admin.manage_flights', page=page_num) }}"
+             class="pg-btn {{ 'active' if page_num == flights.page else '' }}">{{ page_num }}</a>
+        {% else %}
+          <span class="pg-btn disabled">…</span>
+        {% endif %}
+      {% endfor %}
+
+      {% if flights.has_next %}
+      <a href="{{ url_for('admin.manage_flights', page=flights.next_num) }}" class="pg-btn">
+        <i class="bi bi-chevron-right"></i>
+      </a>
+      {% else %}
+      <span class="pg-btn disabled"><i class="bi bi-chevron-right"></i></span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <div class="data-panel">
+    <div class="empty-state">
+      <div class="empty-state-icon">✈</div>
+      <h4>No Flights Found</h4>
+      <p>Start by adding your first flight to the inventory.</p>
+      <a href="{{ url_for('admin.new_flight') }}" class="btn-action-add" style="display:inline-flex">
+        <i class="bi bi-plus-lg"></i> Add First Flight
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

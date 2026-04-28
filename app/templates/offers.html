@@ -1,0 +1,384 @@
+{% extends "layouts/base.html" %}
+{% block title %}Exclusive Offers & Deals — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f8f7ff; }
+
+/* ── Hero ─────────────────────────────────────── */
+.offers-hero {
+  background: linear-gradient(135deg, #3730a3 0%, #6366f1 55%, #a855f7 100%);
+  padding: 40px 0 52px; position: relative; overflow: hidden;
+}
+.offers-hero::before {
+  content: '';
+  position: absolute; bottom: -40%; left: -8%; width: 65%; height: 200%;
+  background: radial-gradient(ellipse, rgba(255,255,255,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.offers-hero-plane {
+  position: absolute; right: -2%; top: 50%; transform: translateY(-55%);
+  font-size: 14rem; opacity: .08; line-height: 1; pointer-events: none;
+  user-select: none;
+}
+
+/* Animated ticker */
+.offer-ticker {
+  background: rgba(0,0,0,.18); border-radius: 40px;
+  padding: 6px 18px; display: inline-flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; overflow: hidden;
+}
+.ticker-dot { width: 6px; height: 6px; background: #facc15; border-radius: 50%; animation: tick-pulse 1.2s infinite; flex-shrink: 0; }
+@keyframes tick-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+.ticker-text { font-size: .8rem; font-weight: 700; color: #fff; white-space: nowrap; letter-spacing: .04em; }
+
+/* ── Promo code cards ─────────────────────────── */
+.promo-card {
+  background: #fff; border-radius: 18px;
+  border: 1.5px solid #e0e7ff;
+  box-shadow: 0 2px 16px rgba(99,102,241,.07);
+  transition: all .2s; overflow: hidden;
+}
+.promo-card:hover { border-color: #a5b4fc; box-shadow: 0 8px 32px rgba(99,102,241,.16); transform: translateY(-3px); }
+.promo-card-top { height: 4px; }
+
+.promo-code-badge {
+  font-family: 'Courier New', monospace;
+  font-size: .98rem; font-weight: 900; letter-spacing: .12em;
+  background: #eef2ff; color: #3730a3;
+  border: 1.5px dashed #a5b4fc; border-radius: 8px;
+  padding: 6px 14px; display: inline-block;
+}
+.discount-tag {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff; font-size: .72rem; font-weight: 800; padding: 4px 10px;
+  border-radius: 20px; letter-spacing: .04em;
+}
+.flat-tag {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff; font-size: .72rem; font-weight: 800; padding: 4px 10px;
+  border-radius: 20px; letter-spacing: .04em;
+}
+
+.btn-copy {
+  border: 1.5px solid #e0e7ff; background: #f5f3ff; color: #4338ca;
+  border-radius: 10px; padding: 8px 16px; font-weight: 700; font-size: .82rem;
+  transition: all .15s; cursor: pointer; display: flex; align-items: center; gap: 6px; flex: 1;
+  justify-content: center;
+}
+.btn-copy:hover { background: #eef2ff; border-color: #a5b4fc; }
+.btn-copy.copied { background: #dcfce7; border-color: #86efac; color: #16a34a; }
+.btn-book-offer {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff; border: none; border-radius: 10px;
+  padding: 8px 18px; font-weight: 700; font-size: .82rem;
+  transition: all .15s; display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  text-decoration: none;
+}
+.btn-book-offer:hover { background: linear-gradient(135deg, #4338ca, #3730a3); color: #fff; transform: translateY(-1px); }
+
+.info-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 6px;
+  padding: 3px 9px; font-size: .72rem; color: #6b7280; font-weight: 500;
+}
+
+/* ── Category cards ───────────────────────────── */
+.cat-card {
+  border-radius: 18px; padding: 26px 20px; text-align: center;
+  border: 1.5px solid transparent; transition: all .2s; cursor: pointer;
+  text-decoration: none; display: block; height: 100%;
+}
+.cat-card:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,.12); }
+.cat-icon { font-size: 2.6rem; margin-bottom: 10px; display: block; }
+.cat-title { font-size: 1rem; font-weight: 800; color: #111; margin-bottom: 6px; }
+.cat-desc { font-size: .78rem; color: #6b7280; line-height: 1.5; margin-bottom: 14px; }
+.cat-cta {
+  display: inline-block; border-radius: 22px; padding: 7px 20px;
+  font-size: .78rem; font-weight: 700; transition: all .15s;
+}
+
+/* ── Banner cards ─────────────────────────────── */
+.banner-card {
+  border-radius: 20px; overflow: hidden; height: 220px; position: relative;
+  box-shadow: 0 4px 20px rgba(0,0,0,.14); transition: transform .2s;
+}
+.banner-card:hover { transform: translateY(-3px); }
+.banner-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.2) 50%, transparent 100%);
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 22px;
+}
+.banner-emoji {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-60%);
+  font-size: 7rem; opacity: .22; line-height: 1;
+}
+.banner-title { font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
+.banner-sub { font-size: .8rem; color: rgba(255,255,255,.85); margin-bottom: 12px; }
+.btn-banner {
+  display: inline-block; background: #fff; color: #111;
+  border-radius: 22px; padding: 6px 18px;
+  font-size: .78rem; font-weight: 700; text-decoration: none; transition: all .15s;
+}
+.btn-banner:hover { background: #f5f3ff; color: #4338ca; }
+
+/* ── Section header ───────────────────────────── */
+.section-head { font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; color: #9ca3af; font-weight: 700; margin-bottom: 18px; }
+.section-head strong { color: #0f172a; font-size: 1.35rem; text-transform: none; letter-spacing: normal; display: block; margin-top: 2px; }
+
+/* Sort bar */
+.deals-bar {
+  background: #fff; border-radius: 14px; padding: 14px 20px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.05); margin-bottom: 18px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<div class="offers-hero">
+  <div class="container">
+    <div class="offers-hero-plane">✈</div>
+    <div class="row align-items-center">
+      <div class="col-lg-7">
+        <div class="offer-ticker">
+          <div class="ticker-dot"></div>
+          <span class="ticker-text">🔥 LIMITED TIME — Use SNAP20 for 20% OFF any booking today!</span>
+        </div>
+        <h1 class="fw-black text-white mb-3" style="font-size:2.4rem;letter-spacing:-.02em;line-height:1.15">
+          Exclusive Offers<br>&amp; Deals
+        </h1>
+        <p class="text-white opacity-75 mb-4" style="font-size:1rem">
+          Save big on flights, hotels, trains &amp; more.<br>Apply promo codes at checkout — instant discount.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <div style="background:rgba(255,255,255,.13);border-radius:12px;padding:12px 18px;min-width:120px">
+            <div style="font-size:1.6rem;font-weight:900;color:#fff;line-height:1">{{ promos|length if promos else 5 }}</div>
+            <div style="font-size:.72rem;color:rgba(255,255,255,.7);font-weight:600;margin-top:2px">Active Codes</div>
+          </div>
+          <div style="background:rgba(255,255,255,.13);border-radius:12px;padding:12px 18px;min-width:120px">
+            <div style="font-size:1.6rem;font-weight:900;color:#facc15;line-height:1">₹500</div>
+            <div style="font-size:.72rem;color:rgba(255,255,255,.7);font-weight:600;margin-top:2px">Max Savings</div>
+          </div>
+          <div style="background:rgba(255,255,255,.13);border-radius:12px;padding:12px 18px;min-width:120px">
+            <div style="font-size:1.6rem;font-weight:900;color:#86efac;line-height:1">4+</div>
+            <div style="font-size:.72rem;color:rgba(255,255,255,.7);font-weight:600;margin-top:2px">Categories</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN CONTENT ════════════════════════════════════════════════════════ -->
+<div class="container py-5">
+
+{% if promos %}
+<!-- ── Active Promo Codes ── -->
+<div class="deals-bar">
+  <div>
+    <div class="fw-bold" style="font-size:.97rem;color:#111">
+      🎫 <span id="promoCount">{{ promos|length }}</span> Active Promo Code{{ 's' if promos|length != 1 }}
+    </div>
+    <div class="text-muted" style="font-size:.75rem;margin-top:1px">Valid for flights, hotels, trains &amp; more</div>
+  </div>
+  <div class="text-muted small">
+    <i class="bi bi-clock me-1 text-warning"></i>Codes expire soon — grab them now
+  </div>
+</div>
+
+<div class="row g-4 mb-5">
+  {% for promo in promos %}
+  {% set colors = ['#6366f1','#0ea5e9','#10b981','#f97316','#e63950','#8b5cf6'] %}
+  {% set col = colors[loop.index0 % 6] %}
+  <div class="col-md-6 col-lg-4">
+    <div class="promo-card h-100">
+      <div class="promo-card-top" style="background:{{ col }}"></div>
+      <div class="p-4">
+        <!-- Header row -->
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <span class="promo-code-badge">{{ promo.code }}</span>
+          {% if promo.discount_pct %}
+          <span class="discount-tag">{{ promo.discount_pct|int }}% OFF</span>
+          {% elif promo.discount_flat %}
+          <span class="flat-tag">₹{{ promo.discount_flat|int }} OFF</span>
+          {% endif %}
+        </div>
+
+        <!-- Description -->
+        {% if promo.description %}
+        <p style="font-size:.88rem;color:#374151;font-weight:500;margin-bottom:12px;line-height:1.5">{{ promo.description }}</p>
+        {% endif %}
+
+        <!-- Min/Max pills -->
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          {% if promo.min_amount %}
+          <span class="info-pill"><i class="bi bi-info-circle" style="color:{{ col }}"></i> Min. ₹{{ "{:,.0f}".format(promo.min_amount) }}</span>
+          {% endif %}
+          {% if promo.max_discount %}
+          <span class="info-pill"><i class="bi bi-arrow-up-circle" style="color:{{ col }}"></i> Max. ₹{{ "{:,.0f}".format(promo.max_discount) }}</span>
+          {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex gap-2 mt-auto">
+          <button class="btn-copy copy-code-btn" data-code="{{ promo.code }}">
+            <i class="bi bi-clipboard"></i>Copy Code
+          </button>
+          <a href="{{ url_for('public.flights') }}" class="btn-book-offer">
+            Book Now <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── Deals by Category ── -->
+<div class="mb-2 section-head">
+  Browse by Category
+  <strong>Best Deals Right Now</strong>
+</div>
+
+<div class="row g-4 mb-5">
+  <div class="col-6 col-md-3">
+    <a class="cat-card" href="{{ url_for('public.flights') }}"
+       style="background:linear-gradient(145deg,#eff6ff,#dbeafe);border-color:#bfdbfe">
+      <span class="cat-icon">✈️</span>
+      <div class="cat-title">Flights</div>
+      <div class="cat-desc">Domestic fares from ₹1,499. Use <strong>SNAP20</strong> for 20% off.</div>
+      <span class="cat-cta" style="background:#1d4ed8;color:#fff">Explore →</span>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a class="cat-card" href="{{ url_for('public.hotels') }}"
+       style="background:linear-gradient(145deg,#f0fdf4,#dcfce7);border-color:#a7f3d0">
+      <span class="cat-icon">🏨</span>
+      <div class="cat-title">Hotels</div>
+      <div class="cat-desc">Weekend stays from ₹2,999/night. Early bird available.</div>
+      <span class="cat-cta" style="background:#059669;color:#fff">Explore →</span>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a class="cat-card" href="{{ url_for('trains.search') }}"
+       style="background:linear-gradient(145deg,#fffbeb,#fef3c7);border-color:#fde68a">
+      <span class="cat-icon">🚆</span>
+      <div class="cat-title">Trains</div>
+      <div class="cat-desc">Budget fares for Sleeper &amp; AC. All-India network.</div>
+      <span class="cat-cta" style="background:#b45309;color:#fff">Explore →</span>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a class="cat-card" href="{{ url_for('packages.listing') }}"
+       style="background:linear-gradient(145deg,#fdf4ff,#f5d0fe);border-color:#e9d5ff">
+      <span class="cat-icon">🗺️</span>
+      <div class="cat-title">Packages</div>
+      <div class="cat-desc">All-inclusive holidays. Flights + hotels. Save up to 30%.</div>
+      <span class="cat-cta" style="background:#7c3aed;color:#fff">Explore →</span>
+    </a>
+  </div>
+</div>
+
+<!-- ── Seasonal Banners ── -->
+<div class="mb-2 section-head">
+  Season Specials
+  <strong>Hand-Picked Getaways</strong>
+</div>
+
+<div class="row g-4 mb-5">
+  <div class="col-md-6">
+    <div class="banner-card" style="background:linear-gradient(135deg,#0ea5e9 0%,#6366f1 100%)">
+      <div class="banner-emoji">🌊</div>
+      <div class="banner-overlay">
+        <div class="banner-title">Summer Escapes 2026</div>
+        <div class="banner-sub">Beaches, hill stations &amp; more. Book now, travel later!</div>
+        <a href="{{ url_for('activities.listing') }}" class="btn-banner">Discover Activities →</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="banner-card" style="background:linear-gradient(135deg,#10b981 0%,#0284c7 100%)">
+      <div class="banner-emoji">🌿</div>
+      <div class="banner-overlay">
+        <div class="banner-title">Monsoon Getaways</div>
+        <div class="banner-sub">Kerala backwaters, Goa &amp; Coorg await you!</div>
+        <a href="{{ url_for('packages.listing') }}" class="btn-banner">View Packages →</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="banner-card" style="background:linear-gradient(135deg,#f97316 0%,#e63950 100%);height:175px">
+      <div class="banner-emoji" style="font-size:5rem">🏔️</div>
+      <div class="banner-overlay">
+        <div class="banner-title" style="font-size:1rem">Adventure Trips</div>
+        <div class="banner-sub" style="font-size:.75rem;margin-bottom:8px">Manali, Ladakh &amp; Spiti deals</div>
+        <a href="{{ url_for('packages.listing') }}" class="btn-banner" style="font-size:.72rem;padding:5px 14px">Explore →</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="banner-card" style="background:linear-gradient(135deg,#8b5cf6 0%,#ec4899 100%);height:175px">
+      <div class="banner-emoji" style="font-size:5rem">🌸</div>
+      <div class="banner-overlay">
+        <div class="banner-title" style="font-size:1rem">Honeymoon Packages</div>
+        <div class="banner-sub" style="font-size:.75rem;margin-bottom:8px">Romantic escapes from ₹15,999</div>
+        <a href="{{ url_for('packages.listing') }}" class="btn-banner" style="font-size:.72rem;padding:5px 14px">Explore →</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="banner-card" style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);height:175px">
+      <div class="banner-emoji" style="font-size:5rem">✈️</div>
+      <div class="banner-overlay">
+        <div class="banner-title" style="font-size:1rem">International Flights</div>
+        <div class="banner-sub" style="font-size:.75rem;margin-bottom:8px">Dubai, Singapore from ₹12,999</div>
+        <a href="{{ url_for('public.flights') }}" class="btn-banner" style="font-size:.72rem;padding:5px 14px">Search →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CTA ── -->
+<div style="background:linear-gradient(135deg,#3730a3,#6366f1);border-radius:20px;padding:40px 36px;text-align:center">
+  <div style="font-size:2rem;margin-bottom:10px">🎯</div>
+  <h3 style="color:#fff;font-weight:800;margin-bottom:8px">Not finding what you need?</h3>
+  <p style="color:rgba(255,255,255,.75);margin-bottom:22px;font-size:.95rem">Search across all travel options to find the best deals for your next trip.</p>
+  <div class="d-flex justify-content-center gap-3 flex-wrap">
+    <a href="{{ url_for('public.flights') }}" style="background:#fff;color:#3730a3;border-radius:22px;padding:10px 26px;font-weight:700;font-size:.9rem;text-decoration:none;transition:all .15s">
+      ✈ Search Flights
+    </a>
+    <a href="{{ url_for('public.hotels') }}" style="background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:22px;padding:10px 26px;font-weight:700;font-size:.9rem;text-decoration:none;transition:all .15s">
+      🏨 Search Hotels
+    </a>
+    <a href="{{ url_for('buses.search') }}" style="background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.35);border-radius:22px;padding:10px 26px;font-weight:700;font-size:.9rem;text-decoration:none;transition:all .15s">
+      🚌 Search Buses
+    </a>
+  </div>
+</div>
+
+</div><!-- /container -->
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.copy-code-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const code = this.dataset.code;
+    navigator.clipboard.writeText(code).then(() => {
+      const orig = this.innerHTML;
+      this.innerHTML = '<i class="bi bi-check2-circle"></i> Copied!';
+      this.classList.add('copied');
+      setTimeout(() => {
+        this.innerHTML = orig;
+        this.classList.remove('copied');
+      }, 2200);
+    }).catch(() => { alert('Code: ' + code); });
+  });
+});
+</script>
+{% endblock %}

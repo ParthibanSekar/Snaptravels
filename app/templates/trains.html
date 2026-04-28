@@ -1,0 +1,565 @@
+{% extends "layouts/base.html" %}
+{% block title %}Train Tickets — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f0f4ff; }
+.trains-page { min-height: 100vh; }
+
+/* ── Hero ─────────────────────────────────────── */
+.train-hero {
+  background: linear-gradient(135deg, rgba(30,27,75,.78), rgba(29,78,216,.65)), url('/static/images/hero/trains-search.jpg') center/cover no-repeat;
+  padding: 32px 0 40px; position: relative; overflow: hidden;
+}
+.train-hero::before {
+  content: ''; position: absolute; bottom: -40%; left: -10%; width: 70%; height: 180%;
+  background: radial-gradient(ellipse, rgba(255,255,255,.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+.search-card {
+  background: #fff; border-radius: 18px;
+  padding: 24px 28px; box-shadow: 0 8px 40px rgba(0,0,0,.18);
+}
+.search-card .form-control,
+.search-card .form-select {
+  border-radius: 10px; border: 1.5px solid #e0e7ff;
+  padding: 10px 14px; font-size: .92rem;
+  transition: border-color .2s, box-shadow .2s;
+}
+.search-card .form-control:focus,
+.search-card .form-select:focus {
+  border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+}
+.btn-search {
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 11px; font-weight: 700; width: 100%;
+  transition: all .2s; box-shadow: 0 4px 14px rgba(29,78,216,.3);
+}
+.btn-search:hover { background: linear-gradient(135deg, #1e3a8a, #1d4ed8); transform: translateY(-1px); }
+
+/* ── Filter sidebar ───────────────────────────── */
+.filter-panel {
+  background: #fff; border-radius: 16px;
+  padding: 20px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
+  position: sticky; top: 80px;
+}
+.filter-panel h6 { font-weight: 700; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
+.filter-section { border-bottom: 1px solid #f3f4f6; padding-bottom: 16px; margin-bottom: 16px; }
+.filter-section:last-child { border-bottom: none; }
+.class-filter-btn {
+  border: 1.5px solid #e0e7ff; background: #fff; border-radius: 8px;
+  padding: 6px 12px; font-size: .82rem; cursor: pointer; transition: all .15s;
+  color: #374151; font-weight: 600; display: flex; align-items: center; gap: 6px;
+  margin-bottom: 6px; width: 100%;
+}
+.class-filter-btn:hover { background: #eef2ff; border-color: #a5b4fc; color: #1d4ed8; }
+.class-filter-btn.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+.sort-side-btn { border: 1.5px solid #e0e7ff; background: #fff; border-radius: 8px; padding: 6px 12px; font-size: .82rem; cursor: pointer; transition: all .15s; color: #374151; font-weight: 500; display: block; width: 100%; text-align: left; margin-bottom: 6px; }
+.sort-side-btn:hover, .sort-side-btn.active { background: #eef2ff; border-color: #a5b4fc; color: #1d4ed8; }
+.train-type-cb { display: flex; align-items: center; gap: 8px; font-size: .83rem; margin-bottom: 7px; }
+.train-type-cb input { accent-color: #1d4ed8; }
+
+/* ── Train cards ─────────────────────────────── */
+.train-card {
+  background: #fff; border-radius: 18px;
+  border: 1.5px solid #e0e7ff;
+  box-shadow: 0 2px 14px rgba(29,78,216,.05);
+  transition: all .2s; overflow: hidden; margin-bottom: 16px;
+  position: relative;
+}
+.train-card:hover { border-color: #a5b4fc; box-shadow: 0 8px 32px rgba(29,78,216,.13); transform: translateY(-2px); }
+.train-card-top { height: 4px; background: linear-gradient(90deg, #1d4ed8, #60a5fa); }
+
+/* Train info */
+.train-name { font-weight: 800; font-size: .98rem; color: #111; }
+.train-no { font-size: .73rem; color: #9ca3af; margin-top: 2px; }
+.train-type-badge {
+  display: inline-block; border-radius: 6px;
+  padding: 2px 9px; font-size: .68rem; font-weight: 700;
+  letter-spacing: .03em; margin-top: 4px;
+}
+.type-rajdhani { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.type-shatabdi { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+.type-duronto { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+.type-express { background: #f5f3ff; color: #4c1d95; border: 1px solid #c4b5fd; }
+.type-mail { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
+.type-sf { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
+
+/* Route visual */
+.route-wrap { display: flex; align-items: center; gap: 10px; }
+.route-time { font-size: 1.35rem; font-weight: 900; color: #0f172a; line-height: 1; }
+.route-station { font-size: .7rem; color: #9ca3af; margin-top: 3px; }
+.route-mid { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.route-dur { font-size: .72rem; color: #6b7280; font-weight: 700; }
+.route-line-wrap { width: 100%; display: flex; align-items: center; }
+.route-dot { width: 8px; height: 8px; border-radius: 50%; background: #1d4ed8; flex-shrink: 0; }
+.route-bar { flex: 1; height: 2px; background: linear-gradient(90deg, #1d4ed8, #93c5fd, #1d4ed8); }
+.route-train-icon { font-size: .9rem; margin: 0 5px; flex-shrink: 0; }
+.run-days { font-size: .65rem; color: #9ca3af; margin-top: 2px; }
+
+/* Class availability table */
+.class-avail { display: flex; gap: 8px; flex-wrap: wrap; }
+.class-pill {
+  border-radius: 10px; padding: 8px 14px; text-align: center;
+  border: 1.5px solid; cursor: pointer; transition: all .15s; min-width: 80px;
+}
+.class-pill:hover { transform: scale(1.03); }
+.class-pill.available { border-color: #93c5fd; background: #eff6ff; }
+.class-pill.available:hover { background: #dbeafe; }
+.class-pill.waitlist { border-color: #fde68a; background: #fef9c3; }
+.class-pill.notavail { border-color: #e5e7eb; background: #f9fafb; cursor: not-allowed; opacity: .6; }
+.class-pill .cls-code { font-size: .72rem; font-weight: 800; color: #1d4ed8; }
+.class-pill .cls-name { font-size: .62rem; color: #6b7280; }
+.class-pill .cls-fare { font-size: .9rem; font-weight: 900; color: #111; margin: 2px 0; }
+.class-pill .cls-seats { font-size: .62rem; }
+.cls-seats.avail { color: #16a34a; font-weight: 700; }
+.cls-seats.wl { color: #d97706; font-weight: 700; }
+.cls-seats.na { color: #9ca3af; }
+
+/* CTA */
+.btn-book-train {
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 10px 22px; font-weight: 700; font-size: .88rem;
+  transition: all .2s; box-shadow: 0 4px 12px rgba(29,78,216,.25); white-space: nowrap;
+}
+.btn-book-train:hover { background: linear-gradient(135deg, #1e3a8a, #1d4ed8); color: #fff; transform: translateY(-1px); }
+
+/* Sort bar */
+.sort-bar {
+  background: #fff; border-radius: 12px; padding: 12px 18px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.06);
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+}
+
+/* Seat bar */
+.avail-bar { height: 5px; border-radius: 3px; margin-top: 4px; background: #e5e7eb; overflow: hidden; }
+.avail-bar-fill { height: 100%; border-radius: 3px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<div class="train-hero">
+  <div class="container">
+    <div class="d-flex align-items-center gap-3 mb-4 text-white">
+      <div style="width:52px;height:52px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🚆</div>
+      <div>
+        <h1 class="fw-black mb-0" style="font-size:1.9rem;letter-spacing:-.01em">Train Tickets</h1>
+        <p class="mb-0 opacity-75" style="font-size:.88rem">Indian Railways — all classes, all trains, real-time availability.</p>
+      </div>
+    </div>
+    <div class="search-card">
+      <form method="POST" action="{{ url_for('trains.search') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-train-front text-primary me-1"></i>From Station / City
+            </label>
+            <input type="text" name="origin" class="form-control st-ac-city" placeholder="Delhi, Mumbai, Chennai…" value="{{ origin }}" autocomplete="off" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-geo-alt-fill text-danger me-1"></i>To Station / City
+            </label>
+            <input type="text" name="destination" class="form-control st-ac-city" placeholder="Agra, Goa, Bangalore…" value="{{ destination }}" autocomplete="off" required>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-calendar3 text-primary me-1"></i>Journey Date
+            </label>
+            <input type="date" name="travel_date" class="form-control" value="{{ travel_date }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">Class</label>
+            <select name="travel_class" class="form-control">
+              <option value="SL"  {% if travel_class=="SL"  %}selected{% endif %}>🛏 Sleeper (SL)</option>
+              <option value="3AC" {% if travel_class=="3AC" %}selected{% endif %}>❄️ Third AC (3A)</option>
+              <option value="2AC" {% if travel_class=="2AC" %}selected{% endif %}>❄️ Second AC (2A)</option>
+              <option value="1AC" {% if travel_class=="1AC" %}selected{% endif %}>👑 First AC (1A)</option>
+            </select>
+          </div>
+          <div class="col-md-1">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">Passengers</label>
+            <select name="passengers" class="form-control">
+              {% for i in range(1,7) %}
+              <option value="{{ i }}" {% if i==passengers %}selected{% endif %}>{{ i }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-1">
+            <label class="form-label small fw-bold mb-1">&nbsp;</label>
+            <button type="submit" class="btn-search btn">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULTS ════════════════════════════════════════════════════════════ -->
+<div class="trains-page">
+<div class="container py-4">
+{% if results %}
+<div class="row g-3">
+
+  <!-- ── Filter Sidebar ── -->
+  <div class="col-lg-3 d-none d-lg-block">
+    <div class="filter-panel">
+
+      <div class="filter-section">
+        <h6 class="mb-3">Sort By</h6>
+        <button class="sort-side-btn active" onclick="sortTrains('depart', this)">
+          <i class="bi bi-sunrise me-1"></i>Earliest Departure
+        </button>
+        <button class="sort-side-btn" onclick="sortTrains('price', this)">
+          <i class="bi bi-currency-rupee me-1"></i>Lowest Fare
+        </button>
+        <button class="sort-side-btn" onclick="sortTrains('duration', this)">
+          <i class="bi bi-clock me-1"></i>Shortest Duration
+        </button>
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Travel Class</h6>
+        <button class="class-filter-btn active" data-class="all" onclick="filterClass('all', this)">
+          🚆 All Classes
+        </button>
+        <button class="class-filter-btn" data-class="SL" onclick="filterClass('SL', this)">
+          🛏 Sleeper (SL)
+        </button>
+        <button class="class-filter-btn" data-class="3AC" onclick="filterClass('3AC', this)">
+          ❄️ Third AC (3A)
+        </button>
+        <button class="class-filter-btn" data-class="2AC" onclick="filterClass('2AC', this)">
+          ❄️ Second AC (2A)
+        </button>
+        <button class="class-filter-btn" data-class="1AC" onclick="filterClass('1AC', this)">
+          👑 First AC (1A)
+        </button>
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Train Type</h6>
+        {% for ttype in ['Rajdhani', 'Shatabdi', 'Duronto', 'Express', 'Mail', 'Superfast'] %}
+        <label class="train-type-cb">
+          <input type="checkbox" checked onchange="filterTrainType()" data-ttype="{{ ttype }}">
+          {{ ttype }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Departure Time</h6>
+        <div class="d-flex flex-column gap-2">
+          {% for slot, label, icon in [('00:00-06:00','Night (12am–6am)','🌙'),('06:00-12:00','Morning (6am–12pm)','🌅'),('12:00-18:00','Afternoon (12–6pm)','☀️'),('18:00-24:00','Evening (6pm–12am)','🌆')] %}
+          <label class="train-type-cb">
+            <input type="checkbox" checked onchange="filterDepTime()" data-slot="{{ slot }}">
+            {{ icon }} {{ label }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <button onclick="resetFilters()" class="btn btn-outline-secondary btn-sm w-100" style="border-radius:8px">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Train results ── -->
+  <div class="col-lg-9">
+
+    <!-- Filter chips -->
+    {% if search_performed %}
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      {% if origin %}
+      <span class="badge" style="background:#eef2ff;color:#1d4ed8;border:1px solid #c7d2fe;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        🚆 {{ origin }}
+      </span>
+      {% endif %}
+      {% if destination %}
+      <span class="badge" style="background:#fef9c3;color:#92400e;border:1px solid #fde68a;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        📍 {{ destination }}
+      </span>
+      {% endif %}
+      {% if travel_date %}
+      <span class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        📅 {{ travel_date }}
+      </span>
+      {% endif %}
+      <span class="badge" style="background:#f5f3ff;color:#5b21b6;border:1px solid #ddd6fe;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        👥 {{ passengers }} passenger{{ 's' if passengers > 1 }}
+      </span>
+    </div>
+    {% endif %}
+
+    <!-- Sort bar -->
+    <div class="sort-bar">
+      <div class="fw-bold" style="font-size:.95rem;color:#111">
+        <span id="trainCount">{{ results|length }}</span> train{{ 's' if results|length != 1 }}
+        {% if search_performed %}found{% else %}available{% endif %}
+      </div>
+      <div class="text-muted small">
+        <i class="bi bi-clock-history me-1"></i>Data refreshed daily
+      </div>
+    </div>
+
+    <!-- Train cards -->
+    <div id="trainResults">
+    {% for r in results %}
+    {% set t = r.train %}
+    {% set avail_pct = [([r.seats, 80]|min / 80 * 100)|int, 5]|max %}
+    {% set ttype_lc = t.train_type | lower if t.train_type else 'express' %}
+    {% if 'rajdhani' in ttype_lc %}{% set type_cls = 'type-rajdhani' %}
+    {% elif 'shatabdi' in ttype_lc %}{% set type_cls = 'type-shatabdi' %}
+    {% elif 'duronto' in ttype_lc %}{% set type_cls = 'type-duronto' %}
+    {% elif 'mail' in ttype_lc %}{% set type_cls = 'type-mail' %}
+    {% elif 'superfast' in ttype_lc or 'sf' in ttype_lc %}{% set type_cls = 'type-sf' %}
+    {% else %}{% set type_cls = 'type-express' %}{% endif %}
+
+    <div class="train-card"
+         data-depart="{{ t.depart_time }}"
+         data-price="{{ r.fare }}"
+         data-duration="{{ t.duration_mins }}"
+         data-class="{{ r.class_code }}"
+         data-ttype="{{ t.train_type or 'Express' }}">
+      <div class="train-card-top"></div>
+
+      <div class="p-3 pb-2">
+        <div class="row align-items-start g-3">
+
+          <!-- Train info -->
+          <div class="col-md-3">
+            <div class="train-name">{{ t.train_name }}</div>
+            <div class="train-no">{{ t.train_no }}</div>
+            <span class="train-type-badge {{ type_cls }}">{{ t.train_type or 'Express' }}</span>
+            <div class="run-days mt-1">
+              <i class="bi bi-calendar-week me-1"></i>{{ t.run_days or 'Mon–Sun' }}
+            </div>
+          </div>
+
+          <!-- Route -->
+          <div class="col-md-4">
+            <div class="route-wrap">
+              <div class="text-center">
+                <div class="route-time">{{ t.depart_time }}</div>
+                <div class="route-station">{{ t.origin }}</div>
+              </div>
+              <div class="route-mid">
+                <div class="route-dur">{{ t.duration_mins // 60 }}h {{ t.duration_mins % 60 }}m</div>
+                <div class="route-line-wrap">
+                  <div class="route-dot"></div>
+                  <div class="route-bar"></div>
+                  <span class="route-train-icon">🚆</span>
+                  <div class="route-bar"></div>
+                  <div class="route-dot"></div>
+                </div>
+                <div style="font-size:.65rem;color:#16a34a;font-weight:700;background:#dcfce7;padding:1px 8px;border-radius:10px">Direct</div>
+              </div>
+              <div class="text-center">
+                <div class="route-time">{{ t.arrive_time }}</div>
+                <div class="route-station">{{ t.destination }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Class availability — show all 4 classes inline -->
+          <div class="col-md-5">
+            <div class="class-avail">
+              {% for code, info in classes.items() %}
+              {% set fare_val = t[info[1]] if t[info[1]] else None %}
+              {% set seat_val = t[info[2]] if t[info[2]] else 0 %}
+              {% if fare_val %}
+              <a href="{{ url_for('trains.select', train_id=t.id, travel_class=code) }}"
+                 class="class-pill {{ 'available' if seat_val > 0 else 'waitlist' }}"
+                 title="{{ info[0] }}">
+                <div class="cls-code">{{ code }}</div>
+                <div class="cls-name">{{ info[0] }}</div>
+                <div class="cls-fare">₹{{ "{:,.0f}".format(fare_val) }}</div>
+                {% if seat_val > 20 %}
+                <div class="cls-seats avail">{{ seat_val }} avail</div>
+                {% elif seat_val > 0 %}
+                <div class="cls-seats wl">{{ seat_val }} left!</div>
+                {% else %}
+                <div class="cls-seats na">WL</div>
+                {% endif %}
+                <div class="avail-bar">
+                  <div class="avail-bar-fill" style="width:{{ [seat_val / 80 * 100, 100]|min|int }}%;background:{{ '#16a34a' if seat_val > 20 else '#f59e0b' if seat_val > 0 else '#dc2626' }}"></div>
+                </div>
+              </a>
+              {% else %}
+              <div class="class-pill notavail">
+                <div class="cls-code">{{ code }}</div>
+                <div class="cls-name">{{ info[0] }}</div>
+                <div class="cls-fare" style="font-size:.75rem;color:#9ca3af">N/A</div>
+                <div class="cls-seats na">Not avail</div>
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer row -->
+      <div class="border-top mx-3 pt-2 pb-3 d-flex justify-content-between align-items-center">
+        <div class="d-flex gap-3" style="font-size:.76rem;color:#6b7280">
+          <span><i class="bi bi-cup-hot me-1"></i>Pantry Car</span>
+          <span><i class="bi bi-wifi me-1"></i>Wi-Fi</span>
+          <span><i class="bi bi-outlet me-1"></i>Charging Point</span>
+        </div>
+        <a href="{{ url_for('trains.select', train_id=t.id, travel_class=r.class_code) }}"
+           class="btn-book-train btn">
+          Book {{ r.class_code }} — ₹{{ "{:,.0f}".format(r.fare) }}
+          <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+    </div>
+
+  </div><!-- /col-lg-9 -->
+</div><!-- /row -->
+{% else %}
+<!-- Default state - no search yet -->
+<div class="text-center py-5">
+  <div style="font-size:5rem">🚆</div>
+  <h4 class="fw-bold mt-3">Search for trains above</h4>
+  <p class="text-muted">Enter origin &amp; destination to find available trains.</p>
+</div>
+{% endif %}
+
+{# ── No results ── #}
+{% if search_performed and not results and not search_error %}
+<div style="text-align:center;padding:60px 20px;">
+  <div style="font-size:3.5rem;margin-bottom:16px;opacity:.8">🚆</div>
+  <h4 style="font-weight:700;color:#1e293b;margin-bottom:8px">No trains found</h4>
+  <p style="color:#64748b;max-width:420px;margin:0 auto 20px">
+    We couldn't find trains for this route. Try different stations, another date, or a different travel class.
+  </p>
+  <a href="{{ url_for('trains.search') }}" class="btn btn-primary" style="border-radius:10px;padding:10px 24px">
+    <i class="bi bi-arrow-counterclockwise me-1"></i>New Search
+  </a>
+</div>
+{% endif %}
+
+{# ── Search error ── #}
+{% if search_performed and search_error %}
+<div style="text-align:center;padding:60px 20px;">
+  <div style="font-size:3.5rem;margin-bottom:16px;opacity:.8">⚠️</div>
+  <h4 style="font-weight:700;color:#dc2626;margin-bottom:8px">Search Failed</h4>
+  <p style="color:#64748b;max-width:480px;margin:0 auto 20px">{{ search_error }}</p>
+  <div class="d-flex justify-content-center gap-2">
+    <a href="{{ url_for('trains.search') }}" class="btn btn-outline-secondary" style="border-radius:10px;padding:10px 24px">
+      <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+    </a>
+    <button onclick="document.querySelector('form').submit()" class="btn btn-primary" style="border-radius:10px;padding:10px 24px">
+      <i class="bi bi-arrow-repeat me-1"></i>Retry Search
+    </button>
+  </div>
+</div>
+{% endif %}
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const today = new Date().toISOString().split('T')[0];
+document.querySelectorAll('input[type="date"]').forEach(i => i.min = today);
+
+// ── Sort ──────────────────────────────────────────────────────────────────
+function sortTrains(key, btn) {
+  const container = document.getElementById('trainResults');
+  if (!container) return;
+  const cards = [...container.querySelectorAll('.train-card')];
+  cards.sort((a, b) => {
+    if (key === 'depart')   return a.dataset.depart.localeCompare(b.dataset.depart);
+    if (key === 'price')    return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+    if (key === 'duration') return parseInt(a.dataset.duration) - parseInt(b.dataset.duration);
+    return 0;
+  });
+  cards.forEach(c => container.appendChild(c));
+  document.querySelectorAll('.sort-side-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+// ── Class filter ──────────────────────────────────────────────────────────
+function filterClass(cls, btn) {
+  document.querySelectorAll('.class-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.train-card').forEach(card => {
+    card.style.display = (cls === 'all' || card.dataset.class === cls) ? '' : 'none';
+  });
+  updateCount();
+}
+
+// ── Train type filter ────────────────────────────────────────────────────
+function filterTrainType() {
+  applyFilters();
+}
+
+// ── Departure time filter ─────────────────────────────────────────────────
+function filterDepTime() {
+  applyFilters();
+}
+
+function applyFilters() {
+  const activeTtypes = new Set();
+  document.querySelectorAll('input[data-ttype]:checked').forEach(cb => activeTtypes.add(cb.dataset.ttype));
+  const activeSlots = [...document.querySelectorAll('input[data-slot]:checked')].map(cb => cb.dataset.slot);
+  const activeClass = document.querySelector('.class-filter-btn.active')?.dataset.class || 'all';
+
+  document.querySelectorAll('.train-card').forEach(card => {
+    const ttype = card.dataset.ttype || '';
+    const depart = card.dataset.depart || '00:00';
+    const cls = card.dataset.class;
+
+    let show = true;
+    // class filter
+    if (activeClass !== 'all' && cls !== activeClass) show = false;
+    // ttype filter
+    if (activeTtypes.size > 0) {
+      const matched = [...activeTtypes].some(t => ttype.toLowerCase().includes(t.toLowerCase()));
+      if (!matched) show = false;
+    }
+    // time slot filter
+    if (activeSlots.length > 0) {
+      const matchSlot = activeSlots.some(slot => {
+        const [s, e] = slot.split('-');
+        return depart >= s && depart < e;
+      });
+      if (!matchSlot) show = false;
+    }
+    card.style.display = show ? '' : 'none';
+  });
+  updateCount();
+}
+
+function updateCount() {
+  const visible = document.querySelectorAll('.train-card:not([style*="none"])').length;
+  const el = document.getElementById('trainCount');
+  if (el) el.textContent = visible;
+}
+
+function resetFilters() {
+  document.querySelectorAll('input[data-ttype]').forEach(cb => cb.checked = true);
+  document.querySelectorAll('input[data-slot]').forEach(cb => cb.checked = true);
+  document.querySelectorAll('.class-filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.class-filter-btn').classList.add('active');
+  document.querySelectorAll('.train-card').forEach(c => c.style.display = '');
+  document.querySelectorAll('.sort-side-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.sort-side-btn').classList.add('active');
+  updateCount();
+}
+</script>
+<script>stAC(['origin','destination']);</script>
+{% endblock %}

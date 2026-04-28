@@ -1,0 +1,553 @@
+{% extends "layouts/base.html" %}
+{% block title %}Select Seats — {{ flight.airline }} {{ flight.flight_no }}{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Page ─────────────────────────────────────── */
+body { background: #f0f4ff; }
+.seat-page { min-height: 100vh; }
+
+/* ── Hero strip ───────────────────────────────── */
+.seat-hero {
+  background: linear-gradient(135deg, #0f2d87 0%, #1d4ed8 60%, #2563eb 100%);
+  padding: 24px 0 28px;
+}
+
+/* ── Flight summary card ──────────────────────── */
+.flight-summary-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 22px 28px;
+  box-shadow: 0 8px 36px rgba(0,0,0,.14);
+}
+.route-time-lg { font-size: 1.6rem; font-weight: 900; color: #0f172a; line-height: 1; }
+.route-city-sm { font-size: .72rem; color: #9ca3af; margin-top: 4px; font-weight: 500; }
+.dur-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #eef2ff; border: 1.5px solid #c7d2fe;
+  border-radius: 20px; padding: 5px 16px;
+  font-size: .8rem; font-weight: 700; color: #1d4ed8;
+}
+.route-line { flex: 1; height: 2px; background: linear-gradient(90deg, #1d4ed8, #93c5fd, #1d4ed8); }
+.step-indicator {
+  display: flex; align-items: center; gap: 0; margin-bottom: 8px;
+}
+.step { display: flex; align-items: center; gap: 6px; }
+.step-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; font-weight: 700;
+}
+.step-dot-done { background: #dcfce7; color: #166534; }
+.step-dot-active { background: #1d4ed8; color: #fff; }
+.step-dot-pending { background: #f3f4f6; color: #9ca3af; }
+.step-label { font-size: .75rem; color: #6b7280; font-weight: 600; }
+.step-line { flex: 1; height: 2px; background: #e5e7eb; margin: 0 6px; min-width: 24px; }
+.step-line-done { background: #16a34a; }
+
+/* ── Cabin map container ──────────────────────── */
+.cabin-wrapper {
+  background: #fff;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.07);
+}
+.cabin-nose {
+  width: 80px; height: 40px; margin: 0 auto -1px;
+  background: linear-gradient(135deg, #c7d2fe, #e0e7ff);
+  border-radius: 40px 40px 0 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+}
+.cabin-body {
+  border: 2px solid #e0e7ff; border-radius: 4px;
+  padding: 14px 10px 20px;
+  background: #f8fafc;
+}
+.seat-section-label {
+  text-align: center; font-size: .7rem; font-weight: 700;
+  color: #9ca3af; letter-spacing: .08em; text-transform: uppercase;
+  padding: 6px 0; margin: 6px 0;
+  border-top: 1px dashed #e0e7ff; border-bottom: 1px dashed #e0e7ff;
+}
+.seat-row {
+  display: flex; align-items: center; gap: 4px;
+  margin-bottom: 5px;
+}
+.seat-row-num {
+  width: 22px; text-align: center; font-size: .68rem; color: #9ca3af; font-weight: 600; flex-shrink: 0;
+}
+.seat-col-labels {
+  display: flex; align-items: center; gap: 4px;
+  margin-bottom: 8px; padding-left: 26px;
+}
+.col-label {
+  width: 32px; text-align: center; font-size: .7rem; color: #6b7280; font-weight: 700;
+}
+.aisle-gap { width: 20px; }
+.seat {
+  width: 32px; height: 32px; border-radius: 8px 8px 4px 4px;
+  border: 2px solid; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .65rem; font-weight: 700;
+  transition: all .15s; position: relative;
+  outline: none; user-select: none;
+}
+.seat-available {
+  background: #ecfdf5; border-color: #6ee7b7; color: #065f46;
+}
+.seat-available:hover {
+  background: #6ee7b7; border-color: #059669; color: #fff;
+  transform: scale(1.12);
+}
+.seat-selected {
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  border-color: #1e40af; color: #fff;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(29,78,216,.4);
+}
+.seat-occupied {
+  background: #f3f4f6; border-color: #d1d5db; color: #d1d5db;
+  cursor: not-allowed;
+}
+.seat-exit { border-style: dashed; }
+.seat-window::after {
+  content: '🪟';
+  position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+  font-size: .55rem; opacity: .6;
+}
+
+/* ── Legend ───────────────────────────────────── */
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: .78rem; color: #4b5563; }
+.legend-dot { width: 18px; height: 18px; border-radius: 5px; border: 2px solid; flex-shrink: 0; }
+.legend-available { background: #ecfdf5; border-color: #6ee7b7; }
+.legend-selected  { background: #1d4ed8; border-color: #1e40af; }
+.legend-occupied  { background: #f3f4f6; border-color: #d1d5db; }
+
+/* ── Selection summary ────────────────────────── */
+.selection-panel {
+  background: #fff; border-radius: 18px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.07);
+  position: sticky; top: 80px;
+  overflow: hidden;
+}
+.selection-header {
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  color: #fff; padding: 18px 22px;
+}
+.selected-seat-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #eef2ff; border: 1.5px solid #c7d2fe; border-radius: 8px;
+  padding: 4px 12px; font-size: .82rem; font-weight: 700; color: #1d4ed8;
+  margin: 3px;
+}
+.selected-seat-chip .rm { cursor: pointer; color: #6b7280; margin-left: 4px; }
+.selected-seat-chip .rm:hover { color: #dc2626; }
+.seat-class-badge {
+  border-radius: 8px; padding: 6px 12px; font-size: .78rem; font-weight: 600;
+  cursor: pointer; border: 2px solid transparent; transition: all .15s;
+}
+.seat-class-badge.active { border-color: #1d4ed8; background: #eef2ff; color: #1d4ed8; }
+.seat-class-badge:not(.active) { background: #f9fafb; color: #6b7280; }
+.btn-proceed {
+  background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+  color: #fff; border: none; border-radius: 14px;
+  padding: 14px; font-weight: 800; font-size: 1rem;
+  width: 100%; transition: all .2s;
+  box-shadow: 0 4px 16px rgba(29,78,216,.3);
+}
+.btn-proceed:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  transform: translateY(-1px); box-shadow: 0 6px 22px rgba(29,78,216,.4);
+}
+.btn-proceed:disabled { opacity: .5; cursor: not-allowed; }
+.price-breakdown { font-size: .82rem; }
+.price-breakdown .row-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f3f4f6; }
+.price-breakdown .row-total { display: flex; justify-content: space-between; padding: 8px 0; font-weight: 800; font-size: .95rem; color: #111; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<div class="seat-hero">
+  <div class="container">
+
+    <!-- Step indicator -->
+    <div class="step-indicator mb-4">
+      <div class="step">
+        <div class="step-dot step-dot-done"><i class="bi bi-check"></i></div>
+        <span class="step-label text-white opacity-75">Search</span>
+      </div>
+      <div class="step-line step-line-done"></div>
+      <div class="step">
+        <div class="step-dot step-dot-done"><i class="bi bi-check"></i></div>
+        <span class="step-label text-white opacity-75">Select Flight</span>
+      </div>
+      <div class="step-line step-line-done"></div>
+      <div class="step">
+        <div class="step-dot step-dot-active">3</div>
+        <span class="step-label text-white fw-bold">Choose Seats</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-dot step-dot-pending">4</div>
+        <span class="step-label text-white opacity-50">Passenger Details</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-dot step-dot-pending">5</div>
+        <span class="step-label text-white opacity-50">Confirm &amp; Pay</span>
+      </div>
+    </div>
+
+    <!-- Flight summary card -->
+    <div class="flight-summary-card">
+      <div class="row align-items-center g-3">
+        <div class="col-auto">
+          <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#eef2ff,#e0e7ff);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:900;color:#1d4ed8">
+            {{ flight.airline[:2].upper() }}
+          </div>
+        </div>
+        <div class="col-auto">
+          <div style="font-weight:800;font-size:.95rem;color:#111">{{ flight.airline }}</div>
+          <div style="font-size:.75rem;color:#9ca3af">{{ flight.flight_no }} · {{ flight.cabin_class }}</div>
+        </div>
+        <div class="col d-flex align-items-center gap-3 justify-content-center">
+          <div class="text-center">
+            <div class="route-time-lg">{{ flight.depart_time }}</div>
+            <div class="route-city-sm">{{ flight.origin }}</div>
+          </div>
+          <div class="d-flex align-items-center gap-2" style="flex:1;max-width:180px">
+            <div class="route-line"></div>
+            <div class="dur-pill">✈ {{ flight.duration_mins // 60 }}h {{ flight.duration_mins % 60 }}m</div>
+            <div class="route-line"></div>
+          </div>
+          <div class="text-center">
+            <div class="route-time-lg">{{ flight.arrive_time }}</div>
+            <div class="route-city-sm">{{ flight.destination }}</div>
+          </div>
+        </div>
+        <div class="col-auto text-end">
+          <div style="font-size:.78rem;color:#9ca3af">Base fare</div>
+          <div style="font-size:1.4rem;font-weight:900;color:#1d4ed8">₹{{ "{:,.0f}".format(flight.price) }}</div>
+          <div style="font-size:.72rem;color:#6b7280">per person</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SEAT SELECTION BODY ════════════════════════════════════════════════ -->
+<div class="seat-page">
+<div class="container py-4">
+<div class="row g-4">
+
+  <!-- ── Left: Cabin map ── -->
+  <div class="col-lg-8">
+    <div class="cabin-wrapper">
+
+      <!-- Seat class selector -->
+      <div class="d-flex gap-2 mb-4 flex-wrap">
+        <span style="font-weight:700;font-size:.88rem;color:#374151;align-self:center;margin-right:4px">Seat Class:</span>
+        <div class="seat-class-badge active" onclick="switchClass('economy', this)">
+          Economy &nbsp;·&nbsp; ₹0
+        </div>
+        <div class="seat-class-badge" onclick="switchClass('extra_legroom', this)">
+          Extra Legroom &nbsp;·&nbsp; +₹800
+        </div>
+        <div class="seat-class-badge" onclick="switchClass('business', this)">
+          Business &nbsp;·&nbsp; +₹2,500
+        </div>
+      </div>
+
+      <!-- Column labels -->
+      <div class="seat-col-labels">
+        <div class="col-label">A</div>
+        <div class="col-label">B</div>
+        <div class="col-label">C</div>
+        <div class="aisle-gap"></div>
+        <div class="col-label">D</div>
+        <div class="col-label">E</div>
+        <div class="col-label">F</div>
+      </div>
+
+      <!-- Nose -->
+      <div class="cabin-nose">✈️</div>
+
+      <!-- Cabin body -->
+      <div class="cabin-body" id="cabinBody">
+
+        <!-- Business section (rows 1-3) -->
+        <div class="seat-section-label">Business Class</div>
+        {% for row in range(1, 4) %}
+        <div class="seat-row">
+          <div class="seat-row-num">{{ row }}</div>
+          {% for col in ['A','B','C'] %}
+          {% set sid = row|string + col %}
+          {% if row == 1 and col == 'B' %}
+          <button class="seat seat-occupied" disabled title="Occupied">{{ sid }}</button>
+          {% else %}
+          <button class="seat seat-available seat-window" onclick="toggleSeat(this,'{{ sid }}','business')" data-seat="{{ sid }}" data-class="business" title="Seat {{ sid }} — Business">{{ sid }}</button>
+          {% endif %}
+          {% endfor %}
+          <div class="aisle-gap"></div>
+          {% for col in ['D','E','F'] %}
+          {% set sid = row|string + col %}
+          {% if row == 2 and col == 'E' %}
+          <button class="seat seat-occupied" disabled title="Occupied">{{ sid }}</button>
+          {% else %}
+          <button class="seat seat-available" onclick="toggleSeat(this,'{{ sid }}','business')" data-seat="{{ sid }}" data-class="business" title="Seat {{ sid }} — Business">{{ sid }}</button>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endfor %}
+
+        <!-- Extra legroom (row 4 – emergency exit) -->
+        <div class="seat-section-label" style="color:#f59e0b;border-color:#fde68a">⚡ Extra Legroom (Exit Row)</div>
+        {% for row in [4] %}
+        <div class="seat-row">
+          <div class="seat-row-num">{{ row }}</div>
+          {% for col in ['A','B','C'] %}
+          {% set sid = row|string + col %}
+          <button class="seat seat-available seat-exit" onclick="toggleSeat(this,'{{ sid }}','extra_legroom')" data-seat="{{ sid }}" data-class="extra_legroom" title="Exit Row — Extra Legroom">{{ sid }}</button>
+          {% endfor %}
+          <div class="aisle-gap"></div>
+          {% for col in ['D','E','F'] %}
+          {% set sid = row|string + col %}
+          <button class="seat seat-available seat-exit" onclick="toggleSeat(this,'{{ sid }}','extra_legroom')" data-seat="{{ sid }}" data-class="extra_legroom" title="Exit Row — Extra Legroom">{{ sid }}</button>
+          {% endfor %}
+        </div>
+        {% endfor %}
+
+        <!-- Economy section (rows 5-30) -->
+        <div class="seat-section-label">Economy Class</div>
+        {% set occupied_list = ['5B','6E','7A','8C','9F','10B','11D','12A','13E','14C','15F','16B','17A','18D','19C','20E','21B','22F','23A','24C','25D','26E','27B','28C','29A','30F'] %}
+        {% for row in range(5, 31) %}
+        <div class="seat-row">
+          <div class="seat-row-num">{{ row }}</div>
+          {% for col in ['A','B','C'] %}
+          {% set sid = row|string + col %}
+          {% if sid in occupied_list %}
+          <button class="seat seat-occupied" disabled title="Occupied">{{ sid }}</button>
+          {% else %}
+          <button class="seat seat-available {% if col in ['A','F'] %}seat-window{% endif %}"
+                  onclick="toggleSeat(this,'{{ sid }}','economy')"
+                  data-seat="{{ sid }}" data-class="economy"
+                  title="Seat {{ sid }} — Economy">{{ sid }}</button>
+          {% endif %}
+          {% endfor %}
+          <div class="aisle-gap"></div>
+          {% for col in ['D','E','F'] %}
+          {% set sid = row|string + col %}
+          {% if sid in occupied_list %}
+          <button class="seat seat-occupied" disabled title="Occupied">{{ sid }}</button>
+          {% else %}
+          <button class="seat seat-available {% if col == 'F' %}seat-window{% endif %}"
+                  onclick="toggleSeat(this,'{{ sid }}','economy')"
+                  data-seat="{{ sid }}" data-class="economy"
+                  title="Seat {{ sid }} — Economy">{{ sid }}</button>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endfor %}
+
+      </div><!-- /cabin-body -->
+
+      <!-- Legend -->
+      <div class="d-flex gap-4 mt-4 flex-wrap justify-content-center">
+        <div class="legend-item"><div class="legend-dot legend-available"></div>Available</div>
+        <div class="legend-item"><div class="legend-dot legend-selected"></div>Selected</div>
+        <div class="legend-item"><div class="legend-dot legend-occupied"></div>Occupied</div>
+        <div class="legend-item"><i class="bi bi-exclamation-triangle text-warning me-1"></i>Exit Row</div>
+        <div class="legend-item">🪟 Window</div>
+      </div>
+    </div>
+  </div><!-- /col-lg-8 -->
+
+  <!-- ── Right: Summary panel ── -->
+  <div class="col-lg-4">
+    <div class="selection-panel">
+      <div class="selection-header">
+        <div class="fw-bold" style="font-size:1rem">Your Booking Summary</div>
+        <div style="font-size:.8rem;opacity:.8;margin-top:2px">
+          {{ flight.origin }} → {{ flight.destination }}
+        </div>
+      </div>
+      <div class="p-4">
+
+        <!-- Passengers needed -->
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span style="font-size:.82rem;font-weight:700;color:#374151">Select Seats</span>
+            <span style="font-size:.78rem;color:#6b7280" id="seatCountLabel">
+              <span id="selectedCount">0</span> / {{ passengers }} selected
+            </span>
+          </div>
+          <div class="progress" style="height:6px;border-radius:3px">
+            <div class="progress-bar" id="seatProgress" role="progressbar"
+                 style="width:0%;background:linear-gradient(90deg,#1d4ed8,#3b82f6)"></div>
+          </div>
+        </div>
+
+        <!-- Selected seats chips -->
+        <div id="selectedSeatsChips" class="mb-3" style="min-height:36px">
+          <p class="text-muted small mb-0" id="noSeatMsg">No seats selected yet. Click on a green seat.</p>
+        </div>
+
+        <!-- Price breakdown -->
+        <div class="price-breakdown mb-4">
+          <div class="row-item">
+            <span>Base fare <span id="paxLabel">({{ passengers }} pax)</span></span>
+            <span class="fw-semibold">₹{{ "{:,.0f}".format(flight.price * passengers) }}</span>
+          </div>
+          <div class="row-item">
+            <span>Seat upgrade</span>
+            <span class="fw-semibold" id="seatUpgradeAmt">₹0</span>
+          </div>
+          <div class="row-item">
+            <span>Taxes &amp; fees</span>
+            <span class="fw-semibold">₹{{ "{:,.0f}".format(flight.price * passengers * 0.12) }}</span>
+          </div>
+          <div class="row-total">
+            <span>Total</span>
+            <span id="grandTotal">₹{{ "{:,.0f}".format(flight.price * passengers * 1.12) }}</span>
+          </div>
+        </div>
+
+        <!-- Proceed form -->
+        <form method="POST" action="{{ url_for('public.flight_seat_select', flight_id=flight.id) }}" id="seatForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="selected_seats" id="hiddenSeats" value="">
+          <button type="submit" class="btn-proceed" id="proceedBtn" disabled>
+            <i class="bi bi-grid-3x3 me-2"></i>Continue to Passenger Details
+          </button>
+        </form>
+
+        <div class="mt-3 text-center">
+          <a href="{{ url_for('public.flights') }}" class="text-muted" style="font-size:.8rem">
+            <i class="bi bi-arrow-left me-1"></i>Back to flight results
+          </a>
+        </div>
+
+        <!-- Info -->
+        <div class="mt-4 p-3" style="background:#f0fdf4;border-radius:12px;border:1px solid #bbf7d0">
+          <div style="font-size:.75rem;color:#166534">
+            <i class="bi bi-shield-check me-1"></i><strong>Free cancellation</strong> within 24 hrs of booking.
+          </div>
+          <div style="font-size:.75rem;color:#6b7280;margin-top:4px">
+            <i class="bi bi-luggage me-1"></i>15 kg check-in + 7 kg cabin baggage included.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /col-lg-4 -->
+
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const PASSENGERS_NEEDED = {{ passengers }};
+const BASE_PRICE = {{ flight.price }};
+const BASE_TOTAL = {{ flight.price * passengers }};
+const TAX_RATE = 0.12;
+
+const SEAT_EXTRAS = { economy: 0, extra_legroom: 800, business: 2500 };
+
+let selectedSeats = [];   // [{seat, seatClass}]
+let totalUpgrade = 0;
+
+function toggleSeat(btn, seatId, seatClass) {
+  const idx = selectedSeats.findIndex(s => s.seat === seatId);
+
+  if (btn.classList.contains('seat-selected')) {
+    // Deselect
+    btn.classList.remove('seat-selected');
+    btn.classList.add('seat-available');
+    selectedSeats.splice(idx, 1);
+  } else {
+    // Prevent over-selecting
+    if (selectedSeats.length >= PASSENGERS_NEEDED) {
+      showToast(`You can only select ${PASSENGERS_NEEDED} seat(s).`);
+      return;
+    }
+    btn.classList.remove('seat-available');
+    btn.classList.add('seat-selected');
+    selectedSeats.push({ seat: seatId, seatClass });
+  }
+  updatePanel();
+}
+
+function updatePanel() {
+  const count = selectedSeats.length;
+  document.getElementById('selectedCount').textContent = count;
+  document.getElementById('seatProgress').style.width = (count / PASSENGERS_NEEDED * 100) + '%';
+
+  // Chips
+  const chips = document.getElementById('selectedSeatsChips');
+  const noMsg = document.getElementById('noSeatMsg');
+  if (count === 0) {
+    chips.innerHTML = '<p class="text-muted small mb-0" id="noSeatMsg">No seats selected yet. Click on a green seat.</p>';
+  } else {
+    chips.innerHTML = selectedSeats.map(s => `
+      <span class="selected-seat-chip">
+        <i class="bi bi-grid-3x3" style="font-size:.75rem"></i>&nbsp;${s.seat}
+        <small style="color:#9ca3af;font-size:.65rem">&nbsp;${s.seatClass.replace('_',' ')}</small>
+        <span class="rm" onclick="deselectSeat('${s.seat}')" title="Remove">✕</span>
+      </span>`).join('');
+  }
+
+  // Price
+  totalUpgrade = selectedSeats.reduce((sum, s) => sum + (SEAT_EXTRAS[s.seatClass] || 0), 0);
+  document.getElementById('seatUpgradeAmt').textContent = '₹' + totalUpgrade.toLocaleString('en-IN');
+  const grand = Math.round((BASE_TOTAL + totalUpgrade) * (1 + TAX_RATE));
+  document.getElementById('grandTotal').textContent = '₹' + grand.toLocaleString('en-IN');
+
+  // Hidden input
+  document.getElementById('hiddenSeats').value = selectedSeats.map(s => s.seat).join(',');
+
+  // Proceed button
+  const btn = document.getElementById('proceedBtn');
+  btn.disabled = count < PASSENGERS_NEEDED;
+  if (!btn.disabled) btn.textContent = '✓ Confirm Seats & Continue';
+}
+
+function deselectSeat(seatId) {
+  const btn = document.querySelector(`[data-seat="${seatId}"]`);
+  if (btn) {
+    btn.classList.remove('seat-selected');
+    btn.classList.add('seat-available');
+  }
+  selectedSeats = selectedSeats.filter(s => s.seat !== seatId);
+  updatePanel();
+}
+
+// Highlight seats for the selected class
+function switchClass(cls, el) {
+  document.querySelectorAll('.seat-class-badge').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  // Scroll to first seat of that class
+  const first = document.querySelector(`.seat[data-class="${cls}"]:not(.seat-occupied)`);
+  if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Simple toast
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1d4ed8;color:#fff;border-radius:10px;padding:10px 22px;font-size:.88rem;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2)';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// Form guard
+document.getElementById('seatForm').addEventListener('submit', function(e) {
+  if (selectedSeats.length < PASSENGERS_NEEDED) {
+    e.preventDefault();
+    showToast(`Please select ${PASSENGERS_NEEDED} seat(s) to continue.`);
+  }
+});
+</script>
+{% endblock %}

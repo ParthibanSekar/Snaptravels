@@ -1,0 +1,570 @@
+{% extends "layouts/base.html" %}
+{% block title %}Auto Chaos — SnapTravels Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   SnapTravels — Auto Chaos Dashboard
+   Professional ops-grade dark UI
+═══════════════════════════════════════════════════════════════════ */
+body { background:#080b10 !important; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif !important; }
+
+.ac-hero {
+  background:#080b10;
+  padding:24px 0 20px;
+  border-bottom:1px solid #151c28;
+}
+.ac-breadcrumb { font-size:.72rem; color:#3d5070; font-weight:500; letter-spacing:.03em; margin-bottom:10px; }
+.ac-breadcrumb a { color:#3b82f6; text-decoration:none; }
+.ac-breadcrumb a:hover { text-decoration:underline; }
+.ac-breadcrumb span { color:#4a6080; }
+.ac-title { font-size:1.25rem; font-weight:700; color:#e2e8f0; letter-spacing:-.02em; margin:0; }
+.ac-subtitle { font-size:.78rem; color:#3d5070; margin-top:4px; font-weight:400; }
+
+/* Status badges */
+.status-active {
+  display:inline-flex; align-items:center; gap:6px;
+  background:transparent; color:#dc2626;
+  border:1px solid #7f1d1d; border-radius:4px;
+  padding:4px 10px; font-size:.72rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+}
+.status-off {
+  display:inline-flex; align-items:center; gap:6px;
+  background:transparent; color:#6b7280;
+  border:1px solid #374151; border-radius:4px;
+  padding:4px 10px; font-size:.72rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+}
+.status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.status-dot-red { background:#dc2626; animation:blink-red 1.2s ease-in-out infinite; box-shadow:0 0 0 2px rgba(220,38,38,.2); }
+.status-dot-gray { background:#6b7280; }
+@keyframes blink-red { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* Cards */
+.ac-card {
+  background:#0d1117;
+  border:1px solid #151c28;
+  border-radius:8px;
+  overflow:hidden;
+  margin-bottom:16px;
+}
+.ac-card-head {
+  padding:13px 18px;
+  border-bottom:1px solid #151c28;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:#0d1117;
+}
+.ac-card-body { padding:18px; }
+.ac-badge {
+  width:30px; height:30px; border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.9rem; flex-shrink:0;
+}
+.ac-card-title { font-size:.85rem; font-weight:700; color:#c8d6e8; letter-spacing:-.01em; }
+.ac-card-sub { font-size:.7rem; color:#3d5070; margin-top:1px; }
+
+/* Stat boxes */
+.stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+.stat-box {
+  background:#080b10; border:1px solid #151c28; border-radius:7px;
+  padding:14px 16px; text-align:center;
+}
+.stat-value { font-size:1.5rem; font-weight:800; color:#e2e8f0; font-family:'SF Mono','Fira Code',monospace; }
+.stat-label { font-size:.68rem; color:#3d5070; font-weight:600; text-transform:uppercase; letter-spacing:.08em; margin-top:4px; }
+
+/* Toggle switch */
+.snap-switch { position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0; }
+.snap-switch input { opacity:0; width:0; height:0; }
+.snap-slider {
+  position:absolute; cursor:pointer; inset:0;
+  background:#1a2235; border-radius:24px;
+  transition:background .25s;
+}
+.snap-slider::before {
+  content:''; position:absolute;
+  width:18px; height:18px; left:3px; bottom:3px;
+  background:#3d5070; border-radius:50%;
+  transition:transform .25s, background .25s;
+}
+.snap-switch input:checked + .snap-slider { background:#16a34a; }
+.snap-switch input:checked + .snap-slider::before { transform:translateX(20px); background:#fff; }
+
+/* Timeline rows */
+.tl-row {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 16px; border-radius:7px;
+  border:1px solid #151c28; margin-bottom:6px;
+  transition:border-color .15s;
+}
+.tl-row.past    { opacity:.45; background:#080b10; border-color:#111a26; }
+.tl-row.running { background:#0f0305; border-color:#5c0808; border-left:3px solid #dc2626; box-shadow:0 0 12px rgba(220,38,38,.1); }
+.tl-row.upcoming{ background:#080b10; border-color:#151c28; }
+.tl-row.next-up { background:#080d14; border-color:#1a2640; border-left:3px solid #3b82f6; }
+.tl-mono { font-family:'SF Mono','Fira Code',monospace; font-size:.72rem; }
+.tl-countdown { font-family:'SF Mono','Fira Code',monospace; font-size:.78rem; font-weight:700; }
+
+/* Cycle separator */
+.cycle-sep {
+  display:flex; align-items:center; gap:10px;
+  margin:14px 0 10px;
+  font-size:.65rem; font-weight:800; color:#2d4060;
+  text-transform:uppercase; letter-spacing:.1em;
+}
+.cycle-sep::before, .cycle-sep::after {
+  content:''; flex:1; height:1px; background:#151c28;
+}
+
+/* History */
+.hist-row { display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-bottom:1px solid #0d1117; }
+.hist-row:last-child { border-bottom:none; }
+.hist-badge { font-size:.62rem; font-weight:800; padding:2px 8px; border-radius:4px; white-space:nowrap; flex-shrink:0; }
+
+/* Button */
+.ac-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  background:linear-gradient(135deg,#dc2626,#991b1b);
+  color:#fff; border:1px solid #7f1d1d;
+  padding:8px 18px; border-radius:6px;
+  font-size:.78rem; font-weight:700;
+  cursor:pointer; transition:all .2s;
+  text-decoration:none;
+}
+.ac-btn:hover { filter:brightness(1.15); transform:translateY(-1px); }
+.ac-btn-purple { background:linear-gradient(135deg,#7c3aed,#5b21b6); border-color:#6d28d9; }
+.ac-btn-blue { background:linear-gradient(135deg,#2563eb,#1d4ed8); border-color:#1e40af; }
+
+/* Responsive */
+@media (max-width:768px) {
+  .stat-grid { grid-template-columns:repeat(2,1fr); }
+}
+</style>
+
+<script>
+// UTC to IST converter — defined early so inline document.write() calls work
+function utcToIST(timeStr) {
+  var parts = timeStr.split(':');
+  var h = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10);
+  m += 30; h += 5;
+  if (m >= 60) { m -= 60; h += 1; }
+  if (h >= 24) { h -= 24; }
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+}
+</script>
+{% endblock %}
+
+{% block content %}
+{% set auto_on = state.auto_chaos_mode %}
+{% set any_running = state.auto_chaos_current_type %}
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════════ -->
+<div class="ac-hero">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <div class="ac-breadcrumb">
+          <a href="{{ url_for('chaos_admin.dashboard') }}">Admin / Chaos Engineering</a>
+          <span>/</span> Auto Chaos
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <h1 class="ac-title"><i class="bi bi-robot me-2" style="color:{{ '#ef4444' if auto_on else '#3d5070' }}"></i>Auto Chaos Dashboard</h1>
+          {% if auto_on %}
+            <span class="status-active"><span class="status-dot status-dot-red"></span>AUTOPILOT ACTIVE</span>
+          {% else %}
+            <span class="status-off"><span class="status-dot status-dot-gray"></span>DISABLED</span>
+          {% endif %}
+        </div>
+        <div class="ac-subtitle">Continuous chaos loop — all 5 types cycle automatically with 3-hour cooling gaps</div>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        {% if auto_on and any_running %}
+        <form action="{{ url_for('chaos_admin.end_outage_now') }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button type="submit" class="ac-btn">
+            <i class="bi bi-stop-circle"></i>End All Chaos
+          </button>
+        </form>
+        {% endif %}
+        <form action="{{ url_for('chaos_admin.toggle_auto_mode') }}" method="POST" style="display:flex;align-items:center;gap:10px">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <span style="font-size:.72rem;color:{{ '#ef4444' if auto_on else '#3d5070' }};font-weight:700">{{ 'ON' if auto_on else 'OFF' }}</span>
+          <label class="snap-switch" title="Toggle Auto Chaos Mode">
+            <input type="checkbox" onchange="this.closest('form').submit()" {{ 'checked' if auto_on else '' }}>
+            <span class="snap-slider"></span>
+          </label>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container mt-3">
+
+{% if not auto_on %}
+<!-- ══ OFF STATE ══════════════════════════════════════════════════════════ -->
+<div class="ac-card" style="border-left:3px solid #1e3a5f;">
+  <div class="ac-card-body" style="text-align:center;padding:40px 20px">
+    <i class="bi bi-robot" style="font-size:2.5rem;color:#1e3a5f;display:block;margin-bottom:16px"></i>
+    <div style="font-size:1rem;font-weight:700;color:#c8d6e8;margin-bottom:8px">Auto Chaos is Disabled</div>
+    <div style="font-size:.82rem;color:#4a6080;max-width:500px;margin:0 auto;line-height:1.7;margin-bottom:20px">
+      Enable Auto Chaos to start a continuous loop of all 5 chaos types.
+      Each type runs for 30–60 minutes with a 3-hour cooling gap between events.
+      The cycle repeats 24/7 until you turn it off.
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-width:700px;margin:0 auto 24px">
+      {% for icon,color,title in [
+        ('bi-exclamation-triangle-fill','#ef4444','Named Outage'),
+        ('bi-speedometer2','#a78bfa','Page Load'),
+        ('bi-bug-fill','#f59e0b','Functionality'),
+        ('bi-grid-1x2-fill','#22d3ee','Component'),
+        ('bi-shuffle','#34d399','A/B Test'),
+      ] %}
+      <div style="border:1px solid #151c28;border-radius:6px;padding:14px 10px;background:#080b10;text-align:center">
+        <i class="bi {{ icon }}" style="color:{{ color }};font-size:1.2rem;display:block;margin-bottom:6px"></i>
+        <div style="font-size:.7rem;font-weight:700;color:#94a3b8">{{ title }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <form action="{{ url_for('chaos_admin.toggle_auto_mode') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit" class="ac-btn ac-btn-purple" style="font-size:.85rem;padding:10px 28px">
+        <i class="bi bi-play-fill"></i>Enable Auto Chaos
+      </button>
+    </form>
+  </div>
+</div>
+
+{% else %}
+<!-- ══ ON STATE ═══════════════════════════════════════════════════════════ -->
+
+<!-- ── Stats Row ────────────────────────────────────────────────────────── -->
+<div class="stat-grid">
+  <div class="stat-box" style="border-left:3px solid #3b82f6">
+    <div class="stat-value" style="color:#60a5fa">{{ total_events }}</div>
+    <div class="stat-label">Total Events</div>
+  </div>
+  <div class="stat-box" style="border-left:3px solid #16a34a">
+    <div class="stat-value" style="color:#4ade80">{{ completed_events }}</div>
+    <div class="stat-label">Completed</div>
+  </div>
+  <div class="stat-box" style="border-left:3px solid {% if running_event %}#dc2626{% else %}#374151{% endif %}">
+    <div class="stat-value" style="color:{% if running_event %}#f87171{% else %}#6b7280{% endif %}">{{ 1 if running_event else 0 }}</div>
+    <div class="stat-label">Running Now</div>
+  </div>
+  <div class="stat-box" style="border-left:3px solid #7c3aed">
+    <div class="stat-value" style="color:#a78bfa">{{ upcoming_events }}</div>
+    <div class="stat-label">Upcoming</div>
+  </div>
+</div>
+
+<!-- ── Countdown Timers ─────────────────────────────────────────────────── -->
+<div class="ac-card" style="border-left:3px solid {{ '#dc2626' if running_event else '#3b82f6' }}">
+  <div class="ac-card-body" style="display:flex;gap:20px;flex-wrap:wrap;align-items:stretch">
+
+    <!-- Next Reshuffle -->
+    <div style="flex:1;min-width:220px;background:#080d14;border:1px solid #1a2640;border-radius:7px;padding:16px;text-align:center">
+      <i class="bi bi-arrow-repeat" style="color:#3b82f6;font-size:1.3rem;display:block;margin-bottom:8px"></i>
+      <div style="font-size:.68rem;color:#3d5070;font-weight:700;text-transform:uppercase;letter-spacing:.08em">Next Reshuffle</div>
+      <div style="font-size:.68rem;color:#4a6080;margin-top:2px">05:35 IST (00:05 UTC) daily</div>
+      <div class="tl-countdown" style="color:#60a5fa;font-size:1.3rem;margin-top:8px" id="reshuffleCountdown">--:--:--</div>
+    </div>
+
+    <!-- Currently Running -->
+    {% if running_event %}
+    <div style="flex:1;min-width:220px;background:#0f0305;border:1px solid #5c0808;border-radius:7px;padding:16px;text-align:center">
+      {% set type_meta = {
+        'named_outage':    ('bi-exclamation-triangle-fill', '#ef4444'),
+        'page_load':       ('bi-speedometer2',              '#a78bfa'),
+        'func_chaos':      ('bi-bug-fill',                  '#f59e0b'),
+        'component_chaos': ('bi-grid-1x2-fill',             '#22d3ee'),
+        'ab_test':         ('bi-shuffle',                   '#34d399'),
+      } %}
+      {% set r_icon, r_color = type_meta.get(running_event.type, ('bi-circle','#ef4444')) %}
+      <i class="bi {{ r_icon }}" style="color:{{ r_color }};font-size:1.3rem;display:block;margin-bottom:8px"></i>
+      <div style="font-size:.68rem;color:#dc2626;font-weight:700;text-transform:uppercase;letter-spacing:.08em;animation:blink-red 1.8s infinite">Chaos Running</div>
+      <div style="font-size:.82rem;color:#fca5a5;font-weight:700;margin-top:4px">{{ running_event.label }}</div>
+      <div class="tl-countdown" style="color:#f87171;font-size:1.3rem;margin-top:8px"
+           id="eventCountdown"
+           data-ends="{{ state.auto_chaos_ends_at.isoformat() if state.auto_chaos_ends_at else '' }}">--:--:--</div>
+      <div style="font-size:.68rem;color:#6b7280;margin-top:4px">
+        ends <script>document.write(utcToIST('{{ state.auto_chaos_ends_at.strftime("%H:%M") }}'))</script> IST ({{ state.auto_chaos_ends_at.strftime('%H:%M') }} UTC)
+      </div>
+    </div>
+    {% else %}
+    <div style="flex:1;min-width:220px;background:#080d14;border:1px solid #1a2640;border-radius:7px;padding:16px;text-align:center">
+      <i class="bi bi-pause-circle" style="color:#3d5070;font-size:1.3rem;display:block;margin-bottom:8px"></i>
+      <div style="font-size:.68rem;color:#3d5070;font-weight:700;text-transform:uppercase;letter-spacing:.08em">Status</div>
+      <div style="font-size:.85rem;color:#4a6080;font-weight:700;margin-top:8px">Cooling Down</div>
+      {% if next_event %}
+      <div style="font-size:.68rem;color:#3d5070;margin-top:6px">Next event starts soon</div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Next Up -->
+    {% if next_event %}
+    <div style="flex:1;min-width:220px;background:#080d14;border:1px solid #1a2640;border-radius:7px;padding:16px;text-align:center">
+      {% set type_meta2 = {
+        'named_outage':    ('bi-exclamation-triangle-fill', '#ef4444'),
+        'page_load':       ('bi-speedometer2',              '#a78bfa'),
+        'func_chaos':      ('bi-bug-fill',                  '#f59e0b'),
+        'component_chaos': ('bi-grid-1x2-fill',             '#22d3ee'),
+        'ab_test':         ('bi-shuffle',                   '#34d399'),
+      } %}
+      {% set n_icon, n_color = type_meta2.get(next_event.type, ('bi-circle','#3b82f6')) %}
+      <i class="bi {{ n_icon }}" style="color:{{ n_color }};font-size:1.3rem;display:block;margin-bottom:8px"></i>
+      <div style="font-size:.68rem;color:#3d5070;font-weight:700;text-transform:uppercase;letter-spacing:.08em">Up Next</div>
+      <div style="font-size:.82rem;color:#c8d6e8;font-weight:700;margin-top:4px">{{ next_event.label }}</div>
+      <div class="tl-countdown" style="color:#60a5fa;font-size:1.3rem;margin-top:8px"
+           id="nextEventCountdown"
+           data-starts="{{ next_event.start.isoformat() }}">--:--:--</div>
+      <div style="font-size:.68rem;color:#4a6080;margin-top:4px">{{ next_event.duration }} min duration</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+
+<!-- ── Full Schedule Timeline ───────────────────────────────────────────── -->
+<div class="ac-card" style="border-left:3px solid #7c3aed">
+  <div class="ac-card-head">
+    <div class="ac-badge" style="background:#190f33;color:#a78bfa"><i class="bi bi-calendar3"></i></div>
+    <div style="flex:1">
+      <div class="ac-card-title">Today's Continuous Schedule</div>
+      <div class="ac-card-sub">{{ total_events }} events across {{ total_cycles }} cycle(s) — times shown in IST (UTC)</div>
+    </div>
+  </div>
+  <div class="ac-card-body">
+    {% set type_icons = {
+      'named_outage':    ('bi-exclamation-triangle-fill', '#ef4444'),
+      'page_load':       ('bi-speedometer2',              '#a78bfa'),
+      'func_chaos':      ('bi-bug-fill',                  '#f59e0b'),
+      'component_chaos': ('bi-grid-1x2-fill',             '#22d3ee'),
+      'ab_test':         ('bi-shuffle',                   '#34d399'),
+    } %}
+
+    {% if schedule_windows %}
+      {% set ns = namespace(cycle_num=1, event_in_cycle=0) %}
+      {% for w in schedule_windows %}
+        {# Cycle separator every 5 events #}
+        {% if ns.event_in_cycle == 0 %}
+          <div class="cycle-sep">Cycle {{ ns.cycle_num }}</div>
+        {% endif %}
+
+        {% set icon, color = type_icons.get(w.type, ('bi-circle','#3d5070')) %}
+        {% set ist_start = w.start.__class__(w.start.year, w.start.month, w.start.day, w.start.hour, w.start.minute) %}
+
+        <div class="tl-row {{ w.status }}{% if w.status == 'upcoming' and loop.index == (completed_events + (1 if running_event else 0) + 1) %} next-up{% endif %}"
+             {% if w.status == 'upcoming' %}data-start-utc="{{ w.start.isoformat() }}"{% endif %}>
+          <!-- Icon -->
+          <i class="bi {{ icon }}" style="color:{{ 'rgba(239,68,68,.4)' if w.status=='past' else color }};font-size:1rem;flex-shrink:0;width:22px;text-align:center"></i>
+
+          <!-- Event number -->
+          <span style="font-size:.65rem;font-weight:800;color:#2d4060;min-width:22px">#{{ loop.index }}</span>
+
+          <!-- Label + status -->
+          <div style="flex:1">
+            <span style="font-size:.8rem;font-weight:700;color:{{ '#6b7280' if w.status=='past' else ('#f87171' if w.status=='running' else '#c8d6e8') }}">
+              {{ w.label }}
+            </span>
+            {% if w.status == 'running' %}
+            <span style="font-size:.6rem;color:#dc2626;font-weight:800;margin-left:8px;animation:blink-red 1.4s infinite">● LIVE</span>
+            {% elif w.status == 'past' %}
+            <span style="font-size:.6rem;color:#374151;margin-left:8px">✓ done</span>
+            {% else %}
+            <span style="font-size:.6rem;color:#1e3a5f;margin-left:8px;font-weight:700">upcoming</span>
+            {% endif %}
+          </div>
+
+          <!-- Duration badge -->
+          <span style="font-size:.65rem;background:{{ '#151c28' if w.status=='past' else '#0f1520' }};color:{{ '#374151' if w.status=='past' else '#4a6080' }};padding:3px 8px;border-radius:4px;font-weight:700">
+            {{ w.duration }}m
+          </span>
+
+          <!-- Time (IST primary, UTC in brackets) -->
+          <div style="text-align:right;min-width:180px">
+            <div class="tl-mono" style="color:{{ '#374151' if w.status=='past' else '#c8d6e8' }}">
+              <script>document.write(utcToIST('{{ w.start.strftime("%H:%M") }}'))</script> – <script>document.write(utcToIST('{{ w.end.strftime("%H:%M") }}'))</script> IST
+            </div>
+            <div style="font-size:.62rem;color:{{ '#2d3748' if w.status=='past' else '#3d5070' }}">
+              {{ w.start.strftime('%H:%M') }} – {{ w.end.strftime('%H:%M') }} UTC
+            </div>
+          </div>
+        </div>
+
+        {% set ns.event_in_cycle = ns.event_in_cycle + 1 %}
+        {% if ns.event_in_cycle >= 5 %}
+          {% set ns.event_in_cycle = 0 %}
+          {% set ns.cycle_num = ns.cycle_num + 1 %}
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <div style="border:1px solid #151c28;border-radius:6px;padding:24px;text-align:center;color:#3d5070;font-size:.82rem">
+        <i class="bi bi-hourglass me-2"></i>Generating schedule... refresh in a moment.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+
+<!-- ── Chaos History ────────────────────────────────────────────────────── -->
+{% if history_events %}
+<div class="ac-card" style="border-left:3px solid #1d4ed8">
+  <div class="ac-card-head">
+    <div class="ac-badge" style="background:#0a1624;color:#60a5fa"><i class="bi bi-clock-history"></i></div>
+    <div style="flex:1">
+      <div class="ac-card-title">Chaos History</div>
+      <div class="ac-card-sub">Recent auto-chaos events — times in IST (UTC)</div>
+    </div>
+  </div>
+  <div class="ac-card-body" style="padding:0">
+    <div style="overflow:hidden;background:#080b10">
+      <!-- Header -->
+      <div style="display:flex;gap:10px;padding:10px 16px;background:#0a0d14;border-bottom:1px solid #151c28;font-size:.65rem;font-weight:800;color:#2d4060;text-transform:uppercase;letter-spacing:.08em">
+        <div style="width:120px">Event</div>
+        <div style="flex:1">Type</div>
+        <div style="width:180px;text-align:right">Time (IST / UTC)</div>
+      </div>
+      {% for ev in history_events %}
+      {% set badge_style = {
+        'AUTO_CHAOS_START': 'background:#2d0a0a;color:#f87171',
+        'AUTO_CHAOS_END':   'background:#0a1f0a;color:#4ade80',
+        'OUTAGE_START':     'background:#2d1a00;color:#fb923c',
+        'OUTAGE_END':       'background:#0a1624;color:#60a5fa',
+      }.get(ev.event_type, 'background:#151c28;color:#3d5070') %}
+      <div class="hist-row">
+        <span class="hist-badge" style="{{ badge_style }};width:120px;text-align:center">{{ ev.event_type | replace('_',' ') }}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.76rem;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            {{ ev.label | replace('named_outage:','') | replace('_',' ') | title }}
+          </div>
+        </div>
+        <div style="width:180px;text-align:right">
+          <div style="font-size:.72rem;color:#94a3b8" class="tl-mono">
+            <script>document.write(utcToIST('{{ ev.created_at.strftime("%H:%M") }}'))</script> IST
+          </div>
+          <div style="font-size:.62rem;color:#3d5070">
+            {{ ev.created_at.strftime('%d %b %H:%M') }} UTC
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── How It Works ─────────────────────────────────────────────────────── -->
+<div class="ac-card" style="border-left:3px solid #1e3a5f">
+  <div class="ac-card-head" style="cursor:pointer;user-select:none" onclick="document.getElementById('howItWorks').style.display=document.getElementById('howItWorks').style.display==='none'?'':'none';this.querySelector('.hw-chev').classList.toggle('open')">
+    <div class="ac-badge" style="background:#0a1624;color:#60a5fa"><i class="bi bi-info-circle"></i></div>
+    <div style="flex:1">
+      <div class="ac-card-title">How Continuous Auto Chaos Works</div>
+      <div class="ac-card-sub">Click to expand</div>
+    </div>
+    <span class="hw-chev" style="color:#3d5070;font-size:.85rem;transition:transform .2s"><i class="bi bi-chevron-down"></i></span>
+  </div>
+  <div id="howItWorks" style="display:none">
+    <div class="ac-card-body" style="font-size:.8rem;color:#94a3b8;line-height:1.8">
+      <p style="margin:0 0 12px">
+        <strong style="color:#e2e8f0">Continuous Loop:</strong>
+        Auto Chaos cycles through all 5 chaos types in a random order. After the last type in a cycle finishes and cools down, a new cycle begins with a freshly shuffled order. This runs 24/7 until you disable it.
+      </p>
+      <p style="margin:0 0 12px">
+        <strong style="color:#e2e8f0">Event Duration:</strong>
+        Each chaos event runs for <strong style="color:#c8d6e8">30 or 60 minutes</strong> (randomly chosen).
+      </p>
+      <p style="margin:0 0 12px">
+        <strong style="color:#e2e8f0">Cooling Gap:</strong>
+        A mandatory <strong style="color:#c8d6e8">3-hour gap</strong> (plus 0–30 min random jitter) separates each event. This gives APM time to show recovery before the next chaos begins.
+      </p>
+      <p style="margin:0 0 12px">
+        <strong style="color:#e2e8f0">Daily Reshuffle:</strong>
+        At <strong style="color:#c8d6e8">05:35 IST (00:05 UTC)</strong> each day, the entire schedule is rebuilt from scratch with new random ordering and timing.
+      </p>
+      <p style="margin:0">
+        <strong style="color:#e2e8f0">5 Chaos Types:</strong>
+        Named Outage Profiles (DB down, payment gateway, etc.), Page Load Performance (delays, JS errors, resource failures), Functionality Failures (broken search, forms, CTAs), Component-Level Chaos (UI breakage), and A/B Test Chaos (DOM identifier mutation).
+      </p>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:16px">
+  <a href="{{ url_for('chaos_admin.dashboard') }}" style="font-size:.78rem;color:#3b82f6;text-decoration:none">
+    <i class="bi bi-arrow-left me-1"></i>Back to Chaos Console
+  </a>
+</div>
+
+{% endif %}
+</div>
+
+<!-- ══ JAVASCRIPT ═══════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  function fmtCountdown(ms) {
+    if (ms <= 0) return '00:00:00';
+    var s = Math.floor(ms / 1000);
+    var h = Math.floor(s / 3600); s -= h * 3600;
+    var m = Math.floor(s / 60);   s -= m * 60;
+    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+
+  // ── Reshuffle countdown ───────────────────────────────────────────────
+  var reshuffleEl = document.getElementById('reshuffleCountdown');
+  var reshuffleTarget = {{ next_reshuffle_utc | tojson if next_reshuffle_utc else 'null' }};
+  if (reshuffleEl && reshuffleTarget) {
+    var target = new Date(reshuffleTarget + 'Z');
+    function updateReshuffle() {
+      reshuffleEl.textContent = fmtCountdown(target - Date.now());
+    }
+    updateReshuffle();
+    setInterval(updateReshuffle, 1000);
+  }
+
+  // ── Current event countdown ───────────────────────────────────────────
+  var eventEl = document.getElementById('eventCountdown');
+  if (eventEl) {
+    var endsAt = eventEl.dataset.ends;
+    if (endsAt) {
+      var evTarget = new Date(endsAt.indexOf('Z') === -1 ? endsAt + 'Z' : endsAt);
+      function updateEvent() {
+        var remaining = evTarget - Date.now();
+        if (remaining <= 0) {
+          eventEl.textContent = 'Ending...';
+          setTimeout(function(){ location.reload(); }, 3000);
+        } else {
+          eventEl.textContent = fmtCountdown(remaining);
+        }
+      }
+      updateEvent();
+      setInterval(updateEvent, 1000);
+    }
+  }
+
+  // ── Next event countdown ──────────────────────────────────────────────
+  var nextEl = document.getElementById('nextEventCountdown');
+  if (nextEl) {
+    var startsAt = nextEl.dataset.starts;
+    if (startsAt) {
+      var nxTarget = new Date(startsAt.indexOf('Z') === -1 ? startsAt + 'Z' : startsAt);
+      function updateNext() {
+        var remaining = nxTarget - Date.now();
+        if (remaining <= 0) {
+          nextEl.textContent = 'Starting...';
+          setTimeout(function(){ location.reload(); }, 3000);
+        } else {
+          nextEl.textContent = fmtCountdown(remaining);
+        }
+      }
+      updateNext();
+      setInterval(updateNext, 1000);
+    }
+  }
+
+  // ── Auto-refresh page every 60 seconds to keep timeline status fresh ──
+  setTimeout(function(){ location.reload(); }, 60000);
+})();
+</script>
+{% endblock %}

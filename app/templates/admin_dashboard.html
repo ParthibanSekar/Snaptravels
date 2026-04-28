@@ -1,0 +1,630 @@
+{% extends "layouts/base.html" %}
+{% block title %}Admin Dashboard — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #0f1117; }
+
+/* ── Admin top bar ────────────────────────────── */
+.admin-topbar {
+  background: #0f1117;
+  border-bottom: 1px solid #1e2433;
+  padding: 14px 0;
+}
+.admin-topbar .breadcrumb-item { font-size: .78rem; color: #64748b; }
+.admin-topbar .breadcrumb-item.active { color: #e2e8f0; font-weight: 600; }
+.admin-topbar .breadcrumb-item + .breadcrumb-item::before { color: #334155; }
+
+.admin-timestamp {
+  font-size: .72rem; color: #475569; display: flex; align-items: center; gap: 5px;
+}
+.live-dot {
+  width: 7px; height: 7px; background: #22c55e; border-radius: 50%;
+  animation: live-pulse 2s infinite;
+  box-shadow: 0 0 0 0 rgba(34,197,94,.4);
+}
+@keyframes live-pulse {
+  0%  { box-shadow: 0 0 0 0 rgba(34,197,94,.4); }
+  70% { box-shadow: 0 0 0 7px rgba(34,197,94,0); }
+  100%{ box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+/* ── Page wrapper ─────────────────────────────── */
+.admin-page {
+  background: #0f1117;
+  min-height: calc(100vh - 64px);
+  padding: 0 0 48px;
+}
+.admin-container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Section title ────────────────────────────── */
+.sec-title {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .12em;
+  color: #475569; font-weight: 700; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sec-title::after { content: ''; flex: 1; height: 1px; background: #1e2433; }
+
+/* ── KPI stat cards ───────────────────────────── */
+.kpi-card {
+  background: #1a1f2e; border: 1px solid #1e2433; border-radius: 16px;
+  padding: 22px 24px; position: relative; overflow: hidden;
+  transition: all .2s; cursor: default;
+}
+.kpi-card:hover { border-color: #334155; transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,.4); }
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.kpi-blue::before   { background: linear-gradient(90deg,#3b82f6,#60a5fa); }
+.kpi-green::before  { background: linear-gradient(90deg,#10b981,#34d399); }
+.kpi-cyan::before   { background: linear-gradient(90deg,#06b6d4,#67e8f9); }
+.kpi-amber::before  { background: linear-gradient(90deg,#f59e0b,#fcd34d); }
+.kpi-red::before    { background: linear-gradient(90deg,#e63950,#f97316); }
+.kpi-purple::before { background: linear-gradient(90deg,#8b5cf6,#c4b5fd); }
+
+.kpi-icon {
+  width: 44px; height: 44px; border-radius: 12px; margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+}
+.kpi-blue   .kpi-icon { background: rgba(59,130,246,.15); color: #60a5fa; }
+.kpi-green  .kpi-icon { background: rgba(16,185,129,.15); color: #34d399; }
+.kpi-cyan   .kpi-icon { background: rgba(6,182,212,.15);  color: #67e8f9; }
+.kpi-amber  .kpi-icon { background: rgba(245,158,11,.15); color: #fcd34d; }
+.kpi-red    .kpi-icon { background: rgba(230,57,80,.15);  color: #f87171; }
+.kpi-purple .kpi-icon { background: rgba(139,92,246,.15); color: #c4b5fd; }
+
+.kpi-val { font-size: 2rem; font-weight: 900; color: #f1f5f9; letter-spacing: -.03em; line-height: 1; margin-bottom: 4px; }
+.kpi-lbl { font-size: .75rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; }
+.kpi-trend {
+  position: absolute; top: 22px; right: 20px;
+  font-size: .72rem; font-weight: 700; display: flex; align-items: center; gap: 3px;
+  border-radius: 20px; padding: 3px 9px;
+}
+.kpi-trend-up   { background: rgba(34,197,94,.12); color: #22c55e; }
+.kpi-trend-warn { background: rgba(245,158,11,.12); color: #f59e0b; }
+
+/* ── Quick action tiles ───────────────────────── */
+.action-tile {
+  background: #1a1f2e; border: 1px solid #1e2433; border-radius: 14px;
+  padding: 18px 20px; text-decoration: none; transition: all .2s;
+  display: flex; align-items: center; gap: 14px;
+}
+.action-tile:hover { border-color: #334155; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,.35); }
+.action-tile-icon {
+  width: 42px; height: 42px; border-radius: 11px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+}
+.action-tile-label { font-size: .88rem; font-weight: 700; color: #e2e8f0; line-height: 1.2; }
+.action-tile-sub   { font-size: .72rem; color: #475569; margin-top: 2px; }
+
+/* ── Main data panel ──────────────────────────── */
+.data-panel {
+  background: #1a1f2e; border: 1px solid #1e2433; border-radius: 16px; overflow: hidden;
+}
+.data-panel-head {
+  padding: 16px 22px; border-bottom: 1px solid #1e2433;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.data-panel-title { font-size: .9rem; font-weight: 800; color: #e2e8f0; display: flex; align-items: center; gap: 8px; }
+.data-panel-title i { opacity: .6; }
+.btn-view-all {
+  background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.3);
+  border-radius: 8px; padding: 5px 14px; font-size: .75rem; font-weight: 700;
+  text-decoration: none; transition: all .15s;
+}
+.btn-view-all:hover { background: rgba(99,102,241,.25); color: #a5b4fc; }
+
+/* ── Bookings table ───────────────────────────── */
+.bookings-table { width: 100%; border-collapse: collapse; }
+.bookings-table thead tr { border-bottom: 1px solid #1e2433; }
+.bookings-table thead th {
+  padding: 10px 22px; font-size: .67rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; color: #475569;
+}
+.bookings-table tbody tr { border-bottom: 1px solid #12161f; transition: background .1s; }
+.bookings-table tbody tr:hover { background: rgba(255,255,255,.025); }
+.bookings-table tbody tr:last-child { border-bottom: none; }
+.bookings-table tbody td { padding: 13px 22px; font-size: .83rem; color: #cbd5e1; vertical-align: middle; }
+
+.booking-code-link {
+  font-family: monospace; font-size: .78rem; font-weight: 700; color: #818cf8;
+  text-decoration: none; letter-spacing: .03em;
+}
+.booking-code-link:hover { color: #a5b4fc; text-decoration: underline; }
+
+.customer-name { font-weight: 600; color: #e2e8f0; }
+.amount-cell { font-weight: 800; color: #f1f5f9; }
+
+/* Status badges */
+.st-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .65rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; letter-spacing: .04em;
+}
+.st-confirmed  { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+.st-cancelled  { background: rgba(239,68,68,.15);  color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+.st-requested  { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.25); }
+.st-refunded   { background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.25); }
+.st-other      { background: rgba(100,116,139,.15); color: #94a3b8; border: 1px solid rgba(100,116,139,.25); }
+
+/* Type icons */
+.type-icon { font-size: .85rem; }
+.type-icon.flight  { color: #60a5fa; }
+.type-icon.hotel   { color: #34d399; }
+.type-icon.train   { color: #c4b5fd; }
+.type-icon.bus     { color: #a5b4fc; }
+.type-icon.package { color: #fcd34d; }
+
+.btn-tbl {
+  background: rgba(99,102,241,.12); color: #818cf8;
+  border: 1px solid rgba(99,102,241,.25); border-radius: 7px;
+  padding: 4px 12px; font-size: .72rem; font-weight: 700;
+  text-decoration: none; transition: all .15s; white-space: nowrap;
+}
+.btn-tbl:hover { background: rgba(99,102,241,.25); color: #a5b4fc; }
+
+/* ── Right column panels ──────────────────────── */
+.mini-panel {
+  background: #1a1f2e; border: 1px solid #1e2433; border-radius: 16px; overflow: hidden; margin-bottom: 16px;
+}
+.mini-panel-head {
+  padding: 14px 20px; border-bottom: 1px solid #1e2433;
+  font-size: .82rem; font-weight: 800; color: #e2e8f0; display: flex; align-items: center; gap: 7px;
+}
+.mini-panel-head i { opacity: .55; }
+.mini-panel-body { padding: 16px 20px; }
+
+/* Status ring chart (CSS only) */
+.status-ring { display: flex; align-items: center; gap: 16px; }
+.ring-chart {
+  width: 72px; height: 72px; flex-shrink: 0;
+  border-radius: 50%; position: relative;
+  background: conic-gradient(#4ade80 0% 60%, #fbbf24 60% 75%, #f87171 75% 90%, #334155 90% 100%);
+}
+.ring-chart::after {
+  content: ''; position: absolute; inset: 14px;
+  background: #1a1f2e; border-radius: 50%;
+}
+.ring-legend { flex: 1; }
+.ring-item {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 7px; font-size: .75rem;
+}
+.ring-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ring-item-label { color: #94a3b8; flex: 1; }
+.ring-item-val { color: #e2e8f0; font-weight: 700; }
+
+/* Revenue rows */
+.rev-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 0; border-bottom: 1px solid #12161f;
+}
+.rev-row:last-child { border-bottom: none; }
+.rev-label { font-size: .78rem; color: #64748b; display: flex; align-items: center; gap: 7px; }
+.rev-label i { font-size: .82rem; }
+.rev-val { font-size: .88rem; font-weight: 800; color: #e2e8f0; }
+.rev-bar-wrap { width: 100%; height: 4px; background: #12161f; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+.rev-bar-fill { height: 100%; border-radius: 4px; }
+
+/* Chaos control button */
+.btn-chaos {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: #fff; border: none; border-radius: 10px;
+  padding: 9px 18px; font-size: .82rem; font-weight: 800;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+  transition: all .15s; box-shadow: 0 4px 14px rgba(245,158,11,.3);
+}
+.btn-chaos:hover { background: linear-gradient(135deg,#d97706,#ea580c); color: #fff; transform: translateY(-1px); }
+
+/* Admin nav links */
+.admin-nav {
+  display: flex; gap: 4px; flex-wrap: wrap;
+}
+.admin-nav-link {
+  padding: 5px 12px; border-radius: 7px; font-size: .74rem; font-weight: 600;
+  color: #64748b; text-decoration: none; transition: all .12s;
+}
+.admin-nav-link:hover { background: #1e2433; color: #e2e8f0; }
+.admin-nav-link.active { background: #1e2433; color: #818cf8; }
+
+/* System health */
+.health-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid #12161f;
+}
+.health-row:last-child { border-bottom: none; }
+.health-name { font-size: .78rem; color: #94a3b8; display: flex; align-items: center; gap: 7px; }
+.health-dot { width: 7px; height: 7px; border-radius: 50%; }
+.health-ok   { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,.5); }
+.health-warn { background: #f59e0b; }
+.health-err  { background: #ef4444; }
+.health-status { font-size: .72rem; font-weight: 700; }
+.hs-ok   { color: #4ade80; }
+.hs-warn { color: #fbbf24; }
+.hs-err  { color: #f87171; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ ADMIN TOP BAR ══════════════════════════════════════════════════════ -->
+<div class="admin-topbar">
+  <div class="admin-container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <!-- Breadcrumb -->
+      <div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-1">
+            <li class="breadcrumb-item"><a href="{{ url_for('public.home') }}" style="color:#475569;text-decoration:none">snap.travels</a></li>
+            <li class="breadcrumb-item active">Admin Dashboard</li>
+          </ol>
+        </nav>
+        <div class="admin-timestamp">
+          <div class="live-dot"></div>
+          <span>Live · Updated just now</span>
+        </div>
+      </div>
+
+      <!-- Admin nav -->
+      <div class="admin-nav d-none d-md-flex">
+        <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-link active">
+          <i class="bi bi-speedometer2 me-1"></i>Overview
+        </a>
+        <a href="{{ url_for('admin.manage_flights') }}" class="admin-nav-link">
+          <i class="bi bi-airplane me-1"></i>Flights
+        </a>
+        <a href="{{ url_for('admin_ext.hotels') }}" class="admin-nav-link">
+          <i class="bi bi-building me-1"></i>Hotels
+        </a>
+        <a href="{{ url_for('admin.manage_bookings') }}" class="admin-nav-link">
+          <i class="bi bi-receipt me-1"></i>Bookings
+        </a>
+        <a href="{{ url_for('admin_ext.users') }}" class="admin-nav-link">
+          <i class="bi bi-people me-1"></i>Users
+        </a>
+        <a href="{{ url_for('admin_ext.revenue') }}" class="admin-nav-link">
+          <i class="bi bi-graph-up me-1"></i>Revenue
+        </a>
+        <a href="{{ url_for('admin_ext.refunds') }}" class="admin-nav-link">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Refunds
+        </a>
+      </div>
+
+      <!-- Chaos + actions -->
+      <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('public.home') }}" style="background:#1e2433;color:#94a3b8;border:1px solid #334155;border-radius:9px;padding:8px 14px;font-size:.78rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:all .15s">
+          <i class="bi bi-box-arrow-up-right"></i> View Site
+        </a>
+        <a href="{{ url_for('chaos_admin.dashboard') }}" class="btn-chaos">
+          <i class="bi bi-lightning-charge-fill"></i> Chaos Control
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN ═══════════════════════════════════════════════════════════════ -->
+<div class="admin-page">
+<div class="admin-container pt-4">
+
+  <!-- ── KPI Cards ── -->
+  <div class="sec-title">Key Metrics</div>
+  <div class="row g-3 mb-4">
+
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-icon"><i class="bi bi-airplane-fill"></i></div>
+        <div class="kpi-trend kpi-trend-up"><i class="bi bi-arrow-up-short"></i>Active</div>
+        <div class="kpi-val">{{ total_flights }}</div>
+        <div class="kpi-lbl">Flights</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-green">
+        <div class="kpi-icon"><i class="bi bi-building"></i></div>
+        <div class="kpi-trend kpi-trend-up"><i class="bi bi-arrow-up-short"></i>Listed</div>
+        <div class="kpi-val">{{ total_hotels }}</div>
+        <div class="kpi-lbl">Hotels</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-cyan">
+        <div class="kpi-icon"><i class="bi bi-receipt"></i></div>
+        <div class="kpi-trend kpi-trend-up"><i class="bi bi-arrow-up-short"></i>Total</div>
+        <div class="kpi-val">{{ total_bookings }}</div>
+        <div class="kpi-lbl">Bookings</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-amber">
+        <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+        <div class="kpi-trend kpi-trend-up"><i class="bi bi-arrow-up-short"></i>Registered</div>
+        <div class="kpi-val">{{ total_users }}</div>
+        <div class="kpi-lbl">Users</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-red">
+        <div class="kpi-icon"><i class="bi bi-currency-rupee"></i></div>
+        {% set total_rev = recent_bookings | selectattr('status','equalto','CONFIRMED') | sum(attribute='total_amount') if recent_bookings else 0 %}
+        <div class="kpi-val" style="font-size:1.5rem">
+          ₹{{ "{:,.0f}".format(recent_bookings | sum(attribute='total_amount') if recent_bookings else 0) }}
+        </div>
+        <div class="kpi-lbl">Revenue</div>
+      </div>
+    </div>
+
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="kpi-card kpi-purple">
+        <div class="kpi-icon"><i class="bi bi-hourglass-split"></i></div>
+        {% set pending_count = recent_bookings | selectattr('status','equalto','CANCELLATION_REQUESTED') | list | length if recent_bookings else 0 %}
+        <div class="kpi-trend kpi-trend-warn" style="{% if pending_count > 0 %}{% endif %}">
+          {% if pending_count > 0 %}<i class="bi bi-exclamation-triangle-fill"></i>Action{% else %}✓ Clear{% endif %}
+        </div>
+        <div class="kpi-val">{{ pending_count }}</div>
+        <div class="kpi-lbl">Pending</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Quick Actions ── -->
+  <div class="sec-title">Quick Actions</div>
+  <div class="row g-3 mb-4">
+    {% set actions = [
+      (url_for('admin.new_flight'),    'bi-plus-circle-fill',   '#1d4ed8','rgba(29,78,216,.15)',  'Add New Flight',  'Create a new flight listing'),
+      (url_for('admin.manage_flights'), 'bi-airplane-fill',       '#0ea5e9','rgba(14,165,233,.15)', 'Manage Flights',  'Edit, update or remove flights'),
+      (url_for('admin_ext.hotels'),    'bi-building-fill',       '#10b981','rgba(16,185,129,.15)', 'Manage Hotels',   'Hotel listings & inventory'),
+      (url_for('admin.manage_bookings'),'bi-receipt-cutoff',     '#06b6d4','rgba(6,182,212,.15)',  'All Bookings',    'View & manage all bookings'),
+      (url_for('admin_ext.users'),     'bi-person-badge-fill',   '#f59e0b','rgba(245,158,11,.15)', 'Manage Users',    'User accounts & permissions'),
+      (url_for('admin_ext.revenue'),   'bi-graph-up-arrow',      '#e63950','rgba(230,57,80,.15)',  'Revenue Report',  'Analytics & earnings'),
+      (url_for('admin_ext.refunds'),   'bi-arrow-counterclockwise','#8b5cf6','rgba(139,92,246,.15)','Refunds',       'Process refund requests'),
+      (url_for('admin_ext.activities'),'bi-lightning-charge-fill','#ec4899','rgba(236,72,153,.15)','Activities',    'Manage activity listings')
+    ] %}
+    {% for url, icon, color, bg, label, sub in actions %}
+    <div class="col-6 col-md-3">
+      <a href="{{ url }}" class="action-tile">
+        <div class="action-tile-icon" style="background:{{ bg }};color:{{ color }}">
+          <i class="bi {{ icon }}"></i>
+        </div>
+        <div>
+          <div class="action-tile-label">{{ label }}</div>
+          <div class="action-tile-sub">{{ sub }}</div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── Main grid: bookings + sidebar ── -->
+  <div class="row g-4">
+
+    <!-- Left: Recent Bookings table -->
+    <div class="col-lg-8">
+      <div class="sec-title">Recent Activity</div>
+      <div class="data-panel">
+        <div class="data-panel-head">
+          <span class="data-panel-title"><i class="bi bi-receipt"></i>Recent Bookings</span>
+          <a href="{{ url_for('admin.manage_bookings') }}" class="btn-view-all">View All →</a>
+        </div>
+
+        {% if recent_bookings %}
+        <table class="bookings-table">
+          <thead>
+            <tr>
+              <th>Booking Code</th>
+              <th>Customer</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for booking in recent_bookings %}
+            {% set first_item = booking.items[0] if booking.items else None %}
+            {% set item_type = first_item.type if first_item else 'BOOKING' %}
+            <tr>
+              <td>
+                <a href="{{ url_for('admin.view_booking', booking_id=booking.id) }}" class="booking-code-link">
+                  {{ booking.booking_code }}
+                </a>
+              </td>
+              <td>
+                <div class="customer-name">{{ booking.customer_name }}</div>
+                <div style="font-size:.7rem;color:#475569">{{ booking.customer_email }}</div>
+              </td>
+              <td>
+                {% if item_type == 'FLIGHT' %}
+                  <span class="type-icon flight"><i class="bi bi-airplane-fill"></i></span>
+                {% elif item_type == 'HOTEL' %}
+                  <span class="type-icon hotel"><i class="bi bi-building"></i></span>
+                {% elif item_type == 'TRAIN' %}
+                  <span class="type-icon train"><i class="bi bi-train-front-fill"></i></span>
+                {% elif item_type == 'BUS' %}
+                  <span class="type-icon bus"><i class="bi bi-bus-front-fill"></i></span>
+                {% else %}
+                  <span class="type-icon package"><i class="bi bi-map-fill"></i></span>
+                {% endif %}
+                <span style="font-size:.72rem;color:#64748b;margin-left:4px">{{ item_type }}</span>
+              </td>
+              <td class="amount-cell">₹{{ "%.0f"|format(booking.total_amount) }}</td>
+              <td>
+                {% if booking.status == 'CONFIRMED' %}
+                  <span class="st-badge st-confirmed">✓ Confirmed</span>
+                {% elif booking.status == 'CANCELLATION_REQUESTED' %}
+                  <span class="st-badge st-requested">⏳ Pending</span>
+                {% elif booking.status == 'CANCELLED' %}
+                  <span class="st-badge st-cancelled">✕ Cancelled</span>
+                {% elif booking.status == 'REFUNDED' %}
+                  <span class="st-badge st-refunded">↩ Refunded</span>
+                {% else %}
+                  <span class="st-badge st-other">{{ booking.status }}</span>
+                {% endif %}
+              </td>
+              <td style="color:#475569;font-size:.78rem">{{ booking.created_at.strftime('%d %b %Y') }}</td>
+              <td>
+                <a href="{{ url_for('admin.view_booking', booking_id=booking.id) }}" class="btn-tbl">View</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="text-align:center;padding:56px 24px">
+          <div style="font-size:3rem;opacity:.2;margin-bottom:12px">📋</div>
+          <div style="color:#475569;font-size:.88rem">No bookings yet</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right: Side panels -->
+    <div class="col-lg-4">
+      <div class="sec-title">Overview</div>
+
+      <!-- Booking status breakdown -->
+      <div class="mini-panel">
+        <div class="mini-panel-head"><i class="bi bi-pie-chart-fill"></i>Booking Status</div>
+        <div class="mini-panel-body">
+          {% if recent_bookings %}
+          {% set confirmed  = recent_bookings | selectattr('status','equalto','CONFIRMED')             | list | length %}
+          {% set pending    = recent_bookings | selectattr('status','equalto','CANCELLATION_REQUESTED')| list | length %}
+          {% set cancelled  = recent_bookings | selectattr('status','equalto','CANCELLED')             | list | length %}
+          {% set total_b    = recent_bookings | length %}
+          <div class="status-ring mb-3">
+            {% set conf_pct   = (confirmed / total_b * 100) | int if total_b else 0 %}
+            {% set pend_pct   = (pending   / total_b * 100) | int if total_b else 0 %}
+            {% set canc_pct   = (cancelled / total_b * 100) | int if total_b else 0 %}
+            <div class="ring-chart"
+                 style="background:conic-gradient(
+                   #4ade80 0% {{ conf_pct }}%,
+                   #fbbf24 {{ conf_pct }}% {{ conf_pct + pend_pct }}%,
+                   #f87171 {{ conf_pct + pend_pct }}% {{ conf_pct + pend_pct + canc_pct }}%,
+                   #334155 {{ conf_pct + pend_pct + canc_pct }}% 100%)">
+            </div>
+            <div class="ring-legend">
+              <div class="ring-item">
+                <div class="ring-dot" style="background:#4ade80"></div>
+                <span class="ring-item-label">Confirmed</span>
+                <span class="ring-item-val">{{ confirmed }}</span>
+              </div>
+              <div class="ring-item">
+                <div class="ring-dot" style="background:#fbbf24"></div>
+                <span class="ring-item-label">Pending</span>
+                <span class="ring-item-val">{{ pending }}</span>
+              </div>
+              <div class="ring-item">
+                <div class="ring-dot" style="background:#f87171"></div>
+                <span class="ring-item-label">Cancelled</span>
+                <span class="ring-item-val">{{ cancelled }}</span>
+              </div>
+              <div class="ring-item">
+                <div class="ring-dot" style="background:#334155"></div>
+                <span class="ring-item-label">Other</span>
+                <span class="ring-item-val">{{ total_b - confirmed - pending - cancelled }}</span>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div style="text-align:center;padding:24px;color:#475569;font-size:.83rem">No data yet</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Revenue by type -->
+      <div class="mini-panel">
+        <div class="mini-panel-head"><i class="bi bi-bar-chart-fill"></i>Revenue by Type</div>
+        <div class="mini-panel-body">
+          {% if recent_bookings %}
+          {% set flight_rev  = recent_bookings | selectattr('items') | list %}
+          <!-- Iterate and compute by item type -->
+          {% set ns = namespace(flight=0, hotel=0, train=0, bus=0, pkg=0) %}
+          {% for b in recent_bookings %}
+            {% set first = b.items[0] if b.items else None %}
+            {% if first %}
+              {% if first.type == 'FLIGHT'  %}{% set ns.flight = ns.flight + b.total_amount %}
+              {% elif first.type == 'HOTEL' %}{% set ns.hotel  = ns.hotel  + b.total_amount %}
+              {% elif first.type == 'TRAIN' %}{% set ns.train  = ns.train  + b.total_amount %}
+              {% elif first.type == 'BUS'   %}{% set ns.bus    = ns.bus    + b.total_amount %}
+              {% else %}{% set ns.pkg = ns.pkg + b.total_amount %}{% endif %}
+            {% endif %}
+          {% endfor %}
+          {% set grand = ns.flight + ns.hotel + ns.train + ns.bus + ns.pkg %}
+          {% for label, val, color in [
+            ('✈ Flights',  ns.flight, '#60a5fa'),
+            ('🏨 Hotels',  ns.hotel,  '#34d399'),
+            ('🚆 Trains',  ns.train,  '#c4b5fd'),
+            ('🚌 Buses',   ns.bus,    '#a78bfa'),
+            ('🗺 Packages',ns.pkg,    '#fcd34d')
+          ] %}
+          {% if val > 0 %}
+          <div class="rev-row">
+            <div>
+              <div class="rev-label">{{ label }}</div>
+              <div class="rev-bar-wrap">
+                <div class="rev-bar-fill" style="width:{{ (val / grand * 100) | int if grand else 0 }}%;background:{{ color }}"></div>
+              </div>
+            </div>
+            <div class="rev-val ms-3" style="font-size:.8rem">₹{{ "{:,.0f}".format(val) }}</div>
+          </div>
+          {% endif %}
+          {% endfor %}
+          <div style="border-top:1px solid #1e2433;padding-top:12px;margin-top:4px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:.72rem;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.07em">Grand Total</span>
+            <span style="font-size:1rem;font-weight:900;color:#e63950">₹{{ "{:,.0f}".format(grand) }}</span>
+          </div>
+          {% else %}
+          <div style="text-align:center;padding:24px;color:#475569;font-size:.83rem">No revenue data</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- System health -->
+      <div class="mini-panel">
+        <div class="mini-panel-head"><i class="bi bi-activity"></i>System Health</div>
+        <div class="mini-panel-body">
+          {% for name, status, label in [
+            ('Database',       'ok',   'Operational'),
+            ('Booking Engine', 'ok',   'Operational'),
+            ('Payment Gateway','ok',   'Operational'),
+            ('Email Service',  'ok',   'Operational'),
+            ('Chaos Engine',   'warn', 'Active'),
+            ('Search Index',   'ok',   'Operational')
+          ] %}
+          <div class="health-row">
+            <span class="health-name">
+              <span class="health-dot health-{{ status }}"></span>{{ name }}
+            </span>
+            <span class="health-status hs-{{ status }}">{{ label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Auto-refresh timestamp
+(function() {
+  const el = document.querySelector('.admin-timestamp span');
+  if (!el) return;
+  let sec = 0;
+  setInterval(() => {
+    sec++;
+    if (sec < 60) el.textContent = `Live · Updated ${sec}s ago`;
+    else el.textContent = `Live · Updated ${Math.floor(sec/60)}m ago`;
+  }, 1000);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,354 @@
+{% extends "layouts/base.html" %}
+{% block title %}Booking {{ booking.booking_code }} — Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #0f1117 !important; color: #e2e8f0; }
+
+@keyframes accentSlide {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.admin-accent-bar {
+  height: 3px;
+  background: linear-gradient(90deg, #e63950, #f97316, #facc15, #e63950);
+  background-size: 200% 100%;
+  animation: accentSlide 3s linear infinite;
+}
+.admin-topbar {
+  background: #1a1f2e; border-bottom: 1px solid #1e2433;
+  padding: 14px 28px; display: flex; align-items: center; justify-content: space-between;
+}
+.admin-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: #64748b; }
+.admin-breadcrumb a { color: #64748b; text-decoration: none; }
+.admin-breadcrumb a:hover { color: #e63950; }
+.admin-breadcrumb .sep { color: #334155; }
+.admin-breadcrumb .current { color: #e2e8f0; font-weight: 600; }
+.admin-nav-links { display: flex; gap: 6px; }
+.admin-nav-links a {
+  padding: 6px 14px; border-radius: 8px; font-size: .78rem; font-weight: 600;
+  color: #94a3b8; text-decoration: none; transition: all .2s; border: 1px solid transparent;
+}
+.admin-nav-links a:hover { background: #1e2433; color: #e2e8f0; }
+.admin-nav-links a.active { background: rgba(230,57,80,.12); color: #e63950; border-color: rgba(230,57,80,.25); }
+
+/* ── Booking Hero Strip ───────────────────────────── */
+.booking-hero {
+  background: #1a1f2e; border: 1px solid #1e2433; border-radius: 16px;
+  padding: 24px 28px; margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+}
+.booking-code {
+  font-family: 'Courier New', monospace; font-size: 1.4rem; font-weight: 900;
+  color: #a78bfa; letter-spacing: .06em;
+}
+.booking-meta { font-size: .78rem; color: #64748b; margin-top: 4px; }
+
+.st-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px; font-size: .78rem; font-weight: 700;
+}
+.st-badge.confirmed { background: rgba(34,197,94,.12); color: #4ade80; border: 1px solid rgba(34,197,94,.2); }
+.st-badge.requested { background: rgba(251,146,60,.12); color: #fb923c; border: 1px solid rgba(251,146,60,.2); }
+.st-badge.cancelled { background: rgba(239,68,68,.12);  color: #f87171; border: 1px solid rgba(239,68,68,.2); }
+.st-badge.refunded  { background: rgba(14,165,233,.12); color: #38bdf8; border: 1px solid rgba(14,165,233,.2); }
+.st-badge.default   { background: rgba(100,116,139,.12); color: #94a3b8; border: 1px solid rgba(100,116,139,.2); }
+
+/* ── Panels ──────────────────────────────────────── */
+.dark-panel { background: #1a1f2e; border: 1px solid #1e2433; border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
+.dark-panel-header {
+  padding: 16px 22px; border-bottom: 1px solid #1e2433;
+  display: flex; align-items: center; gap: 10px;
+}
+.dark-panel-title { font-size: .9rem; font-weight: 700; color: #e2e8f0; }
+.dark-panel-body { padding: 20px 22px; }
+
+/* ── Info rows ───────────────────────────────────── */
+.info-row {
+  display: flex; align-items: flex-start; padding: 10px 0;
+  border-bottom: 1px solid #1e2433; gap: 16px;
+}
+.info-row:last-child { border-bottom: none; padding-bottom: 0; }
+.info-label { font-size: .72rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; min-width: 130px; padding-top: 2px; }
+.info-value { font-size: .88rem; color: #e2e8f0; font-weight: 500; flex: 1; }
+
+/* ── Item cards ──────────────────────────────────── */
+.item-card { border: 1px solid #1e2433; border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
+.item-card:last-child { margin-bottom: 0; }
+.item-card-header {
+  padding: 14px 18px; display: flex; align-items: center; gap: 10px;
+}
+.item-card-header.flight { background: rgba(59,130,246,.08); border-bottom: 1px solid rgba(59,130,246,.12); }
+.item-card-header.hotel  { background: rgba(16,185,129,.08); border-bottom: 1px solid rgba(16,185,129,.12); }
+.item-card-header.bus    { background: rgba(139,92,246,.08); border-bottom: 1px solid rgba(139,92,246,.12); }
+.item-card-header .item-icon {
+  width: 32px; height: 32px; border-radius: 8px; font-size: .9rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.item-icon.flight { background: rgba(59,130,246,.2); color: #60a5fa; }
+.item-icon.hotel  { background: rgba(16,185,129,.2); color: #34d399; }
+.item-icon.bus    { background: rgba(139,92,246,.2); color: #a78bfa; }
+.item-card-body { padding: 16px 18px; }
+
+.route-timeline { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+.route-city { font-size: .92rem; font-weight: 700; color: #e2e8f0; }
+.route-time { font-size: .72rem; color: #64748b; }
+.route-line {
+  flex: 1; height: 1px; background: #2d3748; position: relative; min-width: 60px;
+}
+.route-line::after {
+  content: '✈'; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%); font-size: .7rem; color: #e63950;
+  background: #1a1f2e; padding: 0 4px;
+}
+
+/* ── Summary Panel ───────────────────────────────── */
+.summary-panel { background: #141824; border: 1px solid #1e2433; border-radius: 16px; overflow: hidden; position: sticky; top: 20px; }
+.summary-header {
+  background: linear-gradient(135deg,#1e2433,#252d3f);
+  padding: 18px 22px; border-bottom: 1px solid #1e2433;
+}
+.summary-header-title { font-size: .88rem; font-weight: 800; color: #e2e8f0; }
+.summary-body { padding: 20px 22px; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e2433; font-size: .84rem; }
+.summary-row:last-child { border-bottom: none; }
+.summary-label { color: #64748b; }
+.summary-value { color: #e2e8f0; font-weight: 600; }
+.summary-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 22px; background: rgba(74,222,128,.05); border-top: 1px solid rgba(74,222,128,.1);
+}
+.summary-total-label { font-size: .88rem; font-weight: 700; color: #e2e8f0; }
+.summary-total-amount { font-size: 1.3rem; font-weight: 900; color: #4ade80; }
+
+.btn-back {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 18px; border-radius: 10px; font-size: .82rem; font-weight: 600;
+  background: transparent; border: 1px solid #1e2433; color: #94a3b8;
+  text-decoration: none; transition: all .2s; margin-bottom: 10px; width: 100%; justify-content: center;
+}
+.btn-back:hover { background: #1e2433; color: #e2e8f0; }
+.btn-dashboard {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 18px; border-radius: 10px; font-size: .82rem; font-weight: 700;
+  background: rgba(230,57,80,.12); border: 1px solid rgba(230,57,80,.25); color: #e63950;
+  text-decoration: none; transition: all .2s; width: 100%; justify-content: center;
+}
+.btn-dashboard:hover { background: rgba(230,57,80,.2); color: #e63950; }
+.btn-ghost-sm {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 8px; font-size: .78rem; font-weight: 600;
+  background: transparent; border: 1px solid #1e2433; color: #94a3b8;
+  text-decoration: none; transition: all .2s;
+}
+.btn-ghost-sm:hover { background: #1e2433; color: #e2e8f0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-accent-bar"></div>
+
+<div class="admin-topbar">
+  <div class="admin-breadcrumb">
+    <i class="bi bi-speedometer2" style="color:#e63950"></i>
+    <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+    <span class="sep">›</span>
+    <a href="{{ url_for('admin.manage_bookings') }}">Bookings</a>
+    <span class="sep">›</span>
+    <span class="current">{{ booking.booking_code }}</span>
+  </div>
+  <div class="admin-nav-links">
+    <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap me-1"></i>Dashboard</a>
+    <a href="{{ url_for('admin.manage_flights') }}"><i class="bi bi-airplane me-1"></i>Flights</a>
+    <a href="{{ url_for('admin.manage_bookings') }}" class="active"><i class="bi bi-receipt me-1"></i>Bookings</a>
+    <a href="{{ url_for('admin_ext.hotels') }}"><i class="bi bi-building me-1"></i>Hotels</a>
+    <a href="{{ url_for('admin_ext.users') }}"><i class="bi bi-people me-1"></i>Users</a>
+    <a href="{{ url_for('admin_ext.refunds') }}"><i class="bi bi-arrow-counterclockwise me-1"></i>Refunds</a>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4" style="max-width:1200px;margin:0 auto">
+
+  <!-- Booking Hero -->
+  <div class="booking-hero">
+    <div>
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#64748b;font-weight:700;margin-bottom:6px">Admin · Booking Detail</div>
+      <div class="booking-code">{{ booking.booking_code }}</div>
+      <div class="booking-meta">
+        <i class="bi bi-calendar3 me-1"></i>{{ booking.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+        &nbsp;·&nbsp;
+        <i class="bi bi-person me-1"></i>User #{{ booking.user_id }}
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      {% set s = booking.status|lower %}
+      <span class="st-badge {{ s if s in ['confirmed','requested','cancelled','refunded'] else 'default' }}" style="font-size:.85rem;padding:8px 18px">
+        {% if s == 'confirmed' %}✓{% elif s == 'requested' %}⏳{% elif s == 'cancelled' %}✕{% elif s == 'refunded' %}↩{% endif %}
+        {{ booking.status }}
+      </span>
+      <a href="{{ url_for('admin.manage_bookings') }}" class="btn-ghost-sm">
+        <i class="bi bi-arrow-left"></i> All Bookings
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+
+      <!-- Customer Info -->
+      <div class="dark-panel">
+        <div class="dark-panel-header">
+          <div class="item-icon flight"><i class="bi bi-person"></i></div>
+          <span class="dark-panel-title">Customer Information</span>
+        </div>
+        <div class="dark-panel-body" style="padding:0 22px">
+          <div class="info-row">
+            <span class="info-label">Full Name</span>
+            <span class="info-value">{{ booking.customer_name }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Email</span>
+            <span class="info-value">{{ booking.customer_email }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Phone</span>
+            <span class="info-value">{{ booking.customer_phone or '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Booking Status</span>
+            <span class="info-value">
+              {% set s = booking.status|lower %}
+              <span class="st-badge {{ s if s in ['confirmed','requested','cancelled','refunded'] else 'default' }}">
+                {{ booking.status }}
+              </span>
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">User ID</span>
+            <span class="info-value" style="font-family:monospace;color:#a78bfa">#{{ booking.user_id }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Booked On</span>
+            <span class="info-value">{{ booking.created_at.strftime('%B %d, %Y') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Booked Items -->
+      {% if booking.items %}
+      <div class="dark-panel">
+        <div class="dark-panel-header">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(251,191,36,.15);color:#fbbf24;display:flex;align-items:center;justify-content:center;font-size:.9rem">
+            <i class="bi bi-bag-check"></i>
+          </div>
+          <span class="dark-panel-title">Booked Items ({{ booking.items|length }})</span>
+        </div>
+        <div class="dark-panel-body" style="padding:16px 22px">
+          {% for item in booking.items %}
+          {% set itype = item.type|lower if item.type else 'default' %}
+          <div class="item-card">
+            <div class="item-card-header {{ 'flight' if item.type == 'FLIGHT' else ('hotel' if item.type == 'HOTEL' else 'bus') }}">
+              <div class="item-icon {{ 'flight' if item.type == 'FLIGHT' else ('hotel' if item.type == 'HOTEL' else 'bus') }}">
+                {% if item.type == 'FLIGHT' %}<i class="bi bi-airplane"></i>
+                {% elif item.type == 'HOTEL' %}<i class="bi bi-building"></i>
+                {% else %}<i class="bi bi-bus-front"></i>{% endif %}
+              </div>
+              <div>
+                <div style="font-weight:700;color:#e2e8f0;font-size:.88rem">{{ item.title }}</div>
+                <div style="font-size:.72rem;color:#64748b">{{ item.type }}</div>
+              </div>
+              <div style="margin-left:auto;font-weight:800;color:#4ade80;font-size:.95rem">
+                ₹{{ "%.0f"|format(item.amount) }}
+              </div>
+            </div>
+
+            <div class="item-card-body">
+              {% if item.type == 'FLIGHT' and item.details %}
+              <div class="route-timeline">
+                <div>
+                  <div class="route-city">{{ item.details.origin }}</div>
+                  <div class="route-time">{{ item.details.depart_time }}</div>
+                </div>
+                <div class="route-line"></div>
+                <div>
+                  <div class="route-city">{{ item.details.destination }}</div>
+                  <div class="route-time">{{ item.details.arrive_time }}</div>
+                </div>
+              </div>
+              {% if item.details.cabin_class %}
+              <div style="margin-top:8px">
+                <span style="font-size:.72rem;font-weight:600;color:#94a3b8;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);padding:2px 8px;border-radius:6px;color:#a78bfa">
+                  {{ item.details.cabin_class }}
+                </span>
+              </div>
+              {% endif %}
+              {% elif item.type == 'HOTEL' and item.details %}
+              <div class="row g-2">
+                <div class="col-sm-4">
+                  <div style="font-size:.7rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em">City</div>
+                  <div style="color:#e2e8f0;font-weight:600;margin-top:2px">{{ item.details.city }}</div>
+                </div>
+                <div class="col-sm-4">
+                  <div style="font-size:.7rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Nights</div>
+                  <div style="color:#e2e8f0;font-weight:600;margin-top:2px">{{ item.details.nights }}</div>
+                </div>
+                {% if item.details.checkin %}
+                <div class="col-sm-4">
+                  <div style="font-size:.7rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Check-in</div>
+                  <div style="color:#e2e8f0;font-weight:600;margin-top:2px">{{ item.details.checkin }}</div>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Right: Summary Panel -->
+    <div class="col-lg-4">
+      <div class="summary-panel">
+        <div class="summary-header">
+          <div class="summary-header-title"><i class="bi bi-credit-card me-2"></i>Payment Summary</div>
+        </div>
+        <div class="summary-body">
+          <div class="summary-row">
+            <span class="summary-label">Total Amount</span>
+            <span class="summary-value" style="color:#4ade80;font-weight:800;font-size:.95rem">₹{{ "%.0f"|format(booking.total_amount) }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Currency</span>
+            <span class="summary-value">{{ booking.currency }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Payment Status</span>
+            <span class="st-badge confirmed" style="font-size:.72rem">✓ Paid</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Items</span>
+            <span class="summary-value">{{ booking.items|length }}</span>
+          </div>
+        </div>
+        <div class="summary-total">
+          <span class="summary-total-label">Grand Total</span>
+          <span class="summary-total-amount">₹{{ "%.0f"|format(booking.total_amount) }}</span>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <a href="{{ url_for('admin.manage_bookings') }}" class="btn-back">
+          <i class="bi bi-arrow-left"></i> All Bookings
+        </a>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn-dashboard">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,220 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Sign In – SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-hero {
+    background: linear-gradient(135deg, #e63950 0%, #c0392b 100%);
+    min-height: 100px;
+  }
+  .auth-wrapper {
+    min-height: calc(100vh - 220px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    background: #f5f7fa;
+  }
+  .auth-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+    width: 100%;
+    max-width: 440px;
+    overflow: hidden;
+  }
+  .auth-card-header {
+    background: linear-gradient(135deg, #e63950 0%, #c0392b 100%);
+    color: #fff;
+    padding: 32px 40px 28px;
+    text-align: center;
+  }
+  .auth-card-header .auth-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-bottom: 12px;
+  }
+  .auth-card-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .auth-card-header p {
+    margin: 0;
+    opacity: 0.88;
+    font-size: 0.9rem;
+  }
+  .auth-card-body {
+    padding: 36px 40px 32px;
+  }
+  .auth-card-body .form-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #444;
+    margin-bottom: 6px;
+  }
+  .auth-card-body .form-control {
+    border-radius: 10px;
+    border: 1.5px solid #e0e0e0;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    transition: border-color .2s;
+  }
+  .auth-card-body .form-control:focus {
+    border-color: #e63950;
+    box-shadow: 0 0 0 3px rgba(230,57,80,0.12);
+  }
+  .btn-auth {
+    background: #e63950;
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 12px;
+    width: 100%;
+    transition: background .2s, transform .1s;
+  }
+  .btn-auth:hover { background: #c0392b; transform: translateY(-1px); }
+  .btn-auth:active { transform: translateY(0); }
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #aaa;
+    font-size: 0.82rem;
+    margin: 20px 0;
+  }
+  .auth-divider::before, .auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e5e5e5;
+  }
+  .auth-link { color: #e63950; font-weight: 600; text-decoration: none; }
+  .auth-link:hover { color: #c0392b; text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+
+    <!-- Card header -->
+    <div class="auth-card-header">
+      <div class="auth-icon"><i class="bi bi-person-fill"></i></div>
+      <h2>Welcome Back!</h2>
+      <p>Sign in to continue your journey</p>
+    </div>
+
+    <!-- Card body -->
+    <div class="auth-card-body">
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mb-3" role="alert" style="border-radius:10px;font-size:.9rem">
+              <i class="bi bi-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}-fill me-2"></i>{{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" id="loginForm">
+        {{ form.hidden_tag() }}
+
+        <div class="mb-3">
+          {{ form.email.label(class="form-label") }}
+          {{ form.email(class="form-control", placeholder="you@example.com", id="loginEmail") }}
+          {% for error in form.email.errors %}
+            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="mb-3">
+          {{ form.password.label(class="form-label") }}
+          <div class="position-relative">
+            {{ form.password(class="form-control pe-5", placeholder="Your password", id="loginPassword") }}
+            <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted pe-3 py-0"
+                    style="background:none;border:none;" onclick="togglePwd('loginPassword',this)">
+              <i class="bi bi-eye-slash"></i>
+            </button>
+          </div>
+          {% for error in form.password.errors %}
+            <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="mb-4 d-flex align-items-center justify-content-between">
+          <div class="form-check">
+            {{ form.remember_me(class="form-check-input") }}
+            {{ form.remember_me.label(class="form-check-label text-muted", style="font-size:.88rem") }}
+          </div>
+        </div>
+
+        <button type="submit" class="btn-auth mb-3">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+        </button>
+      </form>
+
+      <!-- Resend verification (shown when unverified user tries to log in) -->
+      {% if show_resend is defined and show_resend %}
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 16px;margin-bottom:16px">
+        <div style="font-size:.85rem;color:#1e40af;margin-bottom:10px">
+          <i class="bi bi-envelope-exclamation me-1"></i>
+          Didn't get the email? Request a new verification link.
+        </div>
+        <form method="POST" action="{{ url_for('auth.resend_confirmation') }}" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="email" value="{{ resend_email }}">
+          <button type="submit" style="background:#2563eb;border:none;border-radius:8px;color:#fff;
+                  font-weight:600;font-size:.82rem;padding:8px 16px;cursor:pointer;transition:background .2s">
+            <i class="bi bi-arrow-clockwise me-1"></i>Resend Verification Email
+          </button>
+        </form>
+      </div>
+      {% endif %}
+
+      <div class="auth-divider">or</div>
+
+      <div class="text-center" style="font-size:.9rem">
+        <span class="text-muted">Don't have an account?</span>
+        <a href="{{ url_for('auth.signup') }}" class="auth-link ms-1">Create one free</a>
+      </div>
+
+      <div class="text-center mt-3">
+        <a href="{{ url_for('public.home') }}" class="text-muted text-decoration-none" style="font-size:.85rem">
+          <i class="bi bi-arrow-left me-1"></i>Continue as Guest
+        </a>
+      </div>
+
+
+    </div><!-- /auth-card-body -->
+  </div><!-- /auth-card -->
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function togglePwd(id, btn) {
+  const inp = document.getElementById(id);
+  const icon = btn.querySelector('i');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    icon.className = 'bi bi-eye';
+  } else {
+    inp.type = 'password';
+    icon.className = 'bi bi-eye-slash';
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Check Your Email – SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-wrapper {
+    min-height: calc(100vh - 220px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    background: #f5f7fa;
+  }
+  .auth-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+    width: 100%;
+    max-width: 480px;
+    overflow: hidden;
+  }
+  .auth-card-header {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #fff;
+    padding: 36px 40px 32px;
+    text-align: center;
+  }
+  .auth-card-header .auth-icon {
+    width: 68px; height: 68px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin-bottom: 14px;
+  }
+  .auth-card-header h2 { font-size: 1.4rem; font-weight: 700; margin: 0 0 6px; }
+  .auth-card-header p  { margin: 0; opacity: .88; font-size: .88rem; }
+
+  .auth-card-body { padding: 36px 40px 32px; }
+
+  .email-pill {
+    display: inline-block;
+    background: #eff6ff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-family: monospace;
+    font-size: .95rem;
+    font-weight: 600;
+    color: #1d4ed8;
+    letter-spacing: .3px;
+    margin: 16px 0 24px;
+    word-break: break-all;
+  }
+
+  .steps-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px;
+    counter-reset: step;
+  }
+  .steps-list li {
+    counter-increment: step;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: .88rem;
+    color: #4b5563;
+    line-height: 1.5;
+  }
+  .steps-list li:last-child { border-bottom: none; }
+  .steps-list li::before {
+    content: counter(step);
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    background: #eff6ff;
+    color: #2563eb;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .78rem;
+    font-weight: 800;
+  }
+
+  .btn-resend {
+    background: #2563eb; border: none; border-radius: 10px;
+    color: #fff; font-weight: 700; font-size: .92rem;
+    padding: 11px 24px; width: 100%;
+    transition: background .2s, transform .1s;
+    cursor: pointer;
+  }
+  .btn-resend:hover  { background: #1d4ed8; transform: translateY(-1px); }
+  .btn-resend:active { transform: translateY(0); }
+
+  .auth-link { color: #e63950; font-weight: 600; text-decoration: none; }
+  .auth-link:hover { color: #c0392b; text-decoration: underline; }
+
+  .tip-box {
+    background: #fefce8;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: .82rem;
+    color: #92400e;
+    margin-top: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+
+    <!-- Header -->
+    <div class="auth-card-header">
+      <div class="auth-icon"><i class="bi bi-envelope-check-fill"></i></div>
+      <h2>Check Your Email</h2>
+      <p>We've sent a verification link to confirm your account</p>
+    </div>
+
+    <!-- Body -->
+    <div class="auth-card-body">
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mb-3"
+                 role="alert" style="border-radius:10px;font-size:.9rem">
+              <i class="bi bi-{{ 'exclamation-circle' if category == 'error' else 'info-circle' }}-fill me-2"></i>{{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% if email %}
+      <div class="text-center">
+        <div class="email-pill">{{ email }}</div>
+      </div>
+      {% endif %}
+
+      <ul class="steps-list">
+        <li>Open your email inbox{% if email %} for <strong>{{ email }}</strong>{% endif %}</li>
+        <li>Click the <strong>"Verify My Email"</strong> button in the email from SnapTravels</li>
+        <li>Once verified, you'll be redirected to the sign-in page</li>
+      </ul>
+
+      <!-- Resend form -->
+      {% if email %}
+      <form method="POST" action="{{ url_for('auth.resend_confirmation') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="email" value="{{ email }}">
+        <button type="submit" class="btn-resend">
+          <i class="bi bi-arrow-clockwise me-2"></i>Resend Verification Email
+        </button>
+      </form>
+      {% endif %}
+
+      <div class="text-center mt-4" style="font-size:.88rem">
+        <span class="text-muted">Already verified?</span>
+        <a href="{{ url_for('auth.login') }}" class="auth-link ms-1">
+          <i class="bi bi-box-arrow-in-right me-1"></i>Sign In
+        </a>
+      </div>
+
+      <div class="tip-box">
+        <i class="bi bi-lightbulb me-1"></i>
+        <strong>Tip:</strong> Check your spam or junk folder if you don't see the email.
+        The link expires in 24 hours.
+      </div>
+
+    </div><!-- /auth-card-body -->
+  </div><!-- /auth-card -->
+</div>
+{% endblock %}

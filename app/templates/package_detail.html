@@ -1,0 +1,873 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ pkg.name }} - SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+  body {
+    background: #f8fafc;
+  }
+
+  /* Hero image section */
+  .detail-hero {
+    position: relative;
+    width: 100%;
+    height: 420px;
+    overflow: hidden;
+    margin-bottom: 0;
+  }
+
+  .detail-hero-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  }
+
+  .detail-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(15, 23, 42, 0.6) 100%);
+  }
+
+  .detail-hero-badges {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    gap: 8px;
+    z-index: 3;
+  }
+
+  .detail-badge {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .detail-badge.bestseller {
+    background: #fbbf24;
+    color: #1f2937;
+  }
+
+  .detail-badge.deal {
+    background: #ef4444;
+    color: #fff;
+  }
+
+  .detail-badge.new {
+    background: #3b82f6;
+    color: #fff;
+  }
+
+  .detail-discount-badge {
+    background: #10b981;
+    color: #fff;
+  }
+
+  .detail-wishlist {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #64748b;
+    transition: all 0.2s;
+    z-index: 4;
+  }
+
+  .detail-wishlist:hover {
+    background: #fff;
+    color: #db2777;
+    transform: scale(1.1);
+  }
+
+  /* Breadcrumb */
+  .breadcrumb-section {
+    background: #f8fafc;
+    padding: 16px 0;
+    margin-top: -40px;
+    position: relative;
+    z-index: 5;
+  }
+
+  .breadcrumb-nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #64748b;
+  }
+
+  .breadcrumb-nav a {
+    color: #0f172a;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .breadcrumb-nav a:hover {
+    color: #db2777;
+  }
+
+  .breadcrumb-sep {
+    color: #cbd5e1;
+  }
+
+  /* Main content layout */
+  .detail-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    padding: 40px 0;
+  }
+
+  @media (max-width: 1024px) {
+    .detail-container {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+  }
+
+  .detail-left {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  /* Package title section */
+  .pkg-title-section h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 12px;
+  }
+
+  .pkg-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 0.95rem;
+    color: #64748b;
+    margin-bottom: 16px;
+  }
+
+  .pkg-rating {
+    color: #f59e0b;
+    font-weight: 600;
+  }
+
+  /* Inclusions chips */
+  .pkg-inclusions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .inclusion-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #334155;
+  }
+
+  /* Description */
+  .section-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 24px;
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 16px;
+  }
+
+  .section-description {
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  /* Highlights */
+  .highlights-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .highlights-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .highlights-list li:last-child {
+    border-bottom: none;
+  }
+
+  .highlights-list .check-icon {
+    color: #10b981;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* Accordion */
+  .accordion-wrapper {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .accordion-item {
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .accordion-item:last-child {
+    border-bottom: none;
+  }
+
+  .accordion-button {
+    background: #fff;
+    border: none;
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 600;
+    color: #0f172a;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    transition: all 0.2s;
+  }
+
+  .accordion-button:hover {
+    background: #f8fafc;
+  }
+
+  .accordion-button.active {
+    background: #f8fafc;
+  }
+
+  .accordion-button::after {
+    content: '▼';
+    font-size: 0.75rem;
+    transition: transform 0.3s;
+    color: #94a3b8;
+  }
+
+  .accordion-button.active::after {
+    transform: rotate(-180deg);
+  }
+
+  .accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+
+  .accordion-content.show {
+    max-height: 500px;
+  }
+
+  .accordion-body {
+    padding: 0 20px 16px 20px;
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  /* Reviews section */
+  .reviews-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 24px;
+  }
+
+  .review-card {
+    padding: 16px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .review-card:last-child {
+    border-bottom: none;
+  }
+
+  .review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .review-rating {
+    color: #f59e0b;
+    font-weight: 600;
+  }
+
+  .review-verified {
+    display: inline-block;
+    background: #10b981;
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+
+  .review-date {
+    color: #94a3b8;
+    font-size: 0.85rem;
+  }
+
+  .review-title {
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 4px;
+  }
+
+  .review-comment {
+    color: #475569;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  .review-author {
+    color: #94a3b8;
+    font-size: 0.85rem;
+  }
+
+  /* Write review form */
+  .review-form {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 20px;
+    margin-top: 16px;
+  }
+
+  .review-form h6 {
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus,
+  .form-select:focus,
+  .form-textarea:focus {
+    outline: none;
+    border-color: #db2777;
+    box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.1);
+  }
+
+  /* Right sidebar - Booking card */
+  .detail-right {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .booking-card {
+    background: #fff;
+    border: none;
+    border-radius: 14px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    position: sticky;
+    top: 80px;
+  }
+
+  .booking-header {
+    background: #0f172a;
+    color: #fff;
+    padding: 20px;
+  }
+
+  .booking-price-crossed {
+    color: #94a3b8;
+    text-decoration: line-through;
+    font-size: 0.9rem;
+    margin-right: 8px;
+  }
+
+  .booking-price {
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+
+  .booking-price-unit {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    margin-left: 4px;
+  }
+
+  .booking-urgency {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #fca5a5;
+  }
+
+  .booking-body {
+    padding: 20px;
+  }
+
+  .booking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .promo-group {
+    display: flex;
+    gap: 8px;
+  }
+
+  .promo-group input {
+    flex: 1;
+  }
+
+  .promo-btn {
+    padding: 10px 16px;
+    background: transparent;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .promo-btn:hover {
+    border-color: #db2777;
+    color: #db2777;
+  }
+
+  .promo-msg {
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-top: 1px solid #e2e8f0;
+    margin-bottom: 12px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .confirm-btn {
+    width: 100%;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #db2777, #f97316);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 16px;
+  }
+
+  .confirm-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(219, 39, 119, 0.3);
+  }
+
+  .perk-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    font-size: 0.9rem;
+    color: #475569;
+  }
+
+  .perk-icon {
+    color: #10b981;
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Image -->
+<div class="detail-hero">
+  {% if pkg.image_path %}
+  <img src="{{ pkg.image_path }}" alt="{{ pkg.name }}" class="detail-hero-image">
+  {% else %}
+  <div class="detail-hero-image" style="background: linear-gradient(135deg, #0ea5e9, #6366f1);"></div>
+  {% endif %}
+  <div class="detail-hero-overlay"></div>
+
+  <div class="detail-hero-badges">
+    {% if pkg.tag %}
+    <div class="detail-badge {% if pkg.tag == 'BESTSELLER' %}bestseller{% elif pkg.tag == 'DEAL' %}deal{% else %}new{% endif %}">
+      {{ pkg.tag }}
+    </div>
+    {% endif %}
+    {% if pkg.discount_pct > 0 %}
+    <div class="detail-badge detail-discount-badge">{{ pkg.discount_pct }}% OFF</div>
+    {% endif %}
+  </div>
+
+  <button class="detail-wishlist wishlist-btn" data-type="PACKAGE" data-id="{{ pkg.id }}">
+    <i class="bi {% if in_wishlist %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+  </button>
+</div>
+
+<!-- Breadcrumb -->
+<section class="breadcrumb-section">
+  <div class="container">
+    <div class="breadcrumb-nav">
+      <a href="{{ url_for('public.home') }}">Home</a>
+      <span class="breadcrumb-sep">/</span>
+      <a href="{{ url_for('packages.listing') }}">Packages</a>
+      <span class="breadcrumb-sep">/</span>
+      <span>{{ pkg.name }}</span>
+    </div>
+  </div>
+</section>
+
+<!-- Main Content -->
+<div class="container">
+  <div class="detail-container">
+    <!-- Left Column -->
+    <div class="detail-left">
+      <!-- Package Title & Meta -->
+      <div class="pkg-title-section">
+        <h1>{{ pkg.name }}</h1>
+        <div class="pkg-meta-row">
+          <span>📍 {{ pkg.destination }}, {{ pkg.country }}</span>
+          <span>🌙 {{ pkg.duration_nights }} nights</span>
+          <span>👥 Up to {{ pkg.max_persons }} persons</span>
+          {% if avg_rating %}
+          <span class="pkg-rating">⭐ {{ avg_rating }} ({{ reviews|length }} reviews)</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Inclusions -->
+      <div class="pkg-inclusions">
+        {% if pkg.includes_flight %}
+        <div class="inclusion-badge">✈️ Flight included</div>
+        {% endif %}
+        {% if pkg.includes_hotel %}
+        <div class="inclusion-badge">🏨 Hotel included</div>
+        {% endif %}
+        {% if pkg.includes_meals %}
+        <div class="inclusion-badge">🍽️ Meals included</div>
+        {% endif %}
+        {% if pkg.includes_transfers %}
+        <div class="inclusion-badge">🚗 Transfers included</div>
+        {% endif %}
+      </div>
+
+      <!-- Description -->
+      {% if pkg.description %}
+      <div class="section-card">
+        <p class="section-description">{{ pkg.description }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Highlights -->
+      {% if pkg.highlights %}
+      <div class="section-card">
+        <h5 class="section-title">Package Highlights</h5>
+        <ul class="highlights-list">
+          {% for h in pkg.highlights %}
+          <li>
+            <span class="check-icon">✓</span>
+            <span>{{ h }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Itinerary -->
+      {% if pkg.itinerary %}
+      <div class="section-card">
+        <h5 class="section-title">Day-wise Itinerary</h5>
+        <div class="accordion-wrapper" id="itineraryAccordion">
+          {% for day in pkg.itinerary %}
+          <div class="accordion-item">
+            <button class="accordion-button {% if loop.first %}active{% endif %}" onclick="toggleAccordion(this, event)">
+              Day {{ loop.index }}: {{ day.title }}
+            </button>
+            <div class="accordion-content {% if loop.first %}show{% endif %}">
+              <div class="accordion-body">{{ day.description }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Reviews -->
+      <div class="reviews-section">
+        <h5 class="section-title">
+          Guest Reviews
+          {% if avg_rating %}
+          <span style="color: #f59e0b; margin-left: 8px;">⭐ {{ avg_rating }}</span>
+          {% endif %}
+        </h5>
+
+        {% if reviews %}
+        {% for rev in reviews %}
+        <div class="review-card">
+          <div class="review-header">
+            <div>
+              <span class="review-rating">{{ rev.stars }}</span>
+              {% if rev.verified_booking %}
+              <span class="review-verified">Verified Booking</span>
+              {% endif %}
+            </div>
+            <span class="review-date">{{ rev.created_at.strftime('%d %b %Y') }}</span>
+          </div>
+          {% if rev.title %}<div class="review-title">{{ rev.title }}</div>{% endif %}
+          {% if rev.comment %}<p class="review-comment">{{ rev.comment }}</p>{% endif %}
+          <div class="review-author">— {{ rev.user.email.split('@')[0] }}</div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p style="color: #64748b;">No reviews yet. Be the first!</p>
+        {% endif %}
+
+        <!-- Write Review Form -->
+        {% if user and not already_reviewed %}
+        <div class="review-form">
+          <h6>Write a Review</h6>
+          <form method="POST" action="{{ url_for('packages.submit_review', pkg_id=pkg.id) }}">
+            {{ review_form.hidden_tag() }}
+            <div class="form-group">
+              <label class="form-label">Rating</label>
+              {{ review_form.rating(class='form-select') }}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Title</label>
+              {{ review_form.title(class='form-input', placeholder='Summarise your experience') }}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Comment</label>
+              {{ review_form.comment(class='form-textarea', rows='3', placeholder='Share details…') }}
+            </div>
+            <button type="submit" style="padding: 10px 20px; background: linear-gradient(135deg, #db2777, #f97316); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+              Submit Review
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right Column - Booking Card -->
+    <div class="detail-right">
+      <div class="booking-card">
+        <div class="booking-header">
+          {% if pkg.original_price and pkg.original_price > pkg.base_price %}
+          <span class="booking-price-crossed">₹{{ "{:,.0f}".format(pkg.original_price) }}</span>
+          {% endif %}
+          <div class="booking-price">
+            ₹{{ "{:,.0f}".format(pkg.base_price) }}
+            <span class="booking-price-unit">/ person</span>
+          </div>
+          <div class="booking-urgency">
+            👥 {{ pkg.bookings_today }} people booked today
+          </div>
+        </div>
+
+        <div class="booking-body">
+          <form method="POST" action="{{ url_for('packages.book', slug=pkg.slug) }}" class="booking-form" id="bookForm">
+            {{ booking_form.hidden_tag() }}
+
+            <div class="form-group">
+              <label class="form-label">Full Name *</label>
+              {{ booking_form.customer_name(class='form-input', placeholder='Your full name') }}
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email *</label>
+              {{ booking_form.customer_email(class='form-input', placeholder='email@example.com') }}
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Phone *</label>
+              {{ booking_form.customer_phone(class='form-input', placeholder='+91 98765 43210') }}
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Persons *</label>
+                {{ booking_form.persons(class='form-select', id='personsInput') }}
+              </div>
+              <div class="form-group">
+                <label class="form-label">Travel Date *</label>
+                {{ booking_form.travel_date(class='form-input') }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Promo Code</label>
+              <div class="promo-group">
+                {{ booking_form.promo_code(class='form-input', id='promoInput', placeholder='e.g. SNAP20') }}
+                <button type="button" class="promo-btn" id="applyPromo">Apply</button>
+              </div>
+              <div id="promoMsg" class="promo-msg"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Special Requests</label>
+              {{ booking_form.special_requests(class='form-textarea', rows='2', placeholder='Any special requirements…') }}
+            </div>
+
+            <div class="total-row">
+              <span>Estimated Total</span>
+              <span id="totalDisplay">₹{{ "{:,.0f}".format(pkg.base_price) }}</span>
+            </div>
+            <input type="hidden" id="discountHidden" name="_discount" value="0">
+
+            <button type="submit" class="confirm-btn">
+              ✓ Confirm Booking
+            </button>
+          </form>
+
+          <div class="perk-item">
+            <span class="perk-icon">✓</span>
+            <span>Free cancellation</span>
+          </div>
+          <div class="perk-item">
+            <span class="perk-icon">✓</span>
+            <span>Instant confirmation</span>
+          </div>
+          <div class="perk-item">
+            <span class="perk-icon">✓</span>
+            <span>24/7 support</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Accordion toggle
+function toggleAccordion(button, event) {
+  event.preventDefault();
+  const content = button.nextElementSibling;
+  button.classList.toggle('active');
+  content.classList.toggle('show');
+}
+
+// Price calculation
+const basePrice = {{ pkg.base_price }};
+const personsInput = document.getElementById('personsInput');
+const totalDisplay = document.getElementById('totalDisplay');
+const promoInput = document.getElementById('promoInput');
+const promoMsg = document.getElementById('promoMsg');
+const discountHidden = document.getElementById('discountHidden');
+let activeDiscount = 0;
+
+function updateTotal() {
+  const persons = parseInt(personsInput.value) || 1;
+  const subtotal = basePrice * persons;
+  const final = subtotal - activeDiscount;
+  totalDisplay.textContent = '₹' + final.toLocaleString('en-IN', {maximumFractionDigits:0});
+}
+
+personsInput.addEventListener('change', updateTotal);
+
+document.getElementById('applyPromo').addEventListener('click', function() {
+  const code = promoInput.value.trim().toUpperCase();
+  const persons = parseInt(personsInput.value) || 1;
+  const amount = basePrice * persons;
+  if (!code) { promoMsg.innerHTML = '<span style="color:#94a3b8">Enter a promo code.</span>'; return; }
+  fetch('/promo/validate', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({code, amount})
+  }).then(r => r.json()).then(d => {
+    if (d.valid) {
+      activeDiscount = d.discount;
+      discountHidden.value = d.discount;
+      promoMsg.innerHTML = `<span style="color:#10b981">✓ ${d.message} — ₹${d.discount.toLocaleString('en-IN')} off</span>`;
+      updateTotal();
+    } else {
+      activeDiscount = 0;
+      discountHidden.value = 0;
+      promoMsg.innerHTML = `<span style="color:#dc2626">✗ ${d.message}</span>`;
+      updateTotal();
+    }
+  });
+});
+
+// Wishlist
+document.querySelectorAll('.wishlist-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const icon = this.querySelector('i');
+    fetch('/wishlist/toggle', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({item_type: this.dataset.type, ref_id: this.dataset.id})
+    }).then(r => r.json()).then(d => {
+      icon.className = d.wishlisted ? 'bi bi-heart-fill' : 'bi bi-heart';
+    });
+  });
+});
+</script>
+{% endblock %}

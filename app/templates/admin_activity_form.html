@@ -1,0 +1,212 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ 'Edit' if activity else 'Add' }} Activity — SnapTravels Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #0f1117 !important; color: #e2e8f0; }
+@keyframes accentSlide { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+.admin-accent-bar { height:3px; background:linear-gradient(90deg,#e63950,#f97316,#facc15,#e63950); background-size:200% 100%; animation:accentSlide 3s linear infinite; }
+.admin-topbar { background:#1a1f2e; border-bottom:1px solid #1e2433; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; }
+.admin-breadcrumb { display:flex; align-items:center; gap:8px; font-size:.82rem; color:#64748b; }
+.admin-breadcrumb a { color:#64748b; text-decoration:none; }
+.admin-breadcrumb a:hover { color:#e63950; }
+.admin-breadcrumb .sep { color:#334155; }
+.admin-breadcrumb .current { color:#e2e8f0; font-weight:600; }
+.admin-nav-links { display:flex; gap:6px; }
+.admin-nav-links a { padding:6px 14px; border-radius:8px; font-size:.78rem; font-weight:600; color:#94a3b8; text-decoration:none; transition:all .2s; border:1px solid transparent; }
+.admin-nav-links a:hover { background:#1e2433; color:#e2e8f0; }
+.admin-nav-links a.active { background:rgba(230,57,80,.12); color:#e63950; border-color:rgba(230,57,80,.25); }
+
+.form-panel { background:#1a1f2e; border:1px solid #1e2433; border-radius:16px; overflow:hidden; }
+.form-panel-header { padding:20px 24px; border-bottom:1px solid #1e2433; background:linear-gradient(90deg,rgba(245,158,11,.06),transparent); }
+.form-body { padding:24px; }
+.form-section-title { font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; color:#f59e0b; font-weight:700; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid #1e2433; display:flex; align-items:center; gap:8px; }
+.form-divider { border:none; border-top:1px solid #1e2433; margin:24px 0; }
+
+.dark-label { display:block; font-size:.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+.dark-input, .dark-select, .dark-textarea {
+  width:100%; background:#141824; border:1.5px solid #1e2433;
+  border-radius:10px; color:#e2e8f0; padding:10px 14px; font-size:.88rem; transition:all .2s;
+}
+.dark-input:focus, .dark-select:focus, .dark-textarea:focus { outline:none; border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.08); }
+.dark-input::placeholder, .dark-textarea::placeholder { color:#334155; }
+.dark-textarea { resize:vertical; }
+.dark-select option { background:#1a1f2e; }
+
+.input-prefix { display:flex; align-items:center; background:#141824; border:1.5px solid #1e2433; border-radius:10px; overflow:hidden; transition:border-color .2s; }
+.input-prefix:focus-within { border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.08); }
+.input-prefix-text { padding:10px 12px; font-size:.82rem; font-weight:700; color:#64748b; border-right:1px solid #1e2433; white-space:nowrap; background:rgba(255,255,255,.02); }
+.input-prefix input { background:transparent; border:none; color:#e2e8f0; padding:10px 14px; font-size:.88rem; flex:1; min-width:0; }
+.input-prefix input:focus { outline:none; }
+.input-prefix input::placeholder { color:#334155; }
+.form-hint { font-size:.72rem; color:#475569; margin-top:5px; }
+
+/* Custom checkbox */
+.dark-check-wrap { display:flex; align-items:center; gap:10px; cursor:pointer; padding:12px 14px; background:#141824; border:1.5px solid #1e2433; border-radius:10px; transition:all .2s; }
+.dark-check-wrap:hover { border-color:#f59e0b; background:rgba(245,158,11,.04); }
+.dark-check-wrap input[type="checkbox"] { width:18px; height:18px; accent-color:#f59e0b; cursor:pointer; }
+.dark-check-label { font-size:.86rem; font-weight:600; color:#e2e8f0; }
+.dark-check-sub { font-size:.72rem; color:#64748b; margin-top:1px; }
+
+.btn-submit { display:inline-flex; align-items:center; gap:8px; padding:12px 28px; border-radius:12px; font-size:.9rem; font-weight:800; background:linear-gradient(135deg,#d97706,#f59e0b); color:#000; border:none; cursor:pointer; transition:all .2s; box-shadow:0 4px 14px rgba(245,158,11,.3); }
+.btn-submit:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(245,158,11,.4); }
+.btn-cancel { display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border-radius:12px; font-size:.88rem; font-weight:600; background:transparent; border:1px solid #1e2433; color:#94a3b8; text-decoration:none; transition:all .2s; }
+.btn-cancel:hover { background:#1e2433; color:#e2e8f0; }
+.btn-ghost { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:10px; font-size:.8rem; font-weight:600; background:transparent; border:1px solid #1e2433; color:#94a3b8; text-decoration:none; transition:all .2s; }
+.btn-ghost:hover { background:#1e2433; color:#e2e8f0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-accent-bar"></div>
+
+<div class="admin-topbar">
+  <div class="admin-breadcrumb">
+    <i class="bi bi-speedometer2" style="color:#e63950"></i>
+    <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+    <span class="sep">›</span>
+    <a href="{{ url_for('admin_ext.activities') }}">Activities</a>
+    <span class="sep">›</span>
+    <span class="current">{{ 'Edit' if activity else 'Add' }} Activity</span>
+  </div>
+  <div class="admin-nav-links">
+    <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap me-1"></i>Dashboard</a>
+    <a href="{{ url_for('admin_ext.hotels') }}"><i class="bi bi-building me-1"></i>Hotels</a>
+    <a href="{{ url_for('admin_ext.activities') }}" class="active"><i class="bi bi-stars me-1"></i>Activities</a>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4" style="max-width:860px;margin:0 auto">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#64748b;font-weight:700">Activity Management</div>
+      <h2 style="font-size:1.5rem;font-weight:900;color:#e2e8f0;margin:4px 0 0">{{ 'Edit' if activity else 'Add' }} Activity</h2>
+    </div>
+    <a href="{{ url_for('admin_ext.activities') }}" class="btn-ghost"><i class="bi bi-arrow-left"></i> All Activities</a>
+  </div>
+
+  <div class="form-panel">
+    <div class="form-panel-header">
+      <div style="font-weight:800;color:#e2e8f0;font-size:1rem">
+        <i class="bi bi-stars me-2" style="color:#f59e0b"></i>{{ 'Edit Activity Details' if activity else 'New Activity Listing' }}
+      </div>
+      <div style="font-size:.78rem;color:#64748b;margin-top:4px">Set up tour details, pricing, and availability.</div>
+    </div>
+
+    <div class="form-body">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        <!-- Basic -->
+        <div class="form-section-title"><i class="bi bi-info-circle"></i> Basic Details</div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-8">
+            <label class="dark-label">Activity Name <span style="color:#e63950">*</span></label>
+            <input type="text" name="name" class="dark-input"
+                   value="{{ activity.name if activity else '' }}" required placeholder="e.g. Sunset Cruise in Goa">
+          </div>
+          <div class="col-md-4">
+            <label class="dark-label">City <span style="color:#e63950">*</span></label>
+            <input type="text" name="city" class="dark-input"
+                   value="{{ activity.city if activity else '' }}" required placeholder="e.g. Goa">
+          </div>
+        </div>
+        <div class="row g-3 mb-0">
+          <div class="col-md-6">
+            <label class="dark-label">Category</label>
+            <select name="category" class="dark-select">
+              {% for cat in categories %}
+              <option value="{{ cat }}" {{ 'selected' if activity and activity.category == cat else '' }}>{{ cat }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="dark-label">Duration (hours)</label>
+            <input type="number" name="duration_hours" class="dark-input" step="0.5" min="0.5"
+                   value="{{ activity.duration_hours if activity else 3 }}" placeholder="3">
+          </div>
+          <div class="col-md-3">
+            <label class="dark-label">Rating</label>
+            <input type="number" name="rating" class="dark-input" step="0.1" min="1" max="5"
+                   value="{{ activity.rating if activity else 4.5 }}" placeholder="4.5">
+          </div>
+        </div>
+
+        <hr class="form-divider">
+
+        <!-- Pricing -->
+        <div class="form-section-title"><i class="bi bi-currency-rupee"></i> Pricing & Capacity</div>
+        <div class="row g-3 mb-0">
+          <div class="col-md-3">
+            <label class="dark-label">Price / Person <span style="color:#e63950">*</span></label>
+            <div class="input-prefix">
+              <span class="input-prefix-text">₹</span>
+              <input type="number" name="price_per_person"
+                     value="{{ activity.price_per_person if activity else '' }}" required placeholder="1500">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="dark-label">Original Price</label>
+            <div class="input-prefix">
+              <span class="input-prefix-text">₹</span>
+              <input type="number" name="original_price"
+                     value="{{ activity.original_price if activity else '' }}" placeholder="2000">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="dark-label">Min Persons</label>
+            <input type="number" name="min_persons" class="dark-input"
+                   value="{{ activity.min_persons if activity else 1 }}" min="1">
+          </div>
+          <div class="col-md-3">
+            <label class="dark-label">Max Persons</label>
+            <input type="number" name="max_persons" class="dark-input"
+                   value="{{ activity.max_persons if activity else 20 }}" min="1">
+          </div>
+        </div>
+
+        <hr class="form-divider">
+
+        <!-- Description & Includes -->
+        <div class="form-section-title"><i class="bi bi-card-text"></i> Description & Inclusions</div>
+        <div class="mb-3">
+          <label class="dark-label">Description</label>
+          <textarea name="description" class="dark-textarea" rows="3"
+                    placeholder="Describe the activity, what to expect, highlights…">{{ activity.description if activity else '' }}</textarea>
+        </div>
+        <div class="mb-0">
+          <label class="dark-label">What's Included <span style="color:#475569;font-weight:400;text-transform:none">(one item per line)</span></label>
+          <textarea name="includes" class="dark-textarea" rows="5"
+                    placeholder="Professional guide&#10;Welcome drink&#10;Safety equipment&#10;Transport from hotel">{{ activity.includes|join('\n') if activity else '' }}</textarea>
+          <div class="form-hint"><i class="bi bi-info-circle me-1"></i>Each line becomes a bullet point on the activity detail page.</div>
+        </div>
+
+        <hr class="form-divider">
+
+        <!-- Visibility -->
+        <div class="form-section-title"><i class="bi bi-eye"></i> Visibility</div>
+        <label class="dark-check-wrap">
+          <input type="checkbox" name="active" id="active"
+                 {{ 'checked' if not activity or activity.active else '' }}>
+          <div>
+            <div class="dark-check-label">Active — visible to users</div>
+            <div class="dark-check-sub">When enabled, this activity appears in search results and listing pages.</div>
+          </div>
+        </label>
+
+        <hr class="form-divider">
+
+        <div class="d-flex align-items-center gap-3">
+          <button type="submit" class="btn-submit">
+            <i class="bi bi-check2-circle"></i>
+            {{ 'Save Changes' if activity else 'Add Activity' }}
+          </button>
+          <a href="{{ url_for('admin_ext.activities') }}" class="btn-cancel">
+            <i class="bi bi-x"></i> Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

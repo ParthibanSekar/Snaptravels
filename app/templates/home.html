@@ -1,0 +1,668 @@
+{% extends "layouts/base.html" %}
+{% block title %}SnapTravels — Flights, Hotels, Trains, Buses, Cabs & Packages{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Hero Slideshow ─────────────────────────────────────────── */
+.hero-section {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.2s ease-in-out;
+  z-index: 0;
+}
+.hero-slide.active { opacity: 1; }
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,rgba(10,20,60,.72) 0%,rgba(10,40,80,.55) 50%,rgba(10,20,60,.45) 100%);
+  z-index: 1;
+}
+.hero-content { position: relative; z-index: 2; padding: 6rem 0 4rem; }
+
+/* ── Slide dots ─────────────────────────────────────────────── */
+.slide-dots {
+  position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  display: flex; gap: .5rem; z-index: 10;
+}
+.slide-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,.4); border: none; padding: 0; cursor: pointer;
+  transition: all .3s;
+}
+.slide-dot.active { background: #fff; width: 24px; border-radius: 4px; }
+
+/* ── Search card ────────────────────────────────────────────── */
+.search-card {
+  background: rgba(255,255,255,.97);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.22);
+  overflow: hidden;
+}
+
+/* ── Tab strip ──────────────────────────────────────────────── */
+.search-tabs {
+  display: flex; background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+  overflow-x: auto; scrollbar-width: none;
+}
+.search-tabs::-webkit-scrollbar { display: none; }
+.search-tab-btn {
+  flex: 0 0 auto; display: flex; align-items: center; gap: .4rem;
+  padding: .85rem 1.2rem; border: none; background: transparent;
+  font-size: .82rem; font-weight: 600; color: #6b7280;
+  white-space: nowrap; cursor: pointer;
+  border-bottom: 3px solid transparent; transition: all .2s; letter-spacing: .2px;
+}
+.search-tab-btn:hover { color: #1d4ed8; background: rgba(37,99,235,.04); }
+.search-tab-btn.active { color: #1d4ed8; border-bottom-color: #1d4ed8; background: rgba(37,99,235,.06); }
+.search-tab-btn .tab-icon { font-size: 1rem; }
+
+/* ── Search panels ──────────────────────────────────────────── */
+.search-panel { display: none; padding: 1.4rem 1.6rem 1.6rem; }
+.search-panel.active { display: block; }
+.search-panel .form-label {
+  font-size: .72rem; font-weight: 700; color: #6b7280;
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: .3rem;
+}
+.search-panel .form-control, .search-panel .form-select {
+  border: 1.5px solid #e5e7eb; border-radius: 10px;
+  padding: .6rem .85rem; font-size: .9rem;
+  transition: border-color .2s, box-shadow .2s;
+}
+.search-panel .form-control:focus, .search-panel .form-select:focus {
+  border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,.1);
+}
+
+/* ── Search buttons ─────────────────────────────────────────── */
+.search-btn {
+  padding: .65rem 1.2rem; border-radius: 10px; font-weight: 700;
+  font-size: .88rem; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: .4rem;
+  white-space: nowrap; transition: all .2s;
+}
+.sb-blue   { background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;box-shadow:0 4px 14px rgba(29,78,216,.3); }
+.sb-green  { background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;box-shadow:0 4px 14px rgba(22,163,74,.3); }
+.sb-indigo { background:linear-gradient(135deg,#4338ca,#6366f1);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.3); }
+.sb-orange { background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;box-shadow:0 4px 14px rgba(217,119,6,.3); }
+.sb-rose   { background:linear-gradient(135deg,#e11d48,#f43f5e);color:#fff;box-shadow:0 4px 14px rgba(225,29,72,.3); }
+.sb-teal   { background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;box-shadow:0 4px 14px rgba(20,184,166,.3); }
+.search-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+
+/* ── Trip type pills ────────────────────────────────────────── */
+.trip-type-group { display: flex; gap: .4rem; margin-bottom: 1rem; }
+.trip-type-group .btn-check + label {
+  padding: .28rem .85rem; border-radius: 20px; font-size: .8rem; font-weight: 600;
+  border: 1.5px solid #e5e7eb; color: #6b7280; cursor: pointer; transition: all .2s;
+}
+.trip-type-group .btn-check:checked + label { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+
+/* ── Hero text ──────────────────────────────────────────────── */
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+  color: #fff; font-size: .78rem; font-weight: 600; letter-spacing: .8px;
+  text-transform: uppercase; padding: .3rem .85rem; border-radius: 20px;
+  margin-bottom: 1rem; backdrop-filter: blur(8px);
+}
+.hero-title {
+  font-size: clamp(2.2rem,5vw,3.6rem); font-weight: 800; line-height: 1.12;
+  color: #fff; margin-bottom: .8rem; text-shadow: 0 2px 20px rgba(0,0,0,.25);
+}
+.hero-sub { font-size: 1rem; color: rgba(255,255,255,.82); margin-bottom: 0; }
+.trust-pills { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.5rem; }
+.trust-pill {
+  display: inline-flex; align-items: center; gap: .35rem;
+  background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.2);
+  color: rgba(255,255,255,.9); font-size: .75rem; font-weight: 600;
+  padding: .3rem .75rem; border-radius: 20px; backdrop-filter: blur(8px);
+}
+
+/* ── General sections ───────────────────────────────────────── */
+.section-badge {
+  display: inline-block; background: #eff6ff; color: #1d4ed8;
+  font-size: .72rem; font-weight: 700; letter-spacing: .8px;
+  text-transform: uppercase; padding: .2rem .7rem; border-radius: 20px; margin-bottom: .4rem;
+}
+.pkg-card { border-radius: 16px; overflow: hidden; transition: transform .25s, box-shadow .25s; }
+.pkg-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,.13) !important; }
+.pkg-img { height: 200px; object-fit: cover; width: 100%; }
+.pkg-img-ph { height:200px;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:#fff; }
+.dest-card { border-radius: 14px; transition: transform .22s, box-shadow .22s; text-decoration: none; display: block; }
+.dest-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,.1) !important; }
+.trust-icon-wrap { width:68px;height:68px;border-radius:18px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:.85rem;font-size:1.6rem; }
+.stat-val { font-size:2rem;font-weight:800;line-height:1.1; }
+.stat-lbl { font-size:.8rem;opacity:.7;margin-top:.2rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Promo banner -->
+{% if promo_banner %}
+<div class="alert alert-warning alert-dismissible fade show mb-0 rounded-0 text-center py-2" role="alert" style="font-size:.88rem">
+  <i class="bi bi-tag-fill me-1"></i>
+  <strong>LIMITED OFFER:</strong> Use code <kbd>{{ promo_banner.code }}</kbd> to get
+  {% if promo_banner.discount_type == 'PERCENT' %}{{ promo_banner.discount_value|int }}% off{% else %}₹{{ promo_banner.discount_value|int }} off{% endif %}!
+  {{ promo_banner.description or '' }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- ═══ HERO ═══════════════════════════════════════════════════════════════ -->
+<section class="hero-section">
+
+  <!-- Background slides — iconic India travel imagery (local files) -->
+  <div class="hero-slide active" style="background-image:url('{{ url_for('static', filename='images/hero/taj-mahal.jpg') }}')"></div>
+  <div class="hero-slide" style="background-image:url('{{ url_for('static', filename='images/hero/beach-hero.jpg') }}')"></div>
+  <div class="hero-slide" style="background-image:url('{{ url_for('static', filename='images/hero/mountain-hero.jpg') }}')"></div>
+  <div class="hero-slide" style="background-image:url('{{ url_for('static', filename='images/hero/jaipur-palace.jpg') }}')"></div>
+  <div class="hero-slide" style="background-image:url('{{ url_for('static', filename='images/hero/flights-hero.jpg') }}')"></div>
+  <div class="hero-slide" style="background-image:url('{{ url_for('static', filename='images/destinations/india-gate.jpg') }}')"></div>
+  <div class="hero-overlay"></div>
+
+  <div class="hero-content">
+    <div class="container">
+      <div class="row align-items-center g-5">
+
+        <!-- Headline -->
+        <div class="col-lg-5">
+          <div class="hero-eyebrow"><i class="bi bi-globe2"></i> India's #1 Travel Platform</div>
+          <h1 class="hero-title">Your Next<br>Adventure<br><span style="color:#93c5fd">Starts Here</span></h1>
+          <p class="hero-sub">Flights · Hotels · Trains · Buses · Cabs · Packages — all in one place.</p>
+          <div class="trust-pills">
+            <span class="trust-pill"><i class="bi bi-lightning-charge-fill" style="color:#fbbf24"></i> Instant Booking</span>
+            <span class="trust-pill"><i class="bi bi-shield-check" style="color:#34d399"></i> Secure Payments</span>
+            <span class="trust-pill"><i class="bi bi-percent" style="color:#f87171"></i> Best Price</span>
+            <span class="trust-pill"><i class="bi bi-headset" style="color:#a78bfa"></i> 24/7 Support</span>
+          </div>
+        </div>
+
+        <!-- Search card -->
+        <div class="col-lg-7">
+          <div class="search-card">
+
+            <!-- Tabs -->
+            <div class="search-tabs">
+              <button class="search-tab-btn active" data-tab="flights"><span class="tab-icon">✈️</span> Flights</button>
+              <button class="search-tab-btn" data-tab="hotels"><span class="tab-icon">🏨</span> Hotels</button>
+              <button class="search-tab-btn" data-tab="trains"><span class="tab-icon">🚆</span> Trains</button>
+              <button class="search-tab-btn" data-tab="buses"><span class="tab-icon">🚌</span> Buses</button>
+              <button class="search-tab-btn" data-tab="cabs"><span class="tab-icon">🚕</span> Cabs</button>
+              <button class="search-tab-btn" data-tab="packages"><span class="tab-icon">🏖️</span> Packages</button>
+            </div>
+
+            <!-- Flights -->
+            <div class="search-panel active" id="panel-flights">
+              <form action="{{ url_for('public.flights') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="trip-type-group">
+                  <input type="radio" class="btn-check" name="trip_type" id="hw_one_way" value="one_way" checked>
+                  <label for="hw_one_way"><i class="bi bi-arrow-right me-1"></i>One Way</label>
+                  <input type="radio" class="btn-check" name="trip_type" id="hw_round" value="round_trip">
+                  <label for="hw_round"><i class="bi bi-arrow-left-right me-1"></i>Round Trip</label>
+                </div>
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">From</label>
+                    <input type="text" name="origin" class="form-control st-ac-city" placeholder="Chennai, Delhi, Mumbai..." autocomplete="off">
+                  </div>
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">To</label>
+                    <input type="text" name="destination" class="form-control st-ac-city" placeholder="Bangalore, Hyderabad..." autocomplete="off">
+                  </div>
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">Departure Date</label>
+                    <input type="date" name="depart_date" class="form-control">
+                  </div>
+                  <div class="col-md-4 col-6" id="hw-return-wrap" style="display:none">
+                    <label class="form-label">Return Date</label>
+                    <input type="date" name="return_date" class="form-control">
+                  </div>
+                </div>
+                <div class="row g-2 align-items-end mt-1">
+                  <div class="col-md-3 col-4">
+                    <label class="form-label">Passengers</label>
+                    <select name="passengers" class="form-select">{% for i in range(1,9) %}<option value="{{ i }}">{{ i }} {{ 'Passenger' if i==1 else 'Passengers' }}</option>{% endfor %}</select>
+                  </div>
+                  <div class="col-md-3 col-4">
+                    <label class="form-label">Cabin Class</label>
+                    <select name="cabin_class" class="form-select">
+                      <option value="">Any Class</option>
+                      <option value="Economy">Economy</option>
+                      <option value="Business">Business</option>
+                      <option value="First">First Class</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3 col-4">
+                    <button type="submit" class="search-btn sb-blue w-100"><i class="bi bi-search"></i> Search Flights</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Hotels -->
+            <div class="search-panel" id="panel-hotels">
+              <form action="{{ url_for('public.hotels') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-4 col-12">
+                    <label class="form-label">Destination / City</label>
+                    <input type="text" name="city" class="form-control st-ac-city" placeholder="Goa, Mumbai, Jaipur, Shimla..." autocomplete="off">
+                  </div>
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">Check-in Date</label>
+                    <input type="date" name="checkin" class="form-control">
+                  </div>
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">Check-out Date</label>
+                    <input type="date" name="checkout" class="form-control">
+                  </div>
+                </div>
+                <div class="row g-2 align-items-end mt-1">
+                  <div class="col-md-3 col-4">
+                    <label class="form-label">Guests</label>
+                    <select name="guests" class="form-select">{% for i in range(1,9) %}<option value="{{ i }}" {% if i==2 %}selected{% endif %}>{{ i }} {{ 'Guest' if i==1 else 'Guests' }}</option>{% endfor %}</select>
+                  </div>
+                  <div class="col-md-3 col-4">
+                    <label class="form-label">Rooms</label>
+                    <select name="rooms" class="form-select"><option value="1">1 Room</option><option value="2">2 Rooms</option><option value="3">3 Rooms</option><option value="4">4 Rooms</option><option value="5">5 Rooms</option></select>
+                  </div>
+                  <div class="col-md-3 col-4">
+                    <button type="submit" class="search-btn sb-green w-100"><i class="bi bi-search"></i> Search Hotels</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Trains -->
+            <div class="search-panel" id="panel-trains">
+              <form action="{{ url_for('trains.search') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">From Station / City</label>
+                    <input type="text" name="origin" class="form-control st-ac-city" placeholder="Delhi, Mumbai, Chennai..." autocomplete="off">
+                  </div>
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">To Station / City</label>
+                    <input type="text" name="destination" class="form-control st-ac-city" placeholder="Bangalore, Pune, Goa..." autocomplete="off">
+                  </div>
+                  <div class="col-md-4 col-12">
+                    <label class="form-label">Journey Date</label>
+                    <input type="date" name="travel_date" class="form-control">
+                  </div>
+                </div>
+                <div class="row g-2 align-items-end mt-1">
+                  <div class="col-md-3 col-4">
+                    <label class="form-label">Travel Class</label>
+                    <select name="travel_class" class="form-select">
+                      <option value="SL">Sleeper (SL)</option>
+                      <option value="3A">AC 3 Tier (3A)</option>
+                      <option value="2A">AC 2 Tier (2A)</option>
+                      <option value="1A">AC First (1A)</option>
+                      <option value="CC">Chair Car (CC)</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3 col-4">
+                    <label class="form-label">Passengers</label>
+                    <select name="passengers" class="form-select">{% for i in range(1,7) %}<option value="{{ i }}">{{ i }} {{ 'Passenger' if i==1 else 'Passengers' }}</option>{% endfor %}</select>
+                  </div>
+                  <div class="col-md-3 col-4">
+                    <button type="submit" class="search-btn sb-indigo w-100"><i class="bi bi-search"></i> Search Trains</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Buses -->
+            <div class="search-panel" id="panel-buses">
+              <form action="{{ url_for('buses.search') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">From City</label>
+                    <input type="text" name="origin" class="form-control st-ac-city" placeholder="Bangalore, Chennai, Pune..." autocomplete="off">
+                  </div>
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">To City</label>
+                    <input type="text" name="destination" class="form-control st-ac-city" placeholder="Goa, Hyderabad, Mumbai..." autocomplete="off">
+                  </div>
+                  <div class="col-md-4 col-12">
+                    <label class="form-label">Travel Date</label>
+                    <input type="date" name="travel_date" class="form-control">
+                  </div>
+                </div>
+                <div class="row g-2 align-items-end mt-1">
+                  <div class="col-md-3 col-6">
+                    <label class="form-label">Bus Type</label>
+                    <select name="bus_type" class="form-select">
+                      <option value="">Any Type</option>
+                      <option value="AC Sleeper">AC Sleeper</option>
+                      <option value="Non-AC Sleeper">Non-AC Sleeper</option>
+                      <option value="AC Seater">AC Seater</option>
+                      <option value="Volvo">Volvo</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3 col-6">
+                    <button type="submit" class="search-btn sb-orange w-100"><i class="bi bi-search"></i> Search Buses</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Cabs -->
+            <div class="search-panel" id="panel-cabs">
+              <form action="{{ url_for('cabs.search') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-4 col-12">
+                    <label class="form-label">Pickup Location</label>
+                    <input type="text" name="pickup" class="form-control st-ac-city" placeholder="Airport, hotel or address..." autocomplete="off">
+                  </div>
+                  <div class="col-md-4 col-12">
+                    <label class="form-label">Drop Location</label>
+                    <input type="text" name="destination" class="form-control st-ac-city" placeholder="Airport, hotel or address..." autocomplete="off">
+                  </div>
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">Pickup Date</label>
+                    <input type="date" name="travel_date" class="form-control">
+                  </div>
+                </div>
+                <div class="row g-2 align-items-end mt-1">
+                  <div class="col-md-3 col-6">
+                    <label class="form-label">Pickup Time</label>
+                    <input type="time" name="travel_time" class="form-control" value="10:00">
+                  </div>
+                  <div class="col-md-3 col-6">
+                    <button type="submit" class="search-btn sb-rose w-100"><i class="bi bi-search"></i> Search Cabs</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Packages -->
+            <div class="search-panel" id="panel-packages">
+              <form action="{{ url_for('packages.listing') }}" method="GET">
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-4 col-12">
+                    <label class="form-label">Destination</label>
+                    <input type="text" name="destination" class="form-control st-ac-city" placeholder="Goa, Kerala, Rajasthan, Bali..." autocomplete="off">
+                  </div>
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">Duration</label>
+                    <select name="duration" class="form-select">
+                      <option value="">Any Duration</option>
+                      <option value="3">3 Nights</option>
+                      <option value="5">5 Nights</option>
+                      <option value="7">7 Nights</option>
+                      <option value="10">10+ Nights</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4 col-6">
+                    <label class="form-label">Package Type</label>
+                    <select name="tag" class="form-select">
+                      <option value="">All Types</option>
+                      <option value="BESTSELLER">Bestsellers</option>
+                      <option value="DEAL">Deals</option>
+                      <option value="NEW">New</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row g-2 align-items-end mt-1">
+                  <div class="col-md-3 col-12">
+                    <button type="submit" class="search-btn sb-teal w-100"><i class="bi bi-search"></i> Explore Packages</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+          </div><!-- /search-card -->
+        </div>
+
+      </div><!-- /row -->
+    </div><!-- /container -->
+  </div><!-- /hero-content -->
+
+  <!-- Slide dots -->
+  <div class="slide-dots">
+    <button class="slide-dot active" data-slide="0"></button>
+    <button class="slide-dot" data-slide="1"></button>
+    <button class="slide-dot" data-slide="2"></button>
+    <button class="slide-dot" data-slide="3"></button>
+    <button class="slide-dot" data-slide="4"></button>
+    <button class="slide-dot" data-slide="5"></button>
+  </div>
+
+</section>
+
+<!-- ═══ STATS STRIP ════════════════════════════════════════════════════════ -->
+<section style="background:linear-gradient(90deg,#1e3a8a,#1d4ed8)">
+  <div class="container py-4">
+    <div class="row text-white text-center g-3">
+      <div class="col-6 col-md-3"><div class="stat-val">50L+</div><div class="stat-lbl">Happy Travellers</div></div>
+      <div class="col-6 col-md-3"><div class="stat-val">500+</div><div class="stat-lbl">Destinations</div></div>
+      <div class="col-6 col-md-3"><div class="stat-val">200+</div><div class="stat-lbl">Airlines & Partners</div></div>
+      <div class="col-6 col-md-3"><div class="stat-val">4.8 ★</div><div class="stat-lbl">Average Rating</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PACKAGES ═══════════════════════════════════════════════════════════ -->
+{% if featured_packages %}
+<section class="py-5" style="background:#f8fafc">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+      <div>
+        <div class="section-badge">Holiday Packages</div>
+        <h2 class="fw-bold mb-1 mt-1">Curated Holiday Packages</h2>
+        <p class="text-muted mb-0">All-inclusive deals — flights + hotel + transfers bundled</p>
+      </div>
+      <a href="{{ url_for('packages.listing') }}" class="btn btn-outline-primary btn-sm fw-semibold">
+        View all <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+    </div>
+    <div class="row g-4">
+      {% for pkg in featured_packages %}
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm pkg-card">
+          <div class="position-relative">
+            {% if pkg.tag %}
+            <div class="position-absolute top-0 start-0 m-2" style="z-index:2">
+              <span class="badge px-2 py-1" style="{% if pkg.tag == 'BESTSELLER' %}background:#f59e0b{% elif pkg.tag == 'DEAL' %}background:#ef4444{% else %}background:#3b82f6{% endif %};color:#fff;border-radius:6px;font-size:.7rem;font-weight:700">{{ pkg.tag }}</span>
+            </div>
+            {% endif %}
+            {% if pkg.image_path %}<img src="{{ pkg.image_path }}" class="pkg-img" alt="{{ pkg.name }}">
+            {% else %}<div class="pkg-img-ph">🌍</div>{% endif %}
+          </div>
+          <div class="card-body">
+            <h5 class="fw-bold mb-1">{{ pkg.name }}</h5>
+            <div class="text-muted small mb-3">
+              <i class="bi bi-geo-alt me-1"></i>{{ pkg.destination }} &nbsp;·&nbsp;
+              <i class="bi bi-moon me-1"></i>{{ pkg.duration_nights }} nights
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span class="fs-5 fw-bold text-primary">₹{{ "{:,.0f}".format(pkg.base_price) }}</span>
+                <span class="text-muted small">/person</span>
+              </div>
+              <a href="{{ url_for('packages.detail', slug=pkg.slug) }}" class="btn btn-sm btn-primary rounded-pill px-3">View deal</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ═══ POPULAR DESTINATIONS — India ════════════════════════════════════════ -->
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mb-4">
+      <div class="section-badge">Trending Now</div>
+      <h2 class="fw-bold mt-1">Explore India's Finest Destinations</h2>
+      <p class="text-muted">Handpicked destinations loved by millions of travellers</p>
+    </div>
+    <div class="row g-3">
+      {% set india_dests = [
+        ('Goa',       url_for('static', filename='images/destinations/goa.jpg'),        'Beaches & Nightlife'),
+        ('Jaipur',    url_for('static', filename='images/destinations/jaipur.jpg'),     'Royal Heritage'),
+        ('Kerala',    url_for('static', filename='images/destinations/kerala.jpg'),     'Backwaters & Spice'),
+        ('Manali',    url_for('static', filename='images/destinations/manali.jpg'),     'Mountains & Snow'),
+        ('Varanasi',  url_for('static', filename='images/destinations/varanasi.jpg'),   'Spiritual & Culture'),
+        ('Udaipur',   url_for('static', filename='images/destinations/udaipur.jpg'),    'Lake City Romance'),
+      ] %}
+      {% for name, img, tagline in india_dests %}
+      <div class="col-6 col-md-4 col-lg-2">
+        <a href="{{ url_for('public.flights') }}?destination={{ name }}" class="dest-card card border-0 shadow-sm text-decoration-none h-100" style="overflow:hidden">
+          <div style="position:relative;height:160px;overflow:hidden">
+            <img src="{{ img }}" alt="{{ name }}" style="width:100%;height:100%;object-fit:cover;transition:transform .4s">
+            <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.6) 0%,transparent 60%)"></div>
+            <div style="position:absolute;bottom:10px;left:12px;right:12px">
+              <div style="font-weight:800;font-size:.95rem;color:#fff">{{ name }}</div>
+              <div style="font-size:.7rem;color:rgba(255,255,255,.8)">{{ tagline }}</div>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Dynamic destinations from DB (if available) -->
+    {% if destinations %}
+    <div class="row g-2 mt-3 justify-content-center">
+      {% for destination in destinations %}
+      <div class="col-auto">
+        <a href="{{ url_for('public.flights') }}?destination={{ destination }}"
+           class="btn btn-sm rounded-pill px-3 py-2"
+           style="background:#f0f4ff;color:#1d4ed8;font-weight:600;font-size:.82rem;border:1px solid #dbeafe;text-decoration:none;transition:all .2s">
+          <i class="bi bi-geo-alt me-1"></i>{{ destination }}
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ═══ WHY US ══════════════════════════════════════════════════════════════ -->
+<section class="py-5" style="background:#fff;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb">
+  <div class="container">
+    <div class="text-center mb-4">
+      <div class="section-badge">Why SnapTravels</div>
+      <h2 class="fw-bold mt-1" style="color:#0f172a">Travel with confidence</h2>
+      <p class="text-muted mb-0">Everything you need for a hassle-free trip, from booking to boarding.</p>
+    </div>
+    <div class="row g-3">
+      <div class="col-6 col-md-3">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px 20px;text-align:center;height:100%;transition:box-shadow .2s,transform .2s" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,.08)';this.style.transform='translateY(-3px)'" onmouseout="this.style.boxShadow='none';this.style.transform=''">
+          <div style="width:52px;height:52px;border-radius:12px;background:#eff6ff;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+            <i class="bi bi-lightning-charge-fill" style="font-size:1.15rem;color:#2563eb"></i>
+          </div>
+          <h6 class="fw-bold mb-1" style="color:#0f172a;font-size:.9rem">Instant Booking</h6>
+          <p class="mb-0" style="font-size:.8rem;color:#6b7280;line-height:1.6">Real-time availability with instant confirmation in under 2 minutes.</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px 20px;text-align:center;height:100%;transition:box-shadow .2s,transform .2s" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,.08)';this.style.transform='translateY(-3px)'" onmouseout="this.style.boxShadow='none';this.style.transform=''">
+          <div style="width:52px;height:52px;border-radius:12px;background:#f0fdf4;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+            <i class="bi bi-shield-lock-fill" style="font-size:1.15rem;color:#16a34a"></i>
+          </div>
+          <h6 class="fw-bold mb-1" style="color:#0f172a;font-size:.9rem">Secure Payments</h6>
+          <p class="mb-0" style="font-size:.8rem;color:#6b7280;line-height:1.6">256-bit SSL encryption and PCI-DSS compliant payment gateway.</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px 20px;text-align:center;height:100%;transition:box-shadow .2s,transform .2s" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,.08)';this.style.transform='translateY(-3px)'" onmouseout="this.style.boxShadow='none';this.style.transform=''">
+          <div style="width:52px;height:52px;border-radius:12px;background:#fefce8;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+            <i class="bi bi-tag-fill" style="font-size:1.15rem;color:#ca8a04"></i>
+          </div>
+          <h6 class="fw-bold mb-1" style="color:#0f172a;font-size:.9rem">Best Price Guarantee</h6>
+          <p class="mb-0" style="font-size:.8rem;color:#6b7280;line-height:1.6">Find it cheaper? We'll match the price, no questions asked.</p>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px 20px;text-align:center;height:100%;transition:box-shadow .2s,transform .2s" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,.08)';this.style.transform='translateY(-3px)'" onmouseout="this.style.boxShadow='none';this.style.transform=''">
+          <div style="width:52px;height:52px;border-radius:12px;background:#fdf2f8;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+            <i class="bi bi-headset" style="font-size:1.15rem;color:#db2777"></i>
+          </div>
+          <h6 class="fw-bold mb-1" style="color:#0f172a;font-size:.9rem">24/7 Support</h6>
+          <p class="mb-0" style="font-size:.8rem;color:#6b7280;line-height:1.6">Dedicated travel experts available any time, any day of the year.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+/* Date floors */
+const today = new Date().toISOString().split('T')[0];
+document.querySelectorAll('input[type="date"]').forEach(i => i.min = today);
+
+/* Tab switching */
+document.querySelectorAll('.search-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.search-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.search-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* Round-trip return toggle */
+document.querySelectorAll('input[name="trip_type"]').forEach(r => {
+  r.addEventListener('change', function () {
+    document.getElementById('hw-return-wrap').style.display =
+      this.value === 'round_trip' ? 'block' : 'none';
+  });
+});
+
+/* Hero slideshow */
+const slides = document.querySelectorAll('.hero-slide');
+const dots   = document.querySelectorAll('.slide-dot');
+let current  = 0, timer;
+
+function goTo(n) {
+  slides[current].classList.remove('active');
+  dots[current].classList.remove('active');
+  current = (n + slides.length) % slides.length;
+  slides[current].classList.add('active');
+  dots[current].classList.add('active');
+}
+function startAuto() { timer = setInterval(() => goTo(current + 1), 5000); }
+
+dots.forEach(dot => {
+  dot.addEventListener('click', () => {
+    clearInterval(timer);
+    goTo(parseInt(dot.dataset.slide));
+    startAuto();
+  });
+});
+
+/* Pause on hover */
+document.querySelector('.hero-section').addEventListener('mouseenter', () => clearInterval(timer));
+document.querySelector('.hero-section').addEventListener('mouseleave', startAuto);
+
+startAuto();
+</script>
+<script>
+/* Wire autocomplete on all city inputs across every home-page search panel */
+document.querySelectorAll('.st-ac-city').forEach(function(inp) { _stWire(inp); });
+</script>
+{% endblock %}

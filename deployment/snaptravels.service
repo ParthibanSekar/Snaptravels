@@ -1,0 +1,18 @@
+[Unit]
+Description=SnapTravels Flask Application
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/snaptravels
+Environment=PATH=/var/www/snaptravels/venv/bin
+Environment=FLASK_ENV=production
+ExecStart=/var/www/snaptravels/venv/bin/python main.py
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

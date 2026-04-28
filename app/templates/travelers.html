@@ -1,0 +1,224 @@
+{% extends "layouts/base.html" %}
+{% block title %}Saved Travelers — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f4f6fb; }
+
+.page-hero {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  padding: 36px 0 70px;
+  position: relative; overflow: hidden;
+}
+.page-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0; right: 0; height: 48px;
+  background: #f4f6fb;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+.page-hero-accent {
+  height: 3px;
+  background: linear-gradient(90deg, #e63950, #f97316, #facc15, #e63950);
+  background-size: 200% 100%;
+  animation: accentSlide 3s linear infinite;
+}
+@keyframes accentSlide {
+  0% { background-position: 0% 50% }
+  100% { background-position: 200% 50% }
+}
+
+/* Traveler Cards */
+.traveler-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e8edf5;
+  overflow: hidden;
+  transition: all .2s;
+  height: 100%;
+}
+.traveler-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.08); transform: translateY(-2px); }
+.traveler-card-header {
+  background: linear-gradient(135deg, #f8faff, #eef2ff);
+  padding: 20px 20px 16px;
+  display: flex; align-items: center; gap: 14px;
+  border-bottom: 1px solid #e8edf5;
+}
+.traveler-avatar {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, #e63950, #f97316);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; font-weight: 900; color: #fff;
+  flex-shrink: 0;
+}
+.traveler-avatar.primary-av {
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+}
+.traveler-name { font-size: .95rem; font-weight: 800; color: #1e293b; margin-bottom: 3px; }
+.primary-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(37,99,235,.1); color: #2563eb;
+  border: 1px solid rgba(37,99,235,.2);
+  padding: 2px 9px; border-radius: 20px;
+  font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+}
+.traveler-card-body { padding: 16px 20px; }
+.info-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .82rem; color: #64748b;
+  padding: 5px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.info-row:last-of-type { border-bottom: none; }
+.info-row i { color: #94a3b8; font-size: .8rem; width: 16px; text-align: center; }
+.info-row strong { color: #475569; min-width: 80px; }
+.traveler-card-footer { padding: 12px 20px; border-top: 1px solid #f1f5f9; }
+
+.btn-remove {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 9px;
+  font-size: .78rem; font-weight: 700;
+  background: rgba(220,38,38,.06); color: #dc2626;
+  border: 1px solid rgba(220,38,38,.2);
+  text-decoration: none; transition: all .15s; cursor: pointer;
+}
+.btn-remove:hover { background: rgba(220,38,38,.12); border-color: #dc2626; color: #dc2626; }
+
+.btn-add-traveler {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 20px; border-radius: 11px;
+  font-size: .85rem; font-weight: 800;
+  background: linear-gradient(135deg, #e63950, #f97316);
+  color: #fff; border: none; text-decoration: none;
+  transition: all .2s; box-shadow: 0 4px 14px rgba(230,57,80,.25);
+}
+.btn-add-traveler:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(230,57,80,.35); }
+
+.empty-card {
+  background: #fff; border-radius: 16px; border: 1px solid #e8edf5;
+  padding: 64px 24px; text-align: center;
+}
+.empty-card-icon { font-size: 3.5rem; margin-bottom: 12px; opacity: .3; }
+.empty-card h5 { color: #475569; font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.empty-card p { color: #94a3b8; font-size: .84rem; margin-bottom: 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero-accent"></div>
+<div class="page-hero">
+  <div class="container" style="max-width:1200px">
+    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:#475569;font-weight:700;margin-bottom:6px">
+      My Account
+    </div>
+    <h1 style="font-size:1.8rem;font-weight:900;color:#fff;margin:0 0 4px">
+      <i class="bi bi-people me-2" style="color:#e63950"></i>Saved Travelers
+    </h1>
+    <div style="font-size:.85rem;color:#64748b">
+      Save passenger profiles for faster checkout
+    </div>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:1200px">
+  <div class="row g-4">
+
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+      {% set active_page = 'travelers' %}
+      {% include '_user_sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-9">
+
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div style="font-size:.78rem;color:#94a3b8;font-weight:600">
+          {{ travelers|length }} traveler{{ 's' if travelers|length != 1 else '' }} saved
+        </div>
+        <a href="{{ url_for('user.add_traveler') }}" class="btn-add-traveler">
+          <i class="bi bi-plus-lg"></i> Add Traveler
+        </a>
+      </div>
+
+      {% if travelers %}
+      <div class="row g-3">
+        {% for t in travelers %}
+        <div class="col-md-6">
+          <div class="traveler-card">
+            <div class="traveler-card-header">
+              <div class="traveler-avatar {{ 'primary-av' if t.is_primary else '' }}">
+                {{ t.full_name[0].upper() }}
+              </div>
+              <div>
+                <div class="traveler-name">{{ t.full_name }}</div>
+                <div style="font-size:.78rem;color:#64748b">
+                  {{ t.gender or 'Not specified' }}{% if t.age %} · {{ t.age }} yrs{% endif %}
+                </div>
+                {% if t.is_primary %}
+                <div class="primary-pill mt-1"><i class="bi bi-star-fill"></i> Primary</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="traveler-card-body">
+              {% if t.nationality %}
+              <div class="info-row">
+                <i class="bi bi-flag"></i>
+                <strong>Nationality</strong>
+                {{ t.nationality }}
+              </div>
+              {% endif %}
+              {% if t.id_type %}
+              <div class="info-row">
+                <i class="bi bi-card-text"></i>
+                <strong>{{ t.id_type }}</strong>
+                {{ t.id_number or '—' }}
+              </div>
+              {% endif %}
+              {% if t.passport_no %}
+              <div class="info-row">
+                <i class="bi bi-passport"></i>
+                <strong>Passport</strong>
+                {{ t.passport_no }}
+              </div>
+              {% endif %}
+              {% if t.date_of_birth %}
+              <div class="info-row">
+                <i class="bi bi-cake"></i>
+                <strong>Date of Birth</strong>
+                {{ t.date_of_birth.strftime('%d %b %Y') }}
+              </div>
+              {% endif %}
+              {% if not t.nationality and not t.id_type and not t.passport_no and not t.date_of_birth %}
+              <div style="color:#94a3b8;font-size:.82rem;text-align:center;padding:12px 0">No additional details saved</div>
+              {% endif %}
+            </div>
+            <div class="traveler-card-footer">
+              <form method="POST" action="{{ url_for('user.delete_traveler', tid=t.id) }}"
+                    onsubmit="return confirm('Remove {{ t.full_name }} from your saved travelers?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn-remove">
+                  <i class="bi bi-trash"></i> Remove
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div class="empty-card">
+        <div class="empty-card-icon">👥</div>
+        <h5>No Saved Travelers Yet</h5>
+        <p>Add passenger profiles to speed up your next booking — no more re-entering details every time.</p>
+        <a href="{{ url_for('user.add_traveler') }}" class="btn-add-traveler" style="display:inline-flex">
+          <i class="bi bi-plus-lg"></i> Add Your First Traveler
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

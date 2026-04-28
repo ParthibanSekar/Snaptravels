@@ -1,0 +1,511 @@
+
+{
+  "info": {
+    "name": "SnapTravels API",
+    "description": "Complete API collection for SnapTravels booking platform",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "prodUrl",
+      "value": "https://snaptravels.online",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "User Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@snaptravels.online\",\n  \"password\": \"Password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "signup"]
+            }
+          }
+        },
+        {
+          "name": "User Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"parthiban@snaptravels.online\",\n  \"password\": \"Test@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "login"]
+            }
+          }
+        },
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@snaptravels.online\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/user",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user"]
+            }
+          }
+        },
+        {
+          "name": "User Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Flights",
+      "item": [
+        {
+          "name": "Search All Flights",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/flights",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "flights"]
+            }
+          }
+        },
+        {
+          "name": "Search Flights by Origin",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/flights?origin=Mumbai",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "flights"],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "Mumbai"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Flights by Destination",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/flights?destination=Delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "flights"],
+              "query": [
+                {
+                  "key": "destination",
+                  "value": "Delhi"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Flights by Route",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/flights?origin=Mumbai&destination=Delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "flights"],
+              "query": [
+                {
+                  "key": "origin",
+                  "value": "Mumbai"
+                },
+                {
+                  "key": "destination",
+                  "value": "Delhi"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Flight Details",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/flights/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "flights", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hotels",
+      "item": [
+        {
+          "name": "Search All Hotels",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hotels"]
+            }
+          }
+        },
+        {
+          "name": "Search Hotels by Location",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?location=Mumbai",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hotels"],
+              "query": [
+                {
+                  "key": "location",
+                  "value": "Mumbai"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Hotel Details",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hotels", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create Flight Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"flight\",\n  \"flight_id\": 1,\n  \"amount\": 5500\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/book",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "book"]
+            }
+          }
+        },
+        {
+          "name": "Create Hotel Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"hotel\",\n  \"hotel_id\": 1,\n  \"amount\": 8500\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/book",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "book"]
+            }
+          }
+        },
+        {
+          "name": "Get User Bookings",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Itineraries",
+      "item": [
+        {
+          "name": "Get User Itineraries",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/itineraries",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "itineraries"]
+            }
+          }
+        },
+        {
+          "name": "Create Itinerary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mumbai to Delhi Trip\",\n  \"destination\": \"Delhi\",\n  \"start_date\": \"2024-06-15\",\n  \"end_date\": \"2024-06-20\",\n  \"flight_ids\": \"1,2\",\n  \"hotel_ids\": \"1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/itineraries",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "itineraries"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Flights",
+      "item": [
+        {
+          "name": "Get All Flights (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/flights",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "flights"]
+            }
+          }
+        },
+        {
+          "name": "Add Flight (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"airline\": \"Test Airlines\",\n  \"flight_number\": \"TA999\",\n  \"origin\": \"Test Origin\",\n  \"destination\": \"Test Destination\",\n  \"departure_time\": \"10:00\",\n  \"arrival_time\": \"12:00\",\n  \"price\": 3000,\n  \"duration\": \"2h 0m\",\n  \"available_seats\": 100\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/flights",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "flights"]
+            }
+          }
+        },
+        {
+          "name": "Update Flight (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"price\": 6000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/flights",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "flights"]
+            }
+          }
+        },
+        {
+          "name": "Delete Flight (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 51\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/flights",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "flights"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Hotels",
+      "item": [
+        {
+          "name": "Get All Hotels (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/hotels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "hotels"]
+            }
+          }
+        },
+        {
+          "name": "Add Hotel (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Hotel\",\n  \"location\": \"Test City\",\n  \"rating\": 4.0,\n  \"price_per_night\": 5000,\n  \"amenities\": \"WiFi, Pool, Gym\",\n  \"image_url\": \"/assets/images/test_hotel.jpg\",\n  \"description\": \"A test hotel for demonstration\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/hotels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "hotels"]
+            }
+          }
+        },
+        {
+          "name": "Update Hotel (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"price_per_night\": 9000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/hotels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "hotels"]
+            }
+          }
+        },
+        {
+          "name": "Delete Hotel (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 51\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/hotels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "hotels"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Bookings",
+      "item": [
+        {
+          "name": "Get All Bookings (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "bookings"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

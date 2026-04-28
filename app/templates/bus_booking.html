@@ -1,0 +1,712 @@
+{% extends "layouts/base.html" %}
+{% block title %}Confirm Bus Booking — {{ bus.operator }} | SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f5f3ff; }
+
+/* ── Hero strip ──────────────────────────────── */
+.booking-hero {
+  background: linear-gradient(135deg, #3b0764 0%, #7c3aed 60%, #a78bfa 100%);
+  padding: 24px 0 30px;
+}
+
+/* Steps */
+.step-indicator { display: flex; align-items: center; gap: 0; }
+.step { display: flex; align-items: center; gap: 6px; }
+.step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; }
+.step-dot-done  { background: #ede9fe; color: #5b21b6; }
+.step-dot-active{ background: #7c3aed; color: #fff; }
+.step-dot-pending{ background: rgba(255,255,255,.2); color: rgba(255,255,255,.45); }
+.step-label { font-size: .75rem; color: rgba(255,255,255,.75); font-weight: 600; }
+.step-label.active { color: #fff; }
+.step-line { flex: 1; height: 2px; background: rgba(255,255,255,.25); margin: 0 6px; min-width: 20px; }
+.step-line-done { background: #c4b5fd; }
+
+/* Journey card */
+.journey-card {
+  background: #fff; border-radius: 18px;
+  padding: 20px 24px; box-shadow: 0 8px 36px rgba(0,0,0,.18);
+}
+.route-time-lg { font-size: 1.45rem; font-weight: 900; color: #0f172a; line-height: 1; }
+.route-station-sm { font-size: .72rem; color: #9ca3af; margin-top: 3px; }
+.route-bar { flex: 1; height: 2px; background: linear-gradient(90deg, #7c3aed, #c4b5fd, #7c3aed); }
+.dur-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #ede9fe; border: 1.5px solid #c4b5fd;
+  border-radius: 20px; padding: 5px 14px;
+  font-size: .78rem; font-weight: 700; color: #7c3aed;
+}
+
+/* Summary panel */
+.summary-panel { background: #fff; border-radius: 18px; box-shadow: 0 2px 16px rgba(0,0,0,.08); position: sticky; top: 80px; overflow: hidden; }
+.panel-header { background: linear-gradient(135deg, #5b21b6, #7c3aed); color: #fff; padding: 18px 22px; }
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: .83rem; }
+.info-row:last-child { border-bottom: none; }
+.info-label { color: #6b7280; }
+.info-val { font-weight: 700; color: #111; text-align: right; max-width: 60%; }
+.price-total { display: flex; justify-content: space-between; padding: 12px 0; font-weight: 900; font-size: 1rem; color: #111; }
+
+/* Bus type badge */
+.btype-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  border-radius: 8px; padding: 4px 12px;
+  font-weight: 700; font-size: .78rem;
+}
+.btype-volvo   { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+.btype-sleeper { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.btype-seater  { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+.btype-nonac   { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+.btype-luxury  { background: #fef9c3; color: #78350f; border: 1px solid #fcd34d; }
+.btype-default { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+
+/* Form card */
+.form-card { background: #fff; border-radius: 18px; box-shadow: 0 2px 16px rgba(0,0,0,.07); overflow: hidden; margin-bottom: 18px; }
+.form-card-header { padding: 16px 22px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 10px; }
+.form-card-header .icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.form-card-body { padding: 22px; }
+.form-label { font-weight: 600; font-size: .84rem; color: #374151; margin-bottom: 6px; }
+.form-control, .form-select {
+  border-radius: 10px; border: 1.5px solid #ede9fe;
+  padding: 10px 14px; font-size: .9rem;
+  transition: border-color .2s, box-shadow .2s;
+}
+.form-control:focus, .form-select:focus {
+  border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.12); outline: none;
+}
+
+/* Payment tabs */
+.pay-tab { border: 2px solid #ede9fe; border-radius: 12px; padding: 10px 14px; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 10px; flex: 1; }
+.pay-tab:hover { border-color: #c4b5fd; background: #f9f7ff; }
+.pay-tab.active { border-color: #7c3aed; background: #ede9fe; }
+.pay-tab-icon { font-size: 1.35rem; }
+.pay-tab-label { font-weight: 700; font-size: .8rem; color: #374151; }
+.pay-tab-sub { font-size: .68rem; color: #9ca3af; }
+
+/* Card number input */
+.card-input-wrap { position: relative; }
+.card-input-wrap input { padding-left: 44px; }
+.card-input-wrap .card-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1.05rem; pointer-events: none; transition: all .2s; }
+
+/* Card brand row */
+.card-brands { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.card-brand-pill { border: 1.5px solid #e5e7eb; border-radius: 6px; padding: 4px 10px; font-size: .72rem; font-weight: 700; color: #6b7280; letter-spacing: .5px; transition: all .2s; }
+.card-brand-pill.active { border-color: #7c3aed; color: #7c3aed; background: #ede9fe; }
+
+/* UPI app grid */
+.upi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.upi-app { border: 1.5px solid #ede9fe; border-radius: 12px; padding: 12px 8px; cursor: pointer; text-align: center; transition: all .15s; }
+.upi-app:hover { border-color: #c4b5fd; background: #f9f7ff; }
+.upi-app.selected { border-color: #7c3aed; background: #ede9fe; }
+.upi-app .upi-emoji { font-size: 1.6rem; display: block; margin-bottom: 5px; }
+.upi-app .upi-name { font-size: .7rem; font-weight: 700; color: #374151; }
+
+/* Bank grid */
+.bank-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+.bank-tile { border: 1.5px solid #ede9fe; border-radius: 10px; padding: 10px 6px; cursor: pointer; text-align: center; font-size: .72rem; font-weight: 700; color: #374151; transition: all .15s; }
+.bank-tile:hover { border-color: #c4b5fd; background: #f9f7ff; }
+.bank-tile.selected { border-color: #7c3aed; background: #ede9fe; color: #5b21b6; }
+.bank-tile .bank-icon { font-size: 1.1rem; display: block; margin-bottom: 3px; }
+
+/* Wallet tiles */
+.wallet-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.wallet-tile { border: 1.5px solid #ede9fe; border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 10px; }
+.wallet-tile:hover { border-color: #c4b5fd; background: #f9f7ff; }
+.wallet-tile.selected { border-color: #7c3aed; background: #ede9fe; }
+.wallet-tile .w-emoji { font-size: 1.4rem; }
+.wallet-tile .w-name { font-weight: 700; font-size: .82rem; color: #374151; }
+.wallet-tile .w-sub { font-size: .68rem; color: #9ca3af; }
+
+/* Promo */
+.promo-wrap { display: flex; gap: 8px; }
+.promo-wrap input { border-radius: 10px; border: 1.5px solid #ede9fe; padding: 9px 14px; flex: 1; font-size: .88rem; }
+.promo-wrap input:focus { border-color: #7c3aed; outline: none; box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
+.promo-wrap button { border-radius: 10px; border: none; background: linear-gradient(135deg, #5b21b6, #7c3aed); color: #fff; padding: 9px 18px; font-weight: 700; font-size: .85rem; white-space: nowrap; cursor: pointer; }
+
+/* Submit button */
+.btn-confirm {
+  background: linear-gradient(135deg, #5b21b6, #7c3aed);
+  color: #fff; border: none; border-radius: 14px;
+  padding: 16px; font-weight: 800; font-size: 1rem;
+  width: 100%; transition: all .2s;
+  box-shadow: 0 4px 18px rgba(124,58,237,.35);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-confirm:hover:not(:disabled) { background: linear-gradient(135deg, #4c1d95, #5b21b6); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(124,58,237,.45); }
+.btn-confirm:disabled { opacity: .75; cursor: not-allowed; transform: none; }
+
+/* Terms */
+.terms-check { display: flex; align-items: flex-start; gap: 10px; }
+.terms-check input[type=checkbox] { width: 18px; height: 18px; margin-top: 2px; accent-color: #7c3aed; flex-shrink: 0; }
+.terms-check label { font-size: .8rem; color: #6b7280; }
+
+/* Inclusions */
+.inclusion-list { list-style: none; padding: 0; margin: 0; }
+.inclusion-list li { font-size: .78rem; color: #374151; display: flex; align-items: center; gap: 6px; padding: 4px 0; }
+.inclusion-list li::before { content: "✓"; color: #7c3aed; font-weight: 800; flex-shrink: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Derive bus type CSS class ─────────────────────────────────── #}
+{% set btype_lower = bus.bus_type | lower %}
+{% if 'volvo' in btype_lower %}{% set btype_cls = 'btype-volvo' %}{% set btype_icon = '🟣' %}
+{% elif 'sleeper' in btype_lower %}{% set btype_cls = 'btype-sleeper' %}{% set btype_icon = '🌙' %}
+{% elif 'seater' in btype_lower %}{% set btype_cls = 'btype-seater' %}{% set btype_icon = '💺' %}
+{% elif 'non' in btype_lower %}{% set btype_cls = 'btype-nonac' %}{% set btype_icon = '🌀' %}
+{% elif 'luxury' in btype_lower %}{% set btype_cls = 'btype-luxury' %}{% set btype_icon = '👑' %}
+{% else %}{% set btype_cls = 'btype-default' %}{% set btype_icon = '🚌' %}
+{% endif %}
+
+{# ── Price breakdown ────────────────────────────────────────────── #}
+{% set base_fare = bus.price * passengers %}
+{% set conv_fee  = (passengers * 30) %}
+{% set gst_amt   = (base_fare * 0.05) | round(0) | int %}
+{% set grand_total = total %}
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════════ -->
+<div class="booking-hero">
+  <div class="container">
+
+    <!-- Step Indicator -->
+    <div class="step-indicator mb-4">
+      <div class="step">
+        <div class="step-dot step-dot-done"><i class="bi bi-check"></i></div>
+        <span class="step-label">Search</span>
+      </div>
+      <div class="step-line step-line-done"></div>
+      <div class="step">
+        <div class="step-dot step-dot-done"><i class="bi bi-check"></i></div>
+        <span class="step-label">Select Bus</span>
+      </div>
+      <div class="step-line step-line-done"></div>
+      <div class="step">
+        <div class="step-dot step-dot-active">3</div>
+        <span class="step-label active">Passenger &amp; Payment</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-dot step-dot-pending">4</div>
+        <span class="step-label">Confirmation</span>
+      </div>
+    </div>
+
+    <!-- Journey card -->
+    <div class="journey-card">
+      <div class="row align-items-center g-3">
+
+        <!-- Bus icon + operator -->
+        <div class="col-auto">
+          <div style="width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,#ede9fe,#ddd6fe);display:flex;align-items:center;justify-content:center;font-size:1.8rem">🚌</div>
+        </div>
+        <div class="col-auto">
+          <div style="font-weight:800;font-size:.98rem;color:#111">{{ bus.operator }}</div>
+          <div style="font-size:.75rem;color:#9ca3af">Bus No. {{ bus.bus_no }}</div>
+          <span class="btype-badge {{ btype_cls }} mt-1">{{ btype_icon }} {{ bus.bus_type }}</span>
+        </div>
+
+        <!-- Route visualization -->
+        <div class="col d-flex align-items-center gap-3 justify-content-center">
+          <div class="text-center">
+            <div class="route-time-lg">{{ bus.depart_time }}</div>
+            <div class="route-station-sm">{{ bus.origin }}</div>
+          </div>
+          <div class="d-flex align-items-center gap-2" style="flex:1;max-width:210px">
+            <div class="route-bar"></div>
+            <div class="dur-pill">
+              🚌
+              {% if bus.duration_mins %}
+                {{ bus.duration_mins // 60 }}h {{ bus.duration_mins % 60 }}m
+              {% else %}—{% endif %}
+            </div>
+            <div class="route-bar"></div>
+          </div>
+          <div class="text-center">
+            <div class="route-time-lg">{{ bus.arrive_time }}</div>
+            <div class="route-station-sm">{{ bus.destination }}</div>
+          </div>
+        </div>
+
+        <!-- Price -->
+        <div class="col-auto text-end">
+          <div style="font-size:.78rem;color:#9ca3af">Total fare</div>
+          <div style="font-size:1.5rem;font-weight:900;color:#7c3aed">₹{{ "{:,.0f}".format(grand_total) }}</div>
+          <div style="font-size:.72rem;color:#6b7280">{{ passengers }} seat{{ 's' if passengers > 1 }}</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FORM + SUMMARY ════════════════════════════════════════════════════ -->
+<div class="container py-4">
+<div class="row g-4">
+
+  <!-- ── LEFT: Forms ─────────────────────────────────────────────────── -->
+  <div class="col-lg-8">
+
+    <!-- ① Passenger Details -->
+    <div class="form-card">
+      <div class="form-card-header">
+        <div class="icon" style="background:#ede9fe">👤</div>
+        <div>
+          <div style="font-weight:700;font-size:.95rem;color:#111">Passenger Details</div>
+          <div style="font-size:.75rem;color:#9ca3af">Enter lead passenger information</div>
+        </div>
+      </div>
+      <form method="POST" id="bookingForm" onsubmit="return handleSubmit(event)">
+        <div class="form-card-body">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" id="paymentMethodField" name="payment_method" value="card">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-person me-1" style="color:#7c3aed"></i>Full Name *</label>
+              <input type="text" name="customer_name" class="form-control"
+                     value="{{ user.name if user and user.name else (user.email.split('@')[0].title() if user else '') }}"
+                     placeholder="As on your ID" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-envelope me-1" style="color:#7c3aed"></i>Email Address *</label>
+              <input type="email" name="customer_email" class="form-control"
+                     value="{{ user.email if user else '' }}" placeholder="your@email.com" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-phone me-1" style="color:#7c3aed"></i>Mobile Number</label>
+              <input type="tel" name="customer_phone" class="form-control" id="phoneInput" placeholder="+91 98765 43210">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-calendar3 me-1" style="color:#7c3aed"></i>Date of Journey *</label>
+              <input type="date" class="form-control" name="travel_date" value="{{ bus_search.get('travel_date','') }}" required>
+            </div>
+
+            {% if selected_seats %}
+            <div class="col-12">
+              <label class="form-label"><i class="bi bi-grid-3x3 me-1" style="color:#7c3aed"></i>Selected Seat(s)</label>
+              <div class="form-control" style="background:#f8f7ff;cursor:default">
+                {% for s in selected_seats.split(',') %}
+                  <span style="display:inline-flex;align-items:center;background:#ede9fe;color:#5b21b6;border:1.5px solid #c4b5fd;border-radius:6px;padding:2px 10px;font-weight:700;font-size:.82rem;margin:2px">{{ s.strip() }}</span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          {% if passengers > 1 %}
+          <div class="mt-3 p-3" style="background:#f5f3ff;border-radius:12px;border:1px solid #c4b5fd">
+            <div style="font-size:.82rem;color:#7c3aed;font-weight:600">
+              <i class="bi bi-info-circle me-1"></i>
+              Booking for {{ passengers }} seats — ticket issued under lead passenger name.
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- ② GST Invoice (collapsible) -->
+        <div class="form-card-header" style="border-top:1px solid #f3f4f6;border-bottom:none;cursor:pointer" onclick="toggleGST()">
+          <div class="icon" style="background:#fef3c7">🧾</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:.95rem;color:#111">GST Invoice <span style="font-size:.75rem;color:#9ca3af;font-weight:400">(Optional — for business travel)</span></div>
+          </div>
+          <i class="bi bi-chevron-down" id="gstChevron" style="color:#9ca3af;transition:transform .2s"></i>
+        </div>
+        <div id="gstPanel" class="form-card-body" style="border-top:1px solid #f3f4f6;display:none">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">GSTIN</label>
+              <input type="text" class="form-control" placeholder="22AAAAA0000A1Z5" maxlength="15">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Company Name</label>
+              <input type="text" class="form-control" placeholder="Your Company Pvt. Ltd.">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Registered Address</label>
+              <input type="text" class="form-control" placeholder="Company address">
+            </div>
+          </div>
+        </div>
+
+        <!-- ③ Payment Method -->
+        <div class="form-card-header" style="border-top:1px solid #f3f4f6;border-bottom:none">
+          <div class="icon" style="background:#fef3c7">💳</div>
+          <div>
+            <div style="font-weight:700;font-size:.95rem;color:#111">Payment Method</div>
+            <div style="font-size:.75rem;color:#9ca3af">Demo mode — no real charge will be made</div>
+          </div>
+        </div>
+        <div class="form-card-body" style="border-top:1px solid #f3f4f6">
+
+          <!-- Tab selector (2-row on mobile) -->
+          <div class="d-flex gap-2 mb-4 flex-wrap">
+            <div class="pay-tab active" onclick="switchPay('card',this)" id="tab-card">
+              <div class="pay-tab-icon">💳</div>
+              <div><div class="pay-tab-label">Card</div><div class="pay-tab-sub">Visa / MC / RuPay</div></div>
+            </div>
+            <div class="pay-tab" onclick="switchPay('upi',this)" id="tab-upi">
+              <div class="pay-tab-icon">📱</div>
+              <div><div class="pay-tab-label">UPI</div><div class="pay-tab-sub">GPay, PhonePe…</div></div>
+            </div>
+            <div class="pay-tab" onclick="switchPay('netbanking',this)" id="tab-nb">
+              <div class="pay-tab-icon">🏦</div>
+              <div><div class="pay-tab-label">Net Banking</div><div class="pay-tab-sub">All major banks</div></div>
+            </div>
+            <div class="pay-tab" onclick="switchPay('wallets',this)" id="tab-wl">
+              <div class="pay-tab-icon">👜</div>
+              <div><div class="pay-tab-label">Wallets</div><div class="pay-tab-sub">Paytm, Amazon…</div></div>
+            </div>
+          </div>
+
+          <!-- Card panel -->
+          <div id="pay-card">
+            <div class="alert py-2 mb-3" style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;font-size:.82rem;color:#5b21b6">
+              <i class="bi bi-info-circle me-1"></i>Demo mode — use any test values. No real charge will be made.
+            </div>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Card Number</label>
+                <div class="card-input-wrap">
+                  <span class="card-icon" id="cardTypeIcon">💳</span>
+                  <input type="text" id="cardNum" class="form-control" placeholder="4242 4242 4242 4242" maxlength="19" oninput="formatCard(this)">
+                </div>
+                <div class="card-brands mt-2">
+                  <span class="card-brand-pill" id="brand-visa">VISA</span>
+                  <span class="card-brand-pill" id="brand-mc">MC</span>
+                  <span class="card-brand-pill" id="brand-rupay">RuPay</span>
+                  <span class="card-brand-pill" id="brand-amex">AMEX</span>
+                </div>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label">Name on Card</label>
+                <input type="text" class="form-control" placeholder="JOHN DOE" style="text-transform:uppercase">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Expiry</label>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <select class="form-select" style="font-size:.85rem">
+                      <option value="">MM</option>
+                      {% for m in range(1,13) %}
+                      <option value="{{ '%02d' % m }}">{{ '%02d' % m }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <select class="form-select" style="font-size:.85rem">
+                      <option value="">YY</option>
+                      {% for y in range(26, 36) %}
+                      <option value="{{ y }}">{{ y }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">CVV <i class="bi bi-question-circle" title="3-digit code on back of card" style="cursor:help;color:#9ca3af"></i></label>
+                <input type="password" class="form-control" placeholder="•••" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')">
+              </div>
+            </div>
+          </div>
+
+          <!-- UPI panel -->
+          <div id="pay-upi" style="display:none">
+            <label class="form-label mb-2">Enter UPI ID</label>
+            <input type="text" class="form-control mb-3" placeholder="yourname@upi" style="max-width:360px">
+            <div style="font-size:.78rem;color:#9ca3af;margin-bottom:10px">or pay via app</div>
+            <div class="upi-grid">
+              {% for app in [("GPay","🟢","Google Pay"),("PhonePe","🟣","PhonePe"),("Paytm","🔵","Paytm"),("BHIM","🟠","BHIM UPI"),("Amazon","🟡","Amazon Pay"),("Cred","⭕","CRED Pay")] %}
+              <div class="upi-app" onclick="selectUpiApp(this)">
+                <span class="upi-emoji">{{ app[1] }}</span>
+                <span class="upi-name">{{ app[0] }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Net Banking panel -->
+          <div id="pay-netbanking" style="display:none">
+            <div style="font-size:.82rem;color:#6b7280;margin-bottom:10px">Popular banks</div>
+            <div class="bank-grid">
+              {% for b in [("🏛","SBI"),("🔵","HDFC"),("🟠","ICICI"),("🔴","Axis"),("🟢","Kotak"),("🏦","PNB"),("⭕","BOB"),("🌀","Yes")] %}
+              <div class="bank-tile" onclick="selectBank(this)">
+                <span class="bank-icon">{{ b[0] }}</span>{{ b[1] }}
+              </div>
+              {% endfor %}
+            </div>
+            <label class="form-label mt-1">Other Banks</label>
+            <select class="form-select" style="max-width:360px">
+              <option value="">— Select your bank —</option>
+              <option>Canara Bank</option>
+              <option>Indian Bank</option>
+              <option>Union Bank of India</option>
+              <option>Bank of India</option>
+              <option>IndusInd Bank</option>
+              <option>IDFC First Bank</option>
+              <option>Federal Bank</option>
+              <option>South Indian Bank</option>
+            </select>
+          </div>
+
+          <!-- Wallets panel -->
+          <div id="pay-wallets" style="display:none">
+            <div class="wallet-grid">
+              {% for w in [("💰","Paytm Wallet","Instant cashback offers"),("🛒","Amazon Pay","Amazon rewards"),("📲","Mobikwik","MobiKwik SuperCash"),("🌟","Freecharge","Freecharge bonus")] %}
+              <div class="wallet-tile" onclick="selectWallet(this)">
+                <span class="w-emoji">{{ w[0] }}</span>
+                <div><div class="w-name">{{ w[1] }}</div><div class="w-sub">{{ w[2] }}</div></div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Terms + Submit -->
+          <div class="mt-4">
+            <div class="terms-check mb-3">
+              <input type="checkbox" id="termsChk" required>
+              <label for="termsChk">
+                I agree to SnapTravels <a href="#" style="color:#7c3aed">Terms & Conditions</a> and <a href="#" style="color:#7c3aed">Cancellation Policy</a>. I confirm the passenger details are correct.
+              </label>
+            </div>
+            <button type="submit" class="btn-confirm" id="submitBtn">
+              <span class="spinner-border spinner-border-sm d-none" id="btnSpinner" role="status"></span>
+              <i class="bi bi-lock-fill" id="btnIcon"></i>
+              <span id="btnText">Pay Securely — ₹{{ "{:,.0f}".format(grand_total) }}</span>
+            </button>
+          </div>
+
+        </div><!-- /form-card-body -->
+      </form>
+    </div><!-- /form-card -->
+
+  </div><!-- /col-lg-8 -->
+
+  <!-- ── RIGHT: Summary panel ─────────────────────────────────────────── -->
+  <div class="col-lg-4">
+    <div class="summary-panel">
+
+      <div class="panel-header">
+        <div class="fw-bold" style="font-size:1rem">Booking Summary</div>
+        <div style="font-size:.8rem;opacity:.8;margin-top:2px">{{ bus.origin }} → {{ bus.destination }}</div>
+      </div>
+
+      <div class="p-4">
+        <!-- Bus details -->
+        <div class="info-row"><span class="info-label">Operator</span><span class="info-val">{{ bus.operator }}</span></div>
+        <div class="info-row"><span class="info-label">Bus No.</span><span class="info-val">{{ bus.bus_no }}</span></div>
+        <div class="info-row"><span class="info-label">Type</span><span class="info-val"><span class="btype-badge {{ btype_cls }}" style="font-size:.72rem">{{ btype_icon }} {{ bus.bus_type }}</span></span></div>
+        <div class="info-row"><span class="info-label">Journey Date</span><span class="info-val" id="summaryDate">{{ bus_search.get('travel_date','—') }}</span></div>
+        <div class="info-row"><span class="info-label">Departs</span><span class="info-val">{{ bus.depart_time }}</span></div>
+        <div class="info-row"><span class="info-label">Arrives</span><span class="info-val">{{ bus.arrive_time }}</span></div>
+        {% if bus.duration_mins %}
+        <div class="info-row"><span class="info-label">Duration</span><span class="info-val">{{ bus.duration_mins // 60 }}h {{ bus.duration_mins % 60 }}m</span></div>
+        {% endif %}
+        <div class="info-row"><span class="info-label">Passengers</span><span class="info-val">{{ passengers }} seat{{ 's' if passengers > 1 }}</span></div>
+        {% if selected_seats %}
+        <div class="info-row"><span class="info-label">Seats</span><span class="info-val">{{ selected_seats }}</span></div>
+        {% endif %}
+
+        <div style="border-top:2px solid #f3f4f6;margin:12px 0 8px"></div>
+
+        <!-- Price breakdown -->
+        <div class="info-row">
+          <span class="info-label">₹{{ "{:,.0f}".format(bus.price) }} × {{ passengers }}</span>
+          <span class="info-val">₹{{ "{:,.0f}".format(base_fare) }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Convenience fee</span>
+          <span class="info-val">₹{{ conv_fee }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">GST (5%)</span>
+          <span class="info-val">₹{{ gst_amt }}</span>
+        </div>
+
+        <!-- Promo code -->
+        <div class="mt-3 mb-2">
+          <div class="promo-wrap">
+            <input type="text" id="promoInput" placeholder="Promo code">
+            <button type="button" onclick="applyPromo()">Apply</button>
+          </div>
+          <div id="promoMsg" class="mt-1" style="font-size:.78rem"></div>
+        </div>
+
+        <div class="price-total">
+          <span>Total</span>
+          <span id="grandTotal" style="color:#7c3aed">₹{{ "{:,.0f}".format(grand_total) }}</span>
+        </div>
+
+        <!-- What's included -->
+        <div class="mt-3 p-3" style="background:#f5f3ff;border-radius:12px;border:1px solid #c4b5fd">
+          <div style="font-size:.78rem;font-weight:700;color:#5b21b6;margin-bottom:8px">What's Included</div>
+          <ul class="inclusion-list">
+            <li>Seat as per selection</li>
+            <li>Onboard Wi-Fi (where available)</li>
+            <li>GPS-tracked bus</li>
+            <li>Instant e-ticket on email</li>
+            <li>Free cancellation up to 2 hrs before departure</li>
+          </ul>
+        </div>
+
+        <!-- Trust badges -->
+        <div class="mt-3">
+          <div class="d-flex align-items-center gap-2 mb-2" style="font-size:.75rem;color:#6b7280">
+            <i class="bi bi-shield-lock-fill" style="color:#7c3aed"></i>
+            <span><strong style="color:#374151">Secure Payment</strong> — 256-bit SSL</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 mb-2" style="font-size:.75rem;color:#6b7280">
+            <i class="bi bi-envelope-check-fill" style="color:#7c3aed"></i>
+            <span>E-ticket sent instantly to your email</span>
+          </div>
+          <div class="d-flex align-items-center gap-2" style="font-size:.75rem;color:#6b7280">
+            <i class="bi bi-headset" style="color:#7c3aed"></i>
+            <span>24/7 customer support</span>
+          </div>
+        </div>
+
+      </div><!-- /p-4 -->
+    </div><!-- /summary-panel -->
+  </div><!-- /col-lg-4 -->
+
+</div><!-- /row -->
+</div><!-- /container -->
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const TOTAL_AMOUNT = {{ grand_total }};
+
+/* ── Payment tab switcher ─────────────────────────────────────── */
+function switchPay(method, el) {
+  ['card','upi','netbanking','wallets'].forEach(m => {
+    const panel = document.getElementById('pay-' + m);
+    if (panel) panel.style.display = (m === method) ? '' : 'none';
+  });
+  document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  var pmf = document.getElementById('paymentMethodField');
+  if (pmf) pmf.value = method;
+}
+
+/* ── UPI app selector ─────────────────────────────────────────── */
+function selectUpiApp(el) {
+  document.querySelectorAll('.upi-app').forEach(a => a.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+/* ── Bank tile selector ───────────────────────────────────────── */
+function selectBank(el) {
+  document.querySelectorAll('.bank-tile').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+/* ── Wallet selector ──────────────────────────────────────────── */
+function selectWallet(el) {
+  document.querySelectorAll('.wallet-tile').forEach(w => w.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+/* ── GST toggle ───────────────────────────────────────────────── */
+function toggleGST() {
+  const panel = document.getElementById('gstPanel');
+  const chevron = document.getElementById('gstChevron');
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : '';
+  chevron.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+/* ── Card number formatter + brand detector ───────────────────── */
+function formatCard(inp) {
+  let v = inp.value.replace(/\D/g,'').slice(0,16);
+  inp.value = v.replace(/(.{4})/g,'$1 ').trim();
+  detectCardBrand(v);
+}
+
+function detectCardBrand(n) {
+  const icon = document.getElementById('cardTypeIcon');
+  const brands = { visa:'brand-visa', mc:'brand-mc', rupay:'brand-rupay', amex:'brand-amex' };
+  document.querySelectorAll('.card-brand-pill').forEach(p => p.classList.remove('active'));
+  if (!n) { if(icon) icon.textContent = '💳'; return; }
+  if (/^4/.test(n))             { if(icon) icon.textContent='💙'; document.getElementById('brand-visa')?.classList.add('active'); }
+  else if (/^5[1-5]/.test(n))  { if(icon) icon.textContent='🔴'; document.getElementById('brand-mc')?.classList.add('active'); }
+  else if (/^3[47]/.test(n))   { if(icon) icon.textContent='💚'; document.getElementById('brand-amex')?.classList.add('active'); }
+  else if (/^6/.test(n))       { if(icon) icon.textContent='🟠'; document.getElementById('brand-rupay')?.classList.add('active'); }
+  else                          { if(icon) icon.textContent='💳'; }
+}
+
+/* ── Phone number formatter ───────────────────────────────────── */
+const phoneInput = document.getElementById('phoneInput');
+if (phoneInput) {
+  phoneInput.addEventListener('input', function() {
+    let v = this.value.replace(/\D/g,'');
+    if (v.length > 10) v = v.slice(0, 10);
+    this.value = v;
+  });
+}
+
+/* ── Promo code ───────────────────────────────────────────────── */
+function applyPromo() {
+  const code = document.getElementById('promoInput').value.trim().toUpperCase();
+  const msg  = document.getElementById('promoMsg');
+  if (!code) { msg.innerHTML = '<span style="color:#9ca3af">Enter a promo code</span>'; return; }
+  msg.innerHTML = '<span style="color:#9ca3af"><i class="bi bi-hourglass-split me-1"></i>Validating…</span>';
+  fetch('/promo/validate', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ code, amount: TOTAL_AMOUNT })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.valid) {
+      const newTotal = '₹' + Math.round(d.final).toLocaleString('en-IN');
+      document.getElementById('grandTotal').textContent = newTotal;
+      document.getElementById('btnText').textContent = 'Pay Securely — ' + newTotal;
+      msg.innerHTML = '<span style="color:#16a34a"><i class="bi bi-check-circle me-1"></i>' + d.message + '</span>';
+    } else {
+      msg.innerHTML = '<span style="color:#dc2626"><i class="bi bi-x-circle me-1"></i>' + d.message + '</span>';
+    }
+  })
+  .catch(() => {
+    msg.innerHTML = '<span style="color:#dc2626">Could not validate code. Please try again.</span>';
+  });
+}
+
+/* ── Submit with loading state ────────────────────────────────── */
+function handleSubmit(event) {
+  const termsChk = document.getElementById('termsChk');
+  if (!termsChk.checked) {
+    event.preventDefault();
+    termsChk.style.outline = '2px solid #ef4444';
+    setTimeout(() => termsChk.style.outline = '', 2000);
+    return false;
+  }
+  const btn = document.getElementById('submitBtn');
+  const spinner = document.getElementById('btnSpinner');
+  const icon = document.getElementById('btnIcon');
+  const text = document.getElementById('btnText');
+  spinner.classList.remove('d-none');
+  icon.classList.add('d-none');
+  text.textContent = 'Processing payment…';
+  btn.disabled = true;
+  return true;
+}
+
+// ── Journey date: set min to today and sync sidebar summary ──
+(function() {
+  var dateInp = document.querySelector('input[name="travel_date"]');
+  if (!dateInp) return;
+  var today = new Date().toISOString().split('T')[0];
+  dateInp.min = today;
+  if (!dateInp.value || dateInp.value === '—') dateInp.value = today;
+  var summary = document.getElementById('summaryDate');
+  function syncSummary() {
+    if (summary && dateInp.value) {
+      var d = new Date(dateInp.value + 'T00:00:00');
+      summary.textContent = d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+    }
+  }
+  syncSummary();
+  dateInp.addEventListener('change', syncSummary);
+})();
+</script>
+{% endblock %}

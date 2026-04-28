@@ -1,0 +1,354 @@
+{% extends "layouts/base.html" %}
+{% block title %}Payment Successful — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Page shell ─────────────────────────────────────────────── */
+.pay-success-page { background: #f0fdf4; min-height: 100vh; padding: 3rem 0 5rem; }
+
+/* ── Animated tick ──────────────────────────────────────────── */
+.tick-wrap {
+  width: 90px; height: 90px; margin: 0 auto 1.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 0 rgba(34,197,94,.6);
+  animation: pulse-ring 1.8s ease-out 3;
+}
+.tick-wrap i { font-size: 2.8rem; color: #fff; }
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
+  70%  { box-shadow: 0 0 0 22px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.receipt-card {
+  border-radius: 16px;
+  border: none;
+  border-top: 4px solid #22c55e;
+  box-shadow: 0 4px 24px rgba(22,163,74,.12);
+  overflow: hidden;
+}
+.receipt-header {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+  padding: 1.25rem 1.5rem;
+}
+.receipt-header h5 { margin: 0; font-size: 1rem; font-weight: 600; letter-spacing: .4px; }
+
+/* ── Amount pill ────────────────────────────────────────────── */
+.amount-pill {
+  background: #dcfce7;
+  border-radius: 30px;
+  padding: .55rem 1.4rem;
+  display: inline-block;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #15803d;
+  letter-spacing: -0.5px;
+}
+
+/* ── Booking code box ───────────────────────────────────────── */
+.bcode-box {
+  background: #f0fdf4;
+  border: 1.5px dashed #86efac;
+  border-radius: 10px;
+  padding: .65rem 1.2rem;
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #166534;
+  letter-spacing: 1.5px;
+  display: inline-block;
+}
+
+/* ── Journey timeline inside card ───────────────────────────── */
+.journey-row {
+  display: flex; align-items: center; gap: .75rem;
+  background: #f8fafc; border-radius: 10px;
+  padding: .9rem 1.1rem; margin-bottom: .5rem;
+}
+.journey-row .j-icon {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 1.1rem;
+}
+.journey-row .j-route {
+  flex: 1; display: flex; align-items: center; gap: .4rem;
+  font-weight: 600; font-size: .95rem;
+}
+.j-arrow { color: #94a3b8; font-size: .8rem; }
+.journey-row .j-meta { font-size: .78rem; color: #64748b; }
+
+/* ── Status stepper ─────────────────────────────────────────── */
+.pay-stepper {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin: 1.5rem 0 1rem;
+}
+.step-node {
+  display: flex; flex-direction: column; align-items: center; gap: .25rem;
+  font-size: .72rem; color: #64748b; width: 80px;
+}
+.step-node .sn-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .85rem;
+}
+.sn-done   { background: #dcfce7; color: #16a34a; }
+.step-line { flex: 1; height: 2px; background: #dcfce7; margin-bottom: 1.2rem; }
+
+/* ── Next-steps banner ──────────────────────────────────────── */
+.next-banner {
+  background: linear-gradient(135deg, #166534 0%, #15803d 100%);
+  border-radius: 14px; padding: 1.5rem 1.75rem;
+  color: #fff; margin-top: 1.5rem;
+}
+.next-banner h6 { font-weight: 700; margin-bottom: .85rem; font-size: .9rem; letter-spacing: .5px; }
+.next-item { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; font-size: .88rem; }
+.next-item i { font-size: 1rem; opacity: .9; }
+
+/* ── Action buttons ─────────────────────────────────────────── */
+.btn-success-solid {
+  background: #16a34a; color: #fff; border: none;
+  border-radius: 30px; padding: .65rem 1.8rem; font-weight: 600;
+}
+.btn-success-solid:hover { background: #15803d; color: #fff; }
+.btn-success-outline {
+  border: 2px solid #16a34a; color: #16a34a; border-radius: 30px;
+  padding: .65rem 1.8rem; font-weight: 600; background: transparent;
+}
+.btn-success-outline:hover { background: #f0fdf4; }
+
+/* ── Confetti burst (CSS only) ───────────────────────────────── */
+.confetti-wrap { position: relative; overflow: hidden; }
+.c-dot {
+  position: absolute; width: 8px; height: 8px; border-radius: 50%;
+  animation: fall 1.2s ease-out forwards;
+  opacity: 0;
+}
+@keyframes fall {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(80px) rotate(360deg); opacity: 0; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pay-success-page">
+<div class="container">
+<div class="row justify-content-center">
+<div class="col-lg-7">
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <div class="text-center mb-4 confetti-wrap" id="headerWrap">
+    <div class="tick-wrap"><i class="bi bi-check-lg"></i></div>
+    <h2 class="fw-bold text-success mb-1">Payment Successful!</h2>
+    <p class="text-muted mb-0">Your booking is confirmed and e-ticket has been issued.</p>
+  </div>
+
+  <!-- ── Payment stepper ───────────────────────────────────────── -->
+  <div class="pay-stepper">
+    <div class="step-node">
+      <div class="sn-dot sn-done"><i class="bi bi-search"></i></div>
+      <span>Search</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-node">
+      <div class="sn-dot sn-done"><i class="bi bi-person-check"></i></div>
+      <span>Details</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-node">
+      <div class="sn-dot sn-done"><i class="bi bi-credit-card"></i></div>
+      <span>Payment</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-node">
+      <div class="sn-dot sn-done"><i class="bi bi-ticket-perforated"></i></div>
+      <span>Confirmed</span>
+    </div>
+  </div>
+
+  <!-- ── Payment receipt card ──────────────────────────────────── -->
+  <div class="card receipt-card mb-3">
+    <div class="receipt-header">
+      <h5><i class="bi bi-receipt me-2"></i>Payment Receipt</h5>
+    </div>
+    <div class="card-body p-4">
+      <div class="row align-items-center mb-3">
+        <div class="col">
+          <div class="text-muted small mb-1">Amount Charged</div>
+          <div class="amount-pill">₹{{ "%.0f"|format(booking.total_amount) }}</div>
+        </div>
+        <div class="col-auto text-end">
+          <div class="text-muted small mb-1">Status</div>
+          <span class="badge bg-success px-3 py-2 fs-6">
+            <i class="bi bi-check-circle me-1"></i>Paid
+          </span>
+        </div>
+      </div>
+
+      <hr class="my-3">
+
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6">
+          <div class="text-muted small">Booking Code</div>
+          <div class="bcode-box mt-1">{{ booking.booking_code }}</div>
+        </div>
+        <div class="col-sm-6">
+          <div class="text-muted small">Transaction Date &amp; Time</div>
+          <div class="fw-semibold mt-1">{{ booking.created_at.strftime('%b %d, %Y') }}</div>
+          <div class="text-muted small">{{ booking.created_at.strftime('%I:%M %p UTC') }}</div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <div class="text-muted small">Passenger Name</div>
+          <div class="fw-semibold">{{ booking.customer_name }}</div>
+        </div>
+        <div class="col-sm-6">
+          <div class="text-muted small">Contact Email</div>
+          <div class="fw-semibold">{{ booking.customer_email }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Journey / booking details card ───────────────────────── -->
+  {% if booking.items %}
+  <div class="card receipt-card mb-3">
+    <div class="receipt-header" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
+      <h5><i class="bi bi-map me-2"></i>Journey Details</h5>
+    </div>
+    <div class="card-body p-4">
+      {% for item in booking.items %}
+      {% set d = item.details or {} %}
+
+      <!-- Icon and colour per type -->
+      {% if item.type == 'FLIGHT' %}
+        {% set icon = 'bi-airplane' %} {% set ibg = '#eff6ff' %} {% set icol = '#2563eb' %}
+      {% elif item.type == 'TRAIN' %}
+        {% set icon = 'bi-train-front' %} {% set ibg = '#eff6ff' %} {% set icol = '#1d4ed8' %}
+      {% elif item.type == 'BUS' %}
+        {% set icon = 'bi-bus-front' %} {% set ibg = '#f5f3ff' %} {% set icol = '#7c3aed' %}
+      {% elif item.type == 'CAB' %}
+        {% set icon = 'bi-car-front' %} {% set ibg = '#f0fdf4' %} {% set icol = '#16a34a' %}
+      {% elif item.type == 'HOTEL' %}
+        {% set icon = 'bi-building' %} {% set ibg = '#fffbeb' %} {% set icol = '#d97706' %}
+      {% else %}
+        {% set icon = 'bi-bag-check' %} {% set ibg = '#fdf2f8' %} {% set icol = '#db2777' %}
+      {% endif %}
+
+      <div class="journey-row mb-3">
+        <div class="j-icon" style="background:{{ ibg }}; color:{{ icol }};">
+          <i class="bi {{ icon }}"></i>
+        </div>
+        <div>
+          <div class="j-route">
+            {% if item.type in ('FLIGHT','TRAIN','BUS','CAB') %}
+              <span>{{ d.get('origin', d.get('pickup', '—')) }}</span>
+              <i class="bi bi-arrow-right j-arrow"></i>
+              <span>{{ d.get('destination', d.get('drop', '—')) }}</span>
+            {% elif item.type == 'HOTEL' %}
+              <span>{{ d.get('city', item.title) }}</span>
+            {% else %}
+              <span>{{ item.title }}</span>
+            {% endif %}
+          </div>
+          <div class="j-meta">
+            {% if item.type == 'FLIGHT' %}
+              {{ d.get('airline','') }} · {{ d.get('flight_no','') }} ·
+              {{ d.get('depart_time','') }}–{{ d.get('arrive_time','') }} ·
+              {{ d.get('cabin_class','Economy') }}
+            {% elif item.type == 'TRAIN' %}
+              {{ d.get('train_name','') }} ({{ d.get('train_no','') }}) ·
+              {{ d.get('class_name','') }} ·
+              Dep {{ d.get('depart_time','') }}
+              {% if d.get('travel_date') %}· {{ d.get('travel_date') }}{% endif %}
+            {% elif item.type == 'BUS' %}
+              {{ d.get('operator','') }} · {{ d.get('bus_type','') }} ·
+              Dep {{ d.get('depart_time','') }}
+              {% if d.get('travel_date') %}· {{ d.get('travel_date') }}{% endif %}
+            {% elif item.type == 'CAB' %}
+              {{ d.get('cab_name','') }} · {{ d.get('cab_type','') }}
+              {% if d.get('travel_date') %}· {{ d.get('travel_date') }}{% endif %}
+            {% elif item.type == 'HOTEL' %}
+              Check-in {{ d.get('checkin','—') }} · Check-out {{ d.get('checkout','—') }} ·
+              {{ d.get('nights',1) }} night(s)
+            {% endif %}
+            {% if d.get('passengers') and item.type != 'HOTEL' %}
+              · {{ d.get('passengers') }} pax
+            {% endif %}
+          </div>
+        </div>
+        <div class="text-end flex-shrink-0">
+          <div class="fw-bold" style="color:{{ icol }}">₹{{ "%.0f"|format(item.amount) }}</div>
+        </div>
+      </div>
+
+      {% endfor %}
+
+      {% if booking.items|length > 1 %}
+      <div class="d-flex justify-content-between fw-bold border-top pt-3 mt-2">
+        <span>Total</span>
+        <span class="text-success">₹{{ "%.0f"|format(booking.total_amount) }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Next steps banner ─────────────────────────────────────── -->
+  <div class="next-banner">
+    <h6><i class="bi bi-lightning-charge-fill me-1"></i> What happens next?</h6>
+    <div class="next-item"><i class="bi bi-envelope-check"></i> A confirmation e-mail is on its way to <strong>{{ booking.customer_email }}</strong></div>
+    <div class="next-item"><i class="bi bi-ticket-perforated"></i> Your e-ticket is linked to booking code <strong>{{ booking.booking_code }}</strong></div>
+    <div class="next-item"><i class="bi bi-shield-check"></i> Booking is covered by SnapTravels Assurance — we've got you</div>
+  </div>
+
+  <!-- ── Action buttons ─────────────────────────────────────────── -->
+  <div class="text-center mt-4 d-flex flex-wrap justify-content-center gap-3">
+    <a href="{{ url_for('public.my_bookings') }}" class="btn btn-success-solid">
+      <i class="bi bi-list-ul me-1"></i> My Bookings
+    </a>
+    <a href="{{ url_for('public.booking_details', booking_id=booking.id) }}" class="btn btn-success-outline">
+      <i class="bi bi-eye me-1"></i> View Details
+    </a>
+    <a href="{{ url_for('public.home') }}" class="btn btn-success-outline">
+      <i class="bi bi-house me-1"></i> Home
+    </a>
+  </div>
+
+</div><!-- /col -->
+</div><!-- /row -->
+</div><!-- /container -->
+</div><!-- /pay-success-page -->
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Confetti burst on load
+(function() {
+  const wrap = document.getElementById('headerWrap');
+  if (!wrap) return;
+  const colours = ['#22c55e','#16a34a','#86efac','#fbbf24','#60a5fa','#f472b6'];
+  for (let i = 0; i < 28; i++) {
+    const d = document.createElement('div');
+    d.className = 'c-dot';
+    d.style.cssText = `
+      left: ${Math.random()*100}%;
+      top: ${Math.random()*30}px;
+      background: ${colours[Math.floor(Math.random()*colours.length)]};
+      animation-delay: ${Math.random()*0.6}s;
+      animation-duration: ${0.9 + Math.random()*0.8}s;
+      width: ${5 + Math.random()*7}px;
+      height: ${5 + Math.random()*7}px;
+    `;
+    wrap.appendChild(d);
+  }
+})();
+</script>
+{% endblock %}

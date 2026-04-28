@@ -1,0 +1,201 @@
+{% extends "layouts/base.html" %}
+{% block title %}My Trips — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f4f6fb; }
+
+.page-hero {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  padding: 36px 0 70px;
+  position: relative; overflow: hidden;
+}
+.page-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0; right: 0; height: 48px;
+  background: #f4f6fb;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+.page-hero-accent {
+  height: 3px;
+  background: linear-gradient(90deg, #e63950, #f97316, #facc15, #e63950);
+  background-size: 200% 100%;
+  animation: accentSlide 3s linear infinite;
+}
+@keyframes accentSlide {
+  0% { background-position: 0% 50% }
+  100% { background-position: 200% 50% }
+}
+
+/* Trip Cards */
+.trip-card {
+  background: #fff; border-radius: 18px;
+  border: 1px solid #e8edf5; overflow: hidden;
+  height: 100%; transition: all .2s;
+}
+.trip-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,.09); transform: translateY(-3px); }
+
+.trip-card-img {
+  height: 120px;
+  background: linear-gradient(135deg, #0f172a, #1e40af, #0ea5e9);
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; color: #fff; padding: 16px;
+  position: relative; overflow: hidden;
+}
+.trip-card-img::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at top right, rgba(14,165,233,.3), transparent);
+}
+.trip-dest-icon { font-size: 2rem; margin-bottom: 4px; position: relative; z-index: 1; }
+.trip-dest-name { font-size: .88rem; font-weight: 800; position: relative; z-index: 1; }
+
+.trip-card-body { padding: 18px 18px 14px; }
+.trip-name { font-size: 1rem; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
+.trip-meta { font-size: .76rem; color: #64748b; display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+.trip-meta i { color: #94a3b8; }
+
+.trip-card-footer { padding: 12px 18px; border-top: 1px solid #f1f5f9; display: flex; gap: 8px; }
+
+.btn-open-trip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 16px; border-radius: 9px;
+  font-size: .8rem; font-weight: 700;
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  color: #fff; text-decoration: none; border: none;
+  transition: all .15s; box-shadow: 0 3px 10px rgba(37,99,235,.2);
+}
+.btn-open-trip:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 5px 14px rgba(37,99,235,.3); }
+
+.btn-delete-trip {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(220,38,38,.07); color: #dc2626;
+  border: 1px solid rgba(220,38,38,.2); cursor: pointer;
+  transition: all .15s;
+}
+.btn-delete-trip:hover { background: rgba(220,38,38,.13); border-color: #dc2626; }
+
+.btn-plan-trip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 20px; border-radius: 11px;
+  font-size: .85rem; font-weight: 800;
+  background: linear-gradient(135deg, #e63950, #f97316);
+  color: #fff; border: none; text-decoration: none;
+  transition: all .2s; box-shadow: 0 4px 14px rgba(230,57,80,.25);
+}
+.btn-plan-trip:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(230,57,80,.35); }
+
+/* Items count pill */
+.items-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px; border-radius: 20px;
+  font-size: .68rem; font-weight: 700;
+  background: rgba(124,58,237,.08); color: #7c3aed;
+  border: 1px solid rgba(124,58,237,.15);
+}
+
+.empty-card {
+  background: #fff; border-radius: 16px; border: 1px solid #e8edf5;
+  padding: 64px 24px; text-align: center;
+}
+.empty-card-icon { font-size: 3.5rem; margin-bottom: 12px; opacity: .3; }
+.empty-card h5 { color: #475569; font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+.empty-card p { color: #94a3b8; font-size: .84rem; margin-bottom: 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero-accent"></div>
+<div class="page-hero">
+  <div class="container" style="max-width:1200px">
+    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:#475569;font-weight:700;margin-bottom:6px">
+      My Account
+    </div>
+    <h1 style="font-size:1.8rem;font-weight:900;color:#fff;margin:0 0 4px">
+      <i class="bi bi-map me-2" style="color:#e63950"></i>My Trips
+    </h1>
+    <div style="font-size:.85rem;color:#64748b">
+      Plan and organize your travel itineraries in one place
+    </div>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:1200px">
+  <div class="row g-4">
+
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+      {% set active_page = 'trips' %}
+      {% include '_user_sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-9">
+
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div style="font-size:.78rem;color:#94a3b8;font-weight:600">
+          {{ trips|length }} trip{{ 's' if trips|length != 1 else '' }} planned
+        </div>
+        <a href="{{ url_for('trips.new_trip') }}" class="btn-plan-trip">
+          <i class="bi bi-plus-lg"></i> Plan New Trip
+        </a>
+      </div>
+
+      {% if trips %}
+      <div class="row g-3">
+        {% for trip in trips %}
+        <div class="col-md-6 col-xl-4">
+          <div class="trip-card">
+            <div class="trip-card-img">
+              <div>
+                <div class="trip-dest-icon">🗺️</div>
+                <div class="trip-dest-name">{{ trip.destination or 'My Trip' }}</div>
+              </div>
+            </div>
+            <div class="trip-card-body">
+              <div class="trip-name">{{ trip.name }}</div>
+              {% if trip.start_date and trip.end_date %}
+              <div class="trip-meta">
+                <i class="bi bi-calendar3"></i>
+                {{ trip.start_date.strftime('%d %b') }} – {{ trip.end_date.strftime('%d %b %Y') }}
+              </div>
+              {% endif %}
+              <div class="trip-meta">
+                <i class="bi bi-list-ul"></i>
+                <span class="items-pill">{{ trip.items|length }} item{{ 's' if trip.items|length != 1 else '' }}</span>
+              </div>
+            </div>
+            <div class="trip-card-footer">
+              <a href="{{ url_for('trips.detail', trip_id=trip.id) }}" class="btn-open-trip">
+                <i class="bi bi-pencil"></i> Open
+              </a>
+              <form method="POST" action="{{ url_for('trips.delete_trip', trip_id=trip.id) }}"
+                    onsubmit="return confirm('Delete \'{{ trip.name }}\'? This cannot be undone.')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn-delete-trip" title="Delete trip">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div class="empty-card">
+        <div class="empty-card-icon">🗺️</div>
+        <h5>No Trips Planned Yet</h5>
+        <p>Create a trip to organize your flights, hotels, and activities into one place.</p>
+        <a href="{{ url_for('trips.new_trip') }}" class="btn-plan-trip" style="display:inline-flex">
+          <i class="bi bi-plus-lg"></i> Plan Your First Trip
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

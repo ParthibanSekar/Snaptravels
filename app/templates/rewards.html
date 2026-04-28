@@ -1,0 +1,255 @@
+{% extends "layouts/base.html" %}
+{% block title %}My Rewards — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f4f6fb; }
+
+.page-hero {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  padding: 36px 0 70px;
+  position: relative; overflow: hidden;
+}
+.page-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0; right: 0; height: 48px;
+  background: #f4f6fb;
+  clip-path: ellipse(55% 100% at 50% 100%);
+}
+.page-hero-accent {
+  height: 3px;
+  background: linear-gradient(90deg, #e63950, #f97316, #facc15, #e63950);
+  background-size: 200% 100%;
+  animation: accentSlide 3s linear infinite;
+}
+@keyframes accentSlide {
+  0% { background-position: 0% 50% }
+  100% { background-position: 200% 50% }
+}
+
+/* Points card */
+.points-card {
+  border-radius: 18px; overflow: hidden;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border: 1px solid #1e2433;
+  padding: 28px 24px; text-align: center;
+  position: relative;
+}
+.points-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #fbbf24, #f97316);
+}
+.tier-emoji { font-size: 2.8rem; margin-bottom: 8px; }
+.tier-name { font-size: 1rem; font-weight: 800; color: #fbbf24; letter-spacing: .04em; }
+.pts-value { font-size: 2.6rem; font-weight: 900; color: #fff; line-height: 1; margin: 12px 0 4px; }
+.pts-label { font-size: .78rem; color: #64748b; font-weight: 600; }
+.lifetime-label { font-size: .72rem; color: #475569; margin-top: 8px; }
+
+/* Tier table */
+.tier-panel {
+  background: #fff; border-radius: 14px; border: 1px solid #e8edf5;
+  overflow: hidden; margin-top: 12px;
+}
+.tier-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px; border-bottom: 1px solid #f1f5f9;
+  font-size: .84rem;
+}
+.tier-row:last-child { border-bottom: none; }
+.tier-row-name { font-weight: 700; color: #1e293b; }
+.tier-row-range { color: #64748b; font-size: .76rem; }
+.tier-current-pill {
+  display: inline-flex; padding: 2px 9px; border-radius: 20px;
+  font-size: .65rem; font-weight: 800;
+  background: rgba(251,191,36,.15); color: #d97706;
+  border: 1px solid rgba(251,191,36,.3);
+}
+
+/* Earn section */
+.earn-panel {
+  background: #fff; border-radius: 16px; border: 1px solid #e8edf5;
+  overflow: hidden;
+}
+.earn-panel-header {
+  padding: 16px 22px; border-bottom: 1px solid #e8edf5;
+  font-size: .88rem; font-weight: 800; color: #1e293b;
+  display: flex; align-items: center; gap: 8px;
+}
+.earn-panel-header i { color: #fbbf24; }
+.earn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+.earn-tile {
+  padding: 20px 14px; text-align: center;
+  border-right: 1px solid #f1f5f9;
+}
+.earn-tile:last-child { border-right: none; }
+.earn-icon { font-size: 1.6rem; margin-bottom: 8px; }
+.earn-title { font-size: .82rem; font-weight: 700; color: #1e293b; margin-bottom: 3px; }
+.earn-pct { font-size: .74rem; color: #64748b; }
+
+/* History table */
+.history-panel {
+  background: #fff; border-radius: 16px; border: 1px solid #e8edf5;
+  overflow: hidden; margin-top: 16px;
+}
+.history-panel-header {
+  padding: 16px 22px; border-bottom: 1px solid #e8edf5;
+  font-size: .88rem; font-weight: 800; color: #1e293b;
+  display: flex; align-items: center; gap: 8px;
+}
+.history-panel-header i { color: #7c3aed; }
+.hist-table { width: 100%; border-collapse: collapse; }
+.hist-table thead tr { background: #f8faff; }
+.hist-table thead th {
+  padding: 10px 18px; font-size: .7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; color: #94a3b8;
+  border-bottom: 1px solid #e8edf5;
+}
+.hist-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+.hist-table tbody tr:last-child { border-bottom: none; }
+.hist-table tbody tr:hover { background: #f8faff; }
+.hist-table tbody td { padding: 12px 18px; font-size: .83rem; color: #475569; }
+.pts-earn { font-weight: 800; color: #059669; }
+.pts-redeem { font-weight: 800; color: #dc2626; }
+
+.empty-pts {
+  padding: 40px 24px; text-align: center; color: #94a3b8;
+  font-size: .84rem;
+}
+.empty-pts i { font-size: 2.5rem; margin-bottom: 8px; display: block; opacity: .3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero-accent"></div>
+<div class="page-hero">
+  <div class="container" style="max-width:1200px">
+    <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:#475569;font-weight:700;margin-bottom:6px">
+      My Account
+    </div>
+    <h1 style="font-size:1.8rem;font-weight:900;color:#fff;margin:0 0 4px">
+      <i class="bi bi-star-fill me-2" style="color:#fbbf24"></i>SnapRewards
+    </h1>
+    <div style="font-size:.85rem;color:#64748b">
+      Earn points on every booking and unlock exclusive perks
+    </div>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:1200px">
+  <div class="row g-4">
+
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+      {% set active_page = 'rewards' %}
+      {% include '_user_sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-9">
+      <div class="row g-4">
+
+        <!-- Left column: Points card + Tier benefits -->
+        <div class="col-md-4">
+          <div class="points-card">
+            <div class="tier-emoji">
+              {{ '💎' if account.tier == 'Platinum' else ('🏅' if account.tier == 'Gold' else '🥈') }}
+            </div>
+            <div class="tier-name">{{ account.tier }} Member</div>
+            <div class="pts-value">{{ "{:,}".format(account.points) }}</div>
+            <div class="pts-label">Available Points</div>
+            <div class="lifetime-label">Lifetime: {{ "{:,}".format(account.lifetime_points) }} pts</div>
+          </div>
+
+          <div class="tier-panel">
+            <div style="padding:12px 18px 6px;font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em">
+              Tier Thresholds
+            </div>
+            {% for tier_name, min_pts, max_pts in tiers %}
+            <div class="tier-row">
+              <div>
+                <div class="tier-row-name">
+                  {{ '💎' if tier_name == 'Platinum' else ('🏅' if tier_name == 'Gold' else '🥈') }}
+                  {{ tier_name }}
+                </div>
+                <div class="tier-row-range">
+                  {{ "{:,}".format(min_pts) }}{% if max_pts %} – {{ "{:,}".format(max_pts) }}{% else %}+{% endif %} pts
+                </div>
+              </div>
+              {% if account.tier == tier_name %}
+              <span class="tier-current-pill">Current</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Right column: Earn + History -->
+        <div class="col-md-8">
+          <div class="earn-panel">
+            <div class="earn-panel-header">
+              <i class="bi bi-lightning-fill"></i> How to Earn Points
+            </div>
+            <div class="earn-grid">
+              <div class="earn-tile">
+                <div class="earn-icon">✈️</div>
+                <div class="earn-title">Flights</div>
+                <div class="earn-pct">2% of booking value</div>
+              </div>
+              <div class="earn-tile">
+                <div class="earn-icon">🏨</div>
+                <div class="earn-title">Hotels</div>
+                <div class="earn-pct">3% of booking value</div>
+              </div>
+              <div class="earn-tile">
+                <div class="earn-icon">🎭</div>
+                <div class="earn-title">Activities</div>
+                <div class="earn-pct">5% of booking value</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="history-panel">
+            <div class="history-panel-header">
+              <i class="bi bi-clock-history"></i> Points History
+            </div>
+            {% if transactions %}
+            <div class="table-responsive">
+              <table class="hist-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for tx in transactions %}
+                  <tr>
+                    <td style="white-space:nowrap;color:#94a3b8;font-size:.76rem">
+                      {{ tx.created_at.strftime('%d %b %Y') }}
+                    </td>
+                    <td>{{ tx.description }}</td>
+                    <td class="{{ 'pts-earn' if tx.transaction_type == 'EARN' else 'pts-redeem' }}">
+                      {{ '+' if tx.transaction_type == 'EARN' else '−' }}{{ tx.points }}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="empty-pts">
+              <i class="bi bi-clock-history"></i>
+              No transactions yet. Start booking to earn your first points!
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

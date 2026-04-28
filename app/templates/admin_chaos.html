@@ -1,0 +1,1364 @@
+{% extends "layouts/base.html" %}
+{% block title %}Chaos Control — SnapTravels Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   SnapTravels — Chaos Engineering Console
+   Professional ops-grade dark UI (Grafana / Vercel / PagerDuty style)
+═══════════════════════════════════════════════════════════════════ */
+
+/* Base */
+body { background:#080b10 !important; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif !important; }
+.chaos-hero {
+  background:#080b10;
+  padding:24px 0 20px;
+  border-bottom:1px solid #151c28;
+}
+
+/* Topbar breadcrumb */
+.chaos-breadcrumb { font-size:.72rem; color:#3d5070; font-weight:500; letter-spacing:.03em; margin-bottom:10px; }
+.chaos-breadcrumb span { color:#4a6080; }
+
+/* Hero title row */
+.chaos-title { font-size:1.25rem; font-weight:700; color:#e2e8f0; letter-spacing:-.02em; margin:0; }
+.chaos-subtitle { font-size:.78rem; color:#3d5070; margin-top:4px; font-weight:400; }
+
+/* Status badges */
+.status-safe {
+  display:inline-flex; align-items:center; gap:6px;
+  background:transparent; color:#16a34a;
+  border:1px solid #14532d; border-radius:4px;
+  padding:4px 10px; font-size:.72rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+}
+.status-live {
+  display:inline-flex; align-items:center; gap:6px;
+  background:transparent; color:#dc2626;
+  border:1px solid #7f1d1d; border-radius:4px;
+  padding:4px 10px; font-size:.72rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+}
+.status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.status-dot-green { background:#16a34a; box-shadow:0 0 0 2px rgba(22,163,74,.2); }
+.status-dot-red { background:#dc2626; animation:blink-red 1.2s ease-in-out infinite; box-shadow:0 0 0 2px rgba(220,38,38,.2); }
+@keyframes blink-red { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* Section cards */
+.c-section {
+  background:#0d1117;
+  border:1px solid #151c28;
+  border-radius:8px;
+  overflow:hidden;
+  margin-bottom:16px;
+}
+.c-section-head {
+  padding:13px 18px;
+  border-bottom:1px solid #151c28;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:#0d1117;
+}
+/* Section icon — small colored left-border accent instead of emoji box */
+.c-section-num {
+  font-size:.68rem; font-weight:800; letter-spacing:.06em;
+  color:#3d5070; min-width:20px;
+}
+.c-section-title { font-size:.85rem; font-weight:700; color:#c8d6e8; letter-spacing:-.01em; }
+.c-section-sub { font-size:.7rem; color:#3d5070; margin-top:1px; }
+.c-section-body { padding:18px; }
+/* Left accent border per section */
+.c-section.s0 { border-left:3px solid #1d4ed8; }
+.c-section.s1 { border-left:3px solid #7c3aed; }
+.c-section.s2 { border-left:3px solid #b45309; }
+.c-section.s3 { border-left:3px solid #0e7490; }
+.c-section.s-info { border-left:3px solid #1d3a5f; }
+
+/* Section icon badge (Bootstrap Icon container) */
+.c-sec-badge {
+  width:30px; height:30px; border-radius:6px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.9rem; flex-shrink:0;
+}
+.s0 .c-sec-badge { background:#0f1a33; color:#3b82f6; }
+.s1 .c-sec-badge { background:#190f33; color:#a78bfa; }
+.s2 .c-sec-badge { background:#1c1305; color:#f59e0b; }
+.s3 .c-sec-badge { background:#041c21; color:#22d3ee; }
+.s-info .c-sec-badge { background:#0a1624; color:#60a5fa; }
+
+/* Category labels inside sections */
+.cat-label {
+  font-size:.67rem; font-weight:700; color:#2d4060;
+  letter-spacing:.1em; text-transform:uppercase;
+  margin-bottom:12px; margin-top:4px;
+  display:flex; align-items:center; gap:6px;
+}
+.cat-label::before { content:''; display:block; width:16px; height:1px; background:#1e2d40; }
+
+/* Toggle switch */
+.snap-switch { position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0; }
+.snap-switch input { opacity:0; width:0; height:0; }
+.snap-slider {
+  position:absolute; cursor:pointer; inset:0;
+  background:#1a2235; border:1px solid #1e2d40; border-radius:24px; transition:.25s;
+}
+.snap-slider:before {
+  position:absolute; content:''; height:18px; width:18px;
+  left:2px; bottom:2px; background:#374151; border-radius:50%; transition:.25s;
+}
+input:checked + .snap-slider { background:#dc2626; border-color:#dc2626; }
+input:checked + .snap-slider:before { transform:translateX(20px); background:#fff; }
+input:checked + .snap-slider.green-on { background:#15803d; border-color:#15803d; }
+
+/* Range sliders */
+.chaos-range { width:100%; -webkit-appearance:none; appearance:none; height:4px; border-radius:2px; background:#1a2235; outline:none; cursor:pointer; }
+.chaos-range::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:#dc2626; cursor:pointer; border:2px solid #080b10; }
+.chaos-range::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:#dc2626; cursor:pointer; border:2px solid #080b10; }
+
+/* Knob rows */
+.knob-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+.knob-label { font-size:.75rem; font-weight:500; color:#6b7280; min-width:150px; }
+.pct-badge { font-size:.72rem; font-weight:700; color:#f87171; min-width:44px; text-align:right; font-variant-numeric:tabular-nums; font-family:'SF Mono','Fira Code',monospace; }
+.ms-badge  { font-size:.72rem; font-weight:700; color:#fb923c; min-width:52px; text-align:right; font-variant-numeric:tabular-nums; font-family:'SF Mono','Fira Code',monospace; }
+
+/* Dark input */
+.ci { background:#080b10 !important; border:1px solid #1a2235 !important; color:#c8d6e8 !important; border-radius:6px !important; font-size:.82rem !important; padding:7px 10px !important; width:100%; }
+.ci:focus { border-color:#dc2626 !important; outline:none !important; box-shadow:none !important; }
+
+/* Toggle cards (injection grid) */
+.injection-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.injection-card {
+  border:1px solid #151c28; border-radius:6px;
+  padding:11px 13px; cursor:pointer; transition:border-color .12s,background .12s;
+  display:flex; align-items:flex-start; gap:9px;
+  background:#080b10;
+}
+.injection-card:hover { border-color:#1e2d40; }
+.injection-card.ic-active { border-color:#dc2626; background:#0f0508; }
+.injection-card input[type=checkbox] { width:14px; height:14px; margin-top:3px; accent-color:#dc2626; flex-shrink:0; }
+.injection-card-title { font-size:.78rem; font-weight:600; color:#c8d6e8; line-height:1.3; }
+.injection-card-desc { font-size:.68rem; color:#3d5070; margin-top:3px; line-height:1.4; }
+
+/* Page target chips */
+.target-chip {
+  border:1px solid #151c28; border-radius:4px; padding:4px 10px;
+  cursor:pointer; font-size:.7rem; font-weight:600; color:#3d5070;
+  transition:all .12s; user-select:none; background:#080b10;
+  font-family:'SF Mono','Fira Code',monospace; letter-spacing:.02em;
+}
+.target-chip:hover { border-color:#1e2d40; color:#6b7280; }
+.target-chip.tc-active { border-color:#7c3aed; color:#a78bfa; background:#0e0818; }
+.target-chip input { display:none; }
+
+/* Named profile cards */
+.profile-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.profile-btn {
+  border:1px solid #151c28; border-radius:6px; padding:11px 13px;
+  background:#080b10; color:#c8d6e8;
+  cursor:pointer; transition:border-color .12s,background .12s;
+  display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+  text-align:left; width:100%;
+}
+.profile-btn:hover { border-color:#dc2626; background:#0f0508; }
+.profile-btn:active { background:#140508; }
+.pb-icon { font-size:.85rem; color:#dc2626; margin-bottom:2px; }
+.pb-name { font-weight:700; font-size:.78rem; color:#c8d6e8; }
+.pb-sub  { font-size:.65rem; color:#3d5070; line-height:1.3; }
+
+/* Event log */
+.event-log { max-height:320px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:#1a2235 transparent; }
+.event-row { border-bottom:1px solid #0f1520; padding:8px 0; display:flex; gap:10px; align-items:flex-start; }
+.event-row:last-child { border-bottom:none; }
+.event-badge { border-radius:3px; padding:2px 6px; font-size:.6rem; font-weight:700; white-space:nowrap; flex-shrink:0; font-family:'SF Mono','Fira Code',monospace; letter-spacing:.04em; }
+.ev-error  { background:#1a0505; color:#ef4444; border:1px solid #3f0808; }
+.ev-start  { background:#05101a; color:#3b82f6; border:1px solid #0d2040; }
+.ev-end    { background:#051a0d; color:#22c55e; border:1px solid #0d4020; }
+.ev-toggle { background:#1a1505; color:#f59e0b; border:1px solid #402d05; }
+.ev-delay  { background:#13051a; color:#a78bfa; border:1px solid #2e0d40; }
+.ev-time   { font-size:.65rem; color:#2d4060; white-space:nowrap; font-family:'SF Mono','Fira Code',monospace; }
+.ev-label  { font-size:.72rem; color:#4a6080; line-height:1.4; }
+
+/* Divider */
+.c-divider { border:none; border-top:1px solid #0f1520; margin:14px 0; }
+
+/* Submit button */
+.chaos-submit {
+  background:#dc2626; color:#fff; border:none; border-radius:6px;
+  padding:10px 24px; font-weight:600; font-size:.82rem;
+  cursor:pointer; transition:background .15s; letter-spacing:.01em;
+}
+.chaos-submit:hover { background:#b91c1c; }
+
+/* End outage button */
+.chaos-end-btn {
+  background:#15803d; color:#fff; border:none; border-radius:6px;
+  padding:8px 18px; font-weight:600; font-size:.78rem; cursor:pointer;
+  transition:background .15s; letter-spacing:.01em;
+}
+.chaos-end-btn:hover { background:#166534; }
+
+/* Active outage banner */
+.outage-banner {
+  background:#0f0508; border:1px solid #3f0808; border-radius:6px;
+  border-left:3px solid #dc2626;
+  padding:12px 16px; margin-bottom:16px;
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+}
+.outage-dot { width:8px; height:8px; border-radius:50%; background:#dc2626; animation:blink-red 1.2s infinite; flex-shrink:0; }
+
+/* Live state sidebar rows */
+.state-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #0f1520; }
+.state-row:last-child { border-bottom:none; }
+.state-key { font-size:.72rem; color:#3d5070; font-family:'SF Mono','Fira Code',monospace; }
+.state-val-on  { font-size:.72rem; font-weight:700; color:#ef4444; font-family:'SF Mono','Fira Code',monospace; }
+.state-val-off { font-size:.72rem; font-weight:700; color:#15803d; font-family:'SF Mono','Fira Code',monospace; }
+.state-val-num { font-size:.72rem; font-weight:700; color:#f59e0b; font-family:'SF Mono','Fira Code',monospace; }
+
+/* Help section */
+.help-chevron { transition:transform .2s; display:inline-block; }
+.help-chevron.open { transform:rotate(180deg); }
+
+/* Duration field */
+.dur-wrap { display:flex; gap:8px; align-items:center; padding-top:12px; border-top:1px solid #0f1520; }
+
+/* Target page chip grid */
+.target-grid { display:flex; flex-wrap:wrap; gap:8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ══ HERO ══════════════════════════════════════════════════════════════ -->
+{% set any_active = state.login_failure_rate > 0 or state.db_down or state.payment_gateway_down or state.api_5xx_rate > 0 or state.page_load_chaos or state.func_chaos or state.component_chaos or state.ab_test_chaos %}
+<div class="chaos-hero">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <div class="chaos-breadcrumb">Admin <span>/</span> Chaos Engineering</div>
+        <div class="d-flex align-items-center gap-3">
+          <h1 class="chaos-title">Chaos Engineering Console</h1>
+          {% if any_active %}
+            <span class="status-live"><span class="status-dot status-dot-red"></span>CHAOS ACTIVE</span>
+          {% else %}
+            <span class="status-safe"><span class="status-dot status-dot-green"></span>NOMINAL</span>
+          {% endif %}
+        </div>
+        <div class="chaos-subtitle">Inject realistic failures for RCA demos — three independent chaos sections</div>
+      </div>
+      {% if state.auto_chaos_mode %}
+      {# Auto-mode is active: offer "Stop Auto Chaos" which fully resets everything #}
+      <form action="{{ url_for('chaos_admin.toggle_auto_mode') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="chaos-end-btn" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);border:1px solid #6d28d9">
+          <i class="bi bi-robot me-1"></i>Stop Auto Chaos
+        </button>
+      </form>
+      {% elif any_active %}
+      <form action="{{ url_for('chaos_admin.end_outage_now') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" class="chaos-end-btn">
+          <i class="bi bi-shield-check me-1"></i>End All Chaos
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ══ AUTO CHAOS MODE (Compact Card — links to dedicated tab) ═══════════ -->
+<div class="container mt-3">
+{% set auto_on = state.auto_chaos_mode %}
+
+<div class="c-section" style="border-left:3px solid {{ '#dc2626' if auto_on else '#1e3a5f' }};margin-bottom:16px;{% if auto_on %}box-shadow:0 0 0 1px rgba(220,38,38,.15);{% endif %}">
+  <div class="c-section-head" style="background:{{ '#100508' if auto_on else '#0d1117' }}">
+    <div class="c-sec-badge" style="background:{{ 'rgba(220,38,38,.15)' if auto_on else '#0a1624' }};color:{{ '#ef4444' if auto_on else '#60a5fa' }}">
+      <i class="bi bi-robot"></i>
+    </div>
+    <div style="flex:1">
+      <div class="c-section-title" style="display:flex;align-items:center;gap:10px">
+        Auto Chaos Mode
+        {% if auto_on %}
+        <span style="font-size:.6rem;background:#dc2626;color:#fff;padding:2px 9px;border-radius:4px;font-weight:800;letter-spacing:.08em;animation:blink-red 1.8s ease-in-out infinite">● AUTOPILOT ACTIVE</span>
+        {% else %}
+        <span style="font-size:.6rem;background:#1a2235;color:#3d5070;padding:2px 9px;border-radius:4px;font-weight:700;letter-spacing:.08em;border:1px solid #1e2d40">PLUG-AND-PLAY</span>
+        {% endif %}
+      </div>
+      <div class="c-section-sub">
+        Continuous loop — all 5 chaos types cycle with <strong style="color:#c8d6e8">30–60 min durations</strong> and <strong style="color:#c8d6e8">3-hour gaps</strong>. Reshuffles daily at 05:35 IST (00:05 UTC).
+      </div>
+    </div>
+    <!-- Master toggle -->
+    <form action="{{ url_for('chaos_admin.toggle_auto_mode') }}" method="POST" style="display:flex;align-items:center;gap:10px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <span style="font-size:.72rem;color:{{ '#ef4444' if auto_on else '#3d5070' }};font-weight:700">{{ 'ON' if auto_on else 'OFF' }}</span>
+      <label class="snap-switch" style="cursor:pointer" title="Toggle Auto Chaos Mode">
+        <input type="checkbox" onchange="this.closest('form').submit()" {{ 'checked' if auto_on else '' }}>
+        <span class="snap-slider"></span>
+      </label>
+    </form>
+  </div>
+
+  <div class="c-section-body" style="background:{{ '#0a0305' if auto_on else '#0d1117' }}">
+    {% if auto_on %}
+    <!-- Compact summary when ON -->
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      {% if state.auto_chaos_current_type %}
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:#dc2626;animation:blink-red 1.2s infinite;flex-shrink:0"></span>
+        <span style="font-size:.78rem;font-weight:700;color:#ef4444">RUNNING:</span>
+        <span style="font-size:.78rem;color:#fca5a5">{{ state.auto_chaos_current_type | replace('named_outage:','') | replace('_',' ') | title }}</span>
+        {% if state.auto_chaos_ends_at %}
+        <span style="font-size:.7rem;color:#6b7280">
+          ends <script>
+          (function(){
+            var h={{ state.auto_chaos_ends_at.hour }},m={{ state.auto_chaos_ends_at.minute }};
+            m+=30;h+=5;if(m>=60){m-=60;h+=1;}if(h>=24){h-=24;}
+            document.write(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+' IST');
+          })();
+          </script>
+          ({{ state.auto_chaos_ends_at.strftime('%H:%M') }} UTC)
+        </span>
+        {% endif %}
+      </div>
+      {% else %}
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0"></span>
+        <span style="font-size:.78rem;color:#4a6080">Cooling down — next event coming soon</span>
+      </div>
+      {% endif %}
+      <div style="flex:1"></div>
+      <a href="{{ url_for('chaos_admin.auto_chaos_dashboard') }}"
+         style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:1px solid #6d28d9;padding:8px 18px;border-radius:6px;font-size:.78rem;font-weight:700;text-decoration:none;transition:all .2s">
+        <i class="bi bi-calendar3"></i>View Full Schedule & Timeline
+      </a>
+    </div>
+    {% else %}
+    <!-- Compact summary when OFF -->
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="font-size:.78rem;color:#4a6080;flex:1">
+        Enable to start a continuous loop of all 5 chaos types — Named Outage, Page Load, Functionality, Component, and A/B Test — cycling 24/7 with automatic 3-hour cooling gaps.
+      </div>
+      <a href="{{ url_for('chaos_admin.auto_chaos_dashboard') }}"
+         style="display:inline-flex;align-items:center;gap:6px;background:#1a2235;color:#60a5fa;border:1px solid #1e2d40;padding:8px 18px;border-radius:6px;font-size:.78rem;font-weight:700;text-decoration:none;transition:all .2s">
+        <i class="bi bi-box-arrow-up-right"></i>Auto Chaos Dashboard
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+</div>
+
+<!-- Minimal JS — no countdown needed on main page, that's on the Auto Chaos tab -->
+
+<!-- ══ HELP DOCS (link to separate page) ═════════════════════════════════ -->
+<div class="container mt-3" style="margin-top:0 !important">
+  <div class="c-section s-info" style="margin-bottom:0">
+    <a href="{{ url_for('chaos_admin.docs') }}" style="text-decoration:none;display:flex;align-items:center;gap:10px;padding:13px 18px">
+      <div class="c-sec-badge"><i class="bi bi-book"></i></div>
+      <div style="flex:1">
+        <div class="c-section-title">Help & Documentation</div>
+        <div class="c-section-sub">Full guide — every setting, what it does, and what monitoring tools detect</div>
+      </div>
+      <span style="color:#3b82f6;font-size:.82rem;font-weight:700;display:flex;align-items:center;gap:4px">
+        Open Docs <i class="bi bi-arrow-right"></i>
+      </span>
+    </a>
+  </div>
+</div>
+
+<!-- Flash messages -->
+<div class="container mt-3">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+      <div class="alert alert-{{ 'danger' if cat=='error' else cat }} alert-dismissible fade show" style="border-radius:10px">
+        {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+</div>
+
+<!-- ══ MAIN FORM ═════════════════════════════════════════════════════════ -->
+<div class="container py-4">
+<form action="{{ url_for('chaos_admin.update') }}" method="POST" id="chaosForm">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+{% if state.outage_label %}
+<div class="outage-banner">
+  <div class="outage-dot"></div>
+  <div style="flex:1">
+    <div style="font-weight:700;color:#f87171;font-size:.9rem">Active Outage: <strong>{{ state.outage_label }}</strong></div>
+    <div style="font-size:.75rem;color:#9ca3af">
+      Started: {{ state.outage_started_at.strftime('%H:%M:%S UTC') if state.outage_started_at }}
+      {% if state.outage_ends_at %} · Ends: {{ state.outage_ends_at.strftime('%H:%M:%S UTC') }}{% endif %}
+    </div>
+  </div>
+  <button type="button" class="chaos-end-btn" style="padding:7px 16px;font-size:.8rem" onclick="clearOutage()">Clear Outage</button>
+</div>
+{% endif %}
+
+<div class="row g-4">
+<div class="col-lg-8">
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       SECTION 0 — Master switch + Named outage profiles
+       ════════════════════════════════════════════════════════════════════ -->
+  <div class="c-section s0">
+    <div class="c-section-head">
+      <div class="c-sec-badge"><i class="bi bi-cpu"></i></div>
+      <div style="flex:1">
+        <div class="d-flex align-items-center gap-2">
+          <span class="c-section-num">§0</span>
+          <span class="c-section-title">Core Chaos Engine</span>
+        </div>
+        <div class="c-section-sub">Login storms, DB failures, payment gateway, API errors</div>
+      </div>
+      <div class="ms-auto">
+        <label class="snap-switch">
+          <input type="checkbox" name="enabled" {% if state.enabled %}checked{% endif %}>
+          <span class="snap-slider green-on"></span>
+        </label>
+      </div>
+    </div>
+    <div class="c-section-body">
+
+      <!-- Auth / Login -->
+      <div class="cat-label">Authentication</div>
+      <div class="knob-row">
+        <span class="knob-label">Login failure rate</span>
+        <input type="range" class="chaos-range flex-1" name="login_failure_rate" min="0" max="1" step="0.05"
+               value="{{ state.login_failure_rate }}" oninput="updateBadge(this,'loginFailPct','%',100)">
+        <span class="pct-badge" id="loginFailPct">{{ (state.login_failure_rate*100)|int }}%</span>
+      </div>
+      <div class="knob-row">
+        <span class="knob-label">Login slowdown</span>
+        <input type="range" class="chaos-range flex-1" name="login_slowdown_ms" min="0" max="5000" step="100"
+               value="{{ state.login_slowdown_ms }}" oninput="updateBadge(this,'loginSlowMs','ms')">
+        <span class="ms-badge" id="loginSlowMs">{{ state.login_slowdown_ms }}ms</span>
+      </div>
+
+      <hr class="c-divider">
+      <!-- DB -->
+      <div class="cat-label">Database</div>
+      <div class="knob-row">
+        <span class="knob-label">DB completely down</span>
+        <label class="snap-switch ms-auto"><input type="checkbox" name="db_down" {% if state.db_down %}checked{% endif %}><span class="snap-slider"></span></label>
+      </div>
+      <div class="knob-row">
+        <span class="knob-label">DB slowdown</span>
+        <input type="range" class="chaos-range flex-1" name="db_slowdown_ms" min="0" max="10000" step="250"
+               value="{{ state.db_slowdown_ms }}" oninput="updateBadge(this,'dbSlowMs','ms')">
+        <span class="ms-badge" id="dbSlowMs">{{ state.db_slowdown_ms }}ms</span>
+      </div>
+
+      <hr class="c-divider">
+      <!-- Search + Checkout -->
+      <div class="cat-label">Search &amp; Checkout</div>
+      <div class="knob-row">
+        <span class="knob-label">Search timeout rate</span>
+        <input type="range" class="chaos-range flex-1" name="search_timeout_rate" min="0" max="1" step="0.05"
+               value="{{ state.search_timeout_rate }}" oninput="updateBadge(this,'searchPct','%',100)">
+        <span class="pct-badge" id="searchPct">{{ (state.search_timeout_rate*100)|int }}%</span>
+      </div>
+      <div class="knob-row">
+        <span class="knob-label">Search slowdown</span>
+        <input type="range" class="chaos-range flex-1" name="search_slowdown_ms" min="0" max="8000" step="250"
+               value="{{ state.search_slowdown_ms }}" oninput="updateBadge(this,'searchSlowMs','ms')">
+        <span class="ms-badge" id="searchSlowMs">{{ state.search_slowdown_ms }}ms</span>
+      </div>
+      <div class="knob-row">
+        <span class="knob-label">Checkout exception rate</span>
+        <input type="range" class="chaos-range flex-1" name="checkout_exception_rate" min="0" max="1" step="0.05"
+               value="{{ state.checkout_exception_rate }}" oninput="updateBadge(this,'checkoutPct','%',100)">
+        <span class="pct-badge" id="checkoutPct">{{ (state.checkout_exception_rate*100)|int }}%</span>
+      </div>
+
+      <hr class="c-divider">
+      <!-- Payment + API -->
+      <div class="cat-label">Payment &amp; API</div>
+      <div class="knob-row">
+        <span class="knob-label">Payment gateway down</span>
+        <label class="snap-switch ms-auto"><input type="checkbox" name="payment_gateway_down" {% if state.payment_gateway_down %}checked{% endif %}><span class="snap-slider"></span></label>
+      </div>
+      <div class="knob-row">
+        <span class="knob-label">Payment failure rate</span>
+        <input type="range" class="chaos-range flex-1" name="payment_failure_rate" min="0" max="1" step="0.05"
+               value="{{ state.payment_failure_rate }}" oninput="updateBadge(this,'payFailPct','%',100)">
+        <span class="pct-badge" id="payFailPct">{{ (state.payment_failure_rate*100)|int }}%</span>
+      </div>
+      <div class="knob-row">
+        <span class="knob-label">Mobile API 5xx rate</span>
+        <input type="range" class="chaos-range flex-1" name="api_5xx_rate" min="0" max="1" step="0.05"
+               value="{{ state.api_5xx_rate }}" oninput="updateBadge(this,'apiPct','%',100)">
+        <span class="pct-badge" id="apiPct">{{ (state.api_5xx_rate*100)|int }}%</span>
+      </div>
+      <div class="knob-row">
+        <span class="knob-label">API slowdown</span>
+        <input type="range" class="chaos-range flex-1" name="api_slowdown_ms" min="0" max="8000" step="250"
+               value="{{ state.api_slowdown_ms }}" oninput="updateBadge(this,'apiSlowMs','ms')">
+        <span class="ms-badge" id="apiSlowMs">{{ state.api_slowdown_ms }}ms</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       SECTION 1 — Page Load Performance Chaos
+       ════════════════════════════════════════════════════════════════════ -->
+  <div class="c-section s1" id="sec-pageload">
+    <div class="c-section-head">
+      <div class="c-sec-badge"><i class="bi bi-hourglass-split"></i></div>
+      <div style="flex:1">
+        <div class="d-flex align-items-center gap-2">
+          <span class="c-section-num">§1</span>
+          <span class="c-section-title">Page Load Performance Chaos</span>
+        </div>
+        <div class="c-section-sub">Server delays, JS errors, resource failures, memory pressure, render blocking</div>
+      </div>
+      <label class="snap-switch" title="Enable Section 1">
+        <input type="checkbox" name="page_load_chaos" id="plcToggle" {% if state.page_load_chaos %}checked{% endif %}
+               onchange="toggleSection('sec-pageload-body', this.checked)">
+        <span class="snap-slider"></span>
+      </label>
+    </div>
+    <div class="c-section-body" id="sec-pageload-body" style="{{ '' if state.page_load_chaos else 'opacity:.45;pointer-events:none' }}">
+
+      <!-- Server-side delay -->
+      <div style="background:#080b10;border:1px solid #151c28;border-radius:6px;padding:16px;margin-bottom:18px">
+        <div class="cat-label">Server-Side Page Delay</div>
+        <div class="knob-row">
+          <span class="knob-label">Delay per page response</span>
+          <input type="range" class="chaos-range flex-1" name="page_load_delay_ms"
+                 min="0" max="60000" step="500"
+                 value="{{ state.page_load_delay_ms }}"
+                 oninput="updatePageDelay(this)">
+          <span class="ms-badge" id="plDelayBadge" style="min-width:65px">{{ state.page_load_delay_ms }}ms</span>
+        </div>
+        <div style="font-size:.72rem;color:#475569;margin-top:4px">
+          Range: 0 ms (off) → 60,000 ms (60 seconds). This sleep is injected server-side before the HTML response is sent.
+        </div>
+      </div>
+
+      <!-- Target pages -->
+      <div class="cat-label">Target Pages — which pages get delayed</div>
+      <div class="target-grid mb-4">
+        {% for slug in page_targets %}
+        <label class="target-chip {% if slug in target_pages %}tc-active{% endif %}" id="tc-{{ slug }}">
+          <input type="checkbox" name="page_load_target_pages" value="{{ slug }}"
+                 {% if slug in target_pages %}checked{% endif %}
+                 onchange="updateTargetChip('tc-{{ slug }}', this.checked)">
+          {{ slug }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <!-- Client-side injections -->
+      <div class="cat-label">Client-Side Injections — JavaScript</div>
+      <div class="injection-grid">
+
+        <label class="injection-card {% if state.page_load_inject_js_errors %}ic-active{% endif %}" id="ic-jserr" onclick="toggleIC(this,'page_load_inject_js_errors')">
+          <input type="checkbox" name="page_load_inject_js_errors" {% if state.page_load_inject_js_errors %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">JS Console Errors</div>
+            <div class="injection-card-desc">Injects TypeError, ReferenceError, Promise rejection errors into browser console. Visible in APM RUM error tracking.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.page_load_inject_resource_failures %}ic-active{% endif %}" id="ic-res" onclick="toggleIC(this,'page_load_inject_resource_failures')">
+          <input type="checkbox" name="page_load_inject_resource_failures" {% if state.page_load_inject_resource_failures %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Resource Load Failures</div>
+            <div class="injection-card-desc">Appends broken &lt;script&gt; and &lt;link&gt; tags + failed fetch() calls. Shows ERR_FILE_NOT_FOUND in Network tab.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.page_load_inject_memory_pressure %}ic-active{% endif %}" id="ic-mem" onclick="toggleIC(this,'page_load_inject_memory_pressure')">
+          <input type="checkbox" name="page_load_inject_memory_pressure" {% if state.page_load_inject_memory_pressure %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Memory Pressure</div>
+            <div class="injection-card-desc">Allocates ~96MB JS heap via large array. Slows GC, causes tab memory spike. Detected by RUM memory metrics.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.page_load_inject_render_blocking %}ic-active{% endif %}" id="ic-render" onclick="toggleIC(this,'page_load_inject_render_blocking')">
+          <input type="checkbox" name="page_load_inject_render_blocking" {% if state.page_load_inject_render_blocking %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Render-Blocking Script</div>
+            <div class="injection-card-desc">Synchronous busy-wait JS that freezes browser rendering for N ms (tied to delay slider). Spikes LCP & FCP metrics.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.page_load_large_payload %}ic-active{% endif %}" id="ic-payload" onclick="toggleIC(this,'page_load_large_payload')">
+          <input type="checkbox" name="page_load_large_payload" {% if state.page_load_large_payload %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Large DOM Payload</div>
+            <div class="injection-card-desc">Appends 8,000 hidden DOM nodes to &lt;body&gt;. Inflates page size, causes reflow cost, increases DOM parse time.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.page_load_webfont_failure %}ic-active{% endif %}" id="ic-webfont" onclick="toggleIC(this,'page_load_webfont_failure')">
+          <input type="checkbox" name="page_load_webfont_failure" {% if state.page_load_webfont_failure %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">WebFont Failure</div>
+            <div class="injection-card-desc">Blocks Google Fonts CDN. Browser falls back to Times New Roman / serif. Visual regression in screenshots; RUM resource error spike.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.page_load_ttfb_spike %}ic-active{% endif %}" id="ic-ttfb" onclick="toggleIC(this,'page_load_ttfb_spike')">
+          <input type="checkbox" name="page_load_ttfb_spike" {% if state.page_load_ttfb_spike %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">TTFB Spike</div>
+            <div class="injection-card-desc">White-screen overlay for 3–8 seconds after DOMContentLoaded. Simulates slow first-byte from origin. APM RUM flags high TTFB.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.page_load_cache_chaos %}ic-active{% endif %}" id="ic-cache" onclick="toggleIC(this,'page_load_cache_chaos')">
+          <input type="checkbox" name="page_load_cache_chaos" {% if state.page_load_cache_chaos %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Cache-Control Chaos</div>
+            <div class="injection-card-desc">Injects <code style="font-size:.65rem">no-store, no-cache</code> meta tags. Busts CDN / browser cache every load. Page re-downloads all assets on refresh.</div>
+          </div>
+        </label>
+
+      </div><!-- /injection-grid -->
+    </div><!-- /section body -->
+  </div><!-- /section 1 -->
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       SECTION 2 — Functionality Failures
+       ════════════════════════════════════════════════════════════════════ -->
+  <div class="c-section s2" id="sec-func">
+    <div class="c-section-head">
+      <div class="c-sec-badge"><i class="bi bi-exclamation-triangle"></i></div>
+      <div style="flex:1">
+        <div class="d-flex align-items-center gap-2">
+          <span class="c-section-num">§2</span>
+          <span class="c-section-title">Functionality Failures</span>
+        </div>
+        <div class="c-section-sub">Empty results, broken forms, broken images, 404 storms, stuck CTAs</div>
+      </div>
+      <label class="snap-switch" title="Enable Section 2">
+        <input type="checkbox" name="func_chaos" id="funcToggle" {% if state.func_chaos %}checked{% endif %}
+               onchange="toggleSection('sec-func-body', this.checked)">
+        <span class="snap-slider"></span>
+      </label>
+    </div>
+    <div class="c-section-body" id="sec-func-body" style="{{ '' if state.func_chaos else 'opacity:.45;pointer-events:none' }}">
+
+      <!-- Rate-based knobs -->
+      <div class="cat-label">Rate-Based Failures</div>
+      <div class="knob-row">
+        <span class="knob-label">404 Storm rate</span>
+        <input type="range" class="chaos-range flex-1" name="func_404_storm_rate" min="0" max="1" step="0.05"
+               value="{{ state.func_404_storm_rate }}" oninput="updateBadge(this,'f404Pct','%',100)">
+        <span class="pct-badge" id="f404Pct">{{ (state.func_404_storm_rate*100)|int }}%</span>
+      </div>
+      <div style="font-size:.72rem;color:#475569;margin-bottom:14px">% of page requests that randomly return 404. Creates confusing "page not found" errors on real pages.</div>
+
+      <div class="knob-row">
+        <span class="knob-label">Session kill rate</span>
+        <input type="range" class="chaos-range flex-1" name="func_session_kill_rate" min="0" max="1" step="0.05"
+               value="{{ state.func_session_kill_rate }}" oninput="updateBadge(this,'sessKillPct','%',100)">
+        <span class="pct-badge" id="sessKillPct">{{ (state.func_session_kill_rate*100)|int }}%</span>
+      </div>
+      <div style="font-size:.72rem;color:#475569;margin-bottom:16px">% chance user session is cleared per request — randomly logs out authenticated users.</div>
+
+      <hr class="c-divider">
+      <!-- Toggle-based failures (JS-injected) -->
+      <div class="cat-label">Toggle-Based Failures — JS-Injected</div>
+      <div class="injection-grid">
+
+        <label class="injection-card {% if state.func_search_empty %}ic-active{% endif %}" id="ic-empty" onclick="toggleIC(this,'func_search_empty')">
+          <input type="checkbox" name="func_search_empty" {% if state.func_search_empty %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Force Empty Search Results</div>
+            <div class="injection-card-desc">All search pages (flights, hotels, buses, trains, cabs) return 0 results. Server-side — real empty state shown.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.func_form_errors %}ic-active{% endif %}" id="ic-form" onclick="toggleIC(this,'func_form_errors')">
+          <input type="checkbox" name="func_form_errors" {% if state.func_form_errors %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Form Submission Errors</div>
+            <div class="injection-card-desc">60% of form submits are intercepted and show a 503 server error alert. Booking and login forms fail randomly.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.func_broken_images %}ic-active{% endif %}" id="ic-img" onclick="toggleIC(this,'func_broken_images')">
+          <input type="checkbox" name="func_broken_images" {% if state.func_broken_images %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Broken Images</div>
+            <div class="injection-card-desc">55% of &lt;img&gt; tags get broken src URLs. Images show greyed-out with dashed border. ERR_FILE_NOT_FOUND in Network tab.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.func_infinite_spin %}ic-active{% endif %}" id="ic-spin" onclick="toggleIC(this,'func_infinite_spin')">
+          <input type="checkbox" name="func_infinite_spin" {% if state.func_infinite_spin %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Infinite Spinner on CTAs</div>
+            <div class="injection-card-desc">Book / submit buttons spin forever after click. Console shows timeout errors. Users cannot complete bookings.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.func_broken_cta %}ic-active{% endif %}" id="ic-cta" onclick="toggleIC(this,'func_broken_cta')">
+          <input type="checkbox" name="func_broken_cta" {% if state.func_broken_cta %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Broken CTAs — 45% disabled</div>
+            <div class="injection-card-desc">45% of buttons become unclickable (opacity 0.45, pointer-events none). Tooltip shows "503 — temporarily unavailable".</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.func_wrong_search %}ic-active{% endif %}" id="ic-wrongsearch" onclick="toggleIC(this,'func_wrong_search')">
+          <input type="checkbox" name="func_wrong_search" {% if state.func_wrong_search %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Wrong Search Results</div>
+            <div class="injection-card-desc">Search returns mismatched results — flights for wrong city, hotels for wrong dates. Looks valid but data is incorrect. RUM sees abnormal user flow.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.func_fake_soldout %}ic-active{% endif %}" id="ic-soldout" onclick="toggleIC(this,'func_fake_soldout')">
+          <input type="checkbox" name="func_fake_soldout" {% if state.func_fake_soldout %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Fake Sold-Out</div>
+            <div class="injection-card-desc">All inventory shows "Sold Out" or "Fully Booked" banners. Users can browse but cannot select any item. Synthetic booking flow breaks at selection step.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.func_date_picker_broken %}ic-active{% endif %}" id="ic-datepicker" onclick="toggleIC(this,'func_date_picker_broken')">
+          <input type="checkbox" name="func_date_picker_broken" {% if state.func_date_picker_broken %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Date Picker Broken</div>
+            <div class="injection-card-desc">All future dates are disabled in date-picker inputs. Users cannot select travel dates. Booking form always shows "Please select a valid date" error.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.func_otp_invalid %}ic-active{% endif %}" id="ic-otp" onclick="toggleIC(this,'func_otp_invalid')">
+          <input type="checkbox" name="func_otp_invalid" {% if state.func_otp_invalid %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">OTP / 2FA Failures</div>
+            <div class="injection-card-desc">2FA / OTP verification always fails with "Invalid code" even for correct codes. Users with 2FA enabled cannot log in. Synthetic 2FA flow breaks completely.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.func_email_chaos %}ic-active{% endif %}" id="ic-email" onclick="toggleIC(this,'func_email_chaos')">
+          <input type="checkbox" name="func_email_chaos" {% if state.func_email_chaos %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Email Service Down</div>
+            <div class="injection-card-desc">All transactional emails (booking confirmations, password resets, OTPs) silently fail. Users get no confirmation. Server logs show SMTP connection errors.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.func_maintenance_flood %}ic-active{% endif %}" id="ic-maint" onclick="toggleIC(this,'func_maintenance_flood')">
+          <input type="checkbox" name="func_maintenance_flood" {% if state.func_maintenance_flood %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Maintenance Flood</div>
+            <div class="injection-card-desc">25% of pages show a fake "Scheduled Maintenance" overlay (non-blocking). Simulates partial maintenance window affecting random sections of the app.</div>
+          </div>
+        </label>
+
+      </div><!-- /injection-grid -->
+    </div><!-- /section body -->
+  </div><!-- /section 2 -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SECTION 3 — Component-Level Chaos
+       Page returns 200 but specific UI components fail (JS/CSS errors)
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="c-section s3 mb-4">
+    <div class="c-section-head">
+      <div class="c-sec-badge"><i class="bi bi-grid-1x2"></i></div>
+      <div style="flex:1">
+        <div class="d-flex align-items-center gap-2">
+          <span class="c-section-num">§3</span>
+          <span class="c-section-title">Component-Level Chaos</span>
+        </div>
+        <div class="c-section-sub">Page stays 200 — specific UI widgets crash via JS/CSS load failures</div>
+      </div>
+      <label class="snap-switch ms-auto" title="Enable Section 3">
+        <input type="checkbox" name="component_chaos" id="compToggle" {% if state.component_chaos %}checked{% endif %}
+               onchange="toggleSection('sec-comp-body', this.checked)">
+        <span class="snap-slider"></span>
+      </label>
+    </div>
+
+    <div class="c-section-body" id="sec-comp-body" style="{{ '' if state.component_chaos else 'opacity:.45;pointer-events:none' }}">
+
+      <!-- Trigger rate -->
+      <div class="cat-label">Trigger Rate</div>
+      <div class="knob-row">
+        <span class="knob-label">Fire rate</span>
+        <input type="range" class="chaos-range flex-1" name="component_chaos_rate" min="0" max="100" step="5"
+               value="{{ state.component_chaos_rate }}" oninput="updateBadge(this,'compRatePct','%',1)">
+        <span class="pct-badge" id="compRatePct">{{ state.component_chaos_rate }}%</span>
+      </div>
+      <div style="font-size:.72rem;color:#475569;margin-bottom:16px">% chance that component chaos fires on each page load. Even with all components enabled, this controls how often users actually see failures.</div>
+
+      <hr class="c-divider">
+
+      <!-- Target pages -->
+      <div class="cat-label">Target Pages</div>
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        {% for pg in page_targets %}
+        {% set checked = pg in (component_pages or ['all']) %}
+        <label class="target-chip {% if checked %}tc-active{% endif %}" id="ctc-{{ pg }}"
+               onclick="updateTargetChip('ctc-{{ pg }}', !this.querySelector('input').checked)">
+          <input type="checkbox" name="component_target_pages" value="{{ pg }}" {% if checked %}checked{% endif %} style="display:none">
+          {{ pg }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <hr class="c-divider">
+
+      <!-- Component toggles -->
+      <div class="cat-label">Component Failures — JS-Injected</div>
+      <div class="injection-grid">
+
+        <label class="injection-card {% if state.component_break_search %}ic-active{% endif %}" id="ic-comp-search" onclick="toggleIC(this,'component_break_search')">
+          <input type="checkbox" name="component_break_search" {% if state.component_break_search %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Search Widget Crash</div>
+            <div class="injection-card-desc">Search form freezes and shows "ChunkLoadError: search-widget.js". Inputs become unresponsive. Users cannot initiate a search.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.component_break_results %}ic-active{% endif %}" id="ic-comp-results" onclick="toggleIC(this,'component_break_results')">
+          <input type="checkbox" name="component_break_results" {% if state.component_break_results %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Results Component Error</div>
+            <div class="injection-card-desc">Results list disappears and shows "TypeError: Cannot read properties of undefined (reading 'map')" crash box. Simulates React render failure.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.component_break_booking %}ic-active{% endif %}" id="ic-comp-booking" onclick="toggleIC(this,'component_break_booking')">
+          <input type="checkbox" name="component_break_booking" {% if state.component_break_booking %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Booking Module Failure</div>
+            <div class="injection-card-desc">"Select Seats" and "Book Now" buttons fail on click with "MODULE_LOAD_FAIL: booking-flow.js". Toast notification shown. No navigation occurs.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.component_break_pricing %}ic-active{% endif %}" id="ic-comp-pricing" onclick="toggleIC(this,'component_break_pricing')">
+          <input type="checkbox" name="component_break_pricing" {% if state.component_break_pricing %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Price Feed Timeout</div>
+            <div class="injection-card-desc">All prices display as "₹ --" or "N/A" in red. Console shows WebSocket disconnect from pricing-feed service. Users can't compare fares.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.component_break_css %}ic-active{% endif %}" id="ic-comp-css" onclick="toggleIC(this,'component_break_css')">
+          <input type="checkbox" name="component_break_css" {% if state.component_break_css %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">CSS Load Failure</div>
+            <div class="injection-card-desc">App stylesheets are disabled + broken overrides injected. Layout collapses, cards lose styling, images go grayscale. Simulates CSS chunk 503.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.component_break_nav %}ic-active{% endif %}" id="ic-comp-nav" onclick="toggleIC(this,'component_break_nav')">
+          <input type="checkbox" name="component_break_nav" {% if state.component_break_nav %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Navigation Router Crash</div>
+            <div class="injection-card-desc">All nav links show strikethrough and display "ChunkLoadError: router-module.js" on click. Users are trapped on the current page.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.component_break_autocomplete %}ic-active{% endif %}" id="ic-comp-autocomplete" onclick="toggleIC(this,'component_break_autocomplete')">
+          <input type="checkbox" name="component_break_autocomplete" {% if state.component_break_autocomplete %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Autocomplete Crash</div>
+            <div class="injection-card-desc">Search autocomplete throws TypeError on 2nd character typed. Dropdown hangs, input freezes. Console shows uncaught exception in autocomplete.js:214.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.component_break_datepicker %}ic-active{% endif %}" id="ic-comp-datepicker" onclick="toggleIC(this,'component_break_datepicker')">
+          <input type="checkbox" name="component_break_datepicker" {% if state.component_break_datepicker %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Date Picker Freeze</div>
+            <div class="injection-card-desc">Calendar widget UI freezes after opening — all future dates appear disabled. Simulates datepicker library render failure. Booking cannot proceed.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.component_break_ratings %}ic-active{% endif %}" id="ic-comp-ratings" onclick="toggleIC(this,'component_break_ratings')">
+          <input type="checkbox" name="component_break_ratings" {% if state.component_break_ratings %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Rating Widget Crash</div>
+            <div class="injection-card-desc">Star rating components throw TypeError and collapse. Hotel/package/review ratings show error state. Console logs "Cannot read property 'render' of undefined".</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.component_break_loyalty %}ic-active{% endif %}" id="ic-comp-loyalty" onclick="toggleIC(this,'component_break_loyalty')">
+          <input type="checkbox" name="component_break_loyalty" {% if state.component_break_loyalty %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title">Loyalty Points → Zero</div>
+            <div class="injection-card-desc">Loyalty / reward points display forced to ₹0 and 0 pts everywhere. Simulates points-service API timeout. Users see their balance wiped without any error message.</div>
+          </div>
+        </label>
+
+      </div><!-- /injection-grid -->
+    </div><!-- /section body -->
+  </div><!-- /section 3 -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SECTION 4 — A/B Test Chaos
+       Page looks identical but DOM identifiers are mutated — breaks
+       synthetic monitoring element selectors and analytics events.
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="c-section mb-4" style="border-left:3px solid #059669">
+    <div class="c-section-head">
+      <div class="c-sec-badge" style="background:#041c12;color:#34d399"><i class="bi bi-shuffle"></i></div>
+      <div style="flex:1">
+        <div class="d-flex align-items-center gap-2">
+          <span class="c-section-num">§4</span>
+          <span class="c-section-title">A/B Test Chaos</span>
+        </div>
+        <div class="c-section-sub">Mutates DOM identifiers without visual change — breaks synthetic monitors &amp; analytics</div>
+      </div>
+      <label class="snap-switch ms-auto" title="Enable Section 4">
+        <input type="checkbox" name="ab_test_chaos" id="abToggle" {% if state.ab_test_chaos %}checked{% endif %}
+               onchange="toggleSection('sec-ab-body', this.checked)">
+        <span class="snap-slider" style="{% if state.ab_test_chaos %}background:#059669;border-color:#059669{% endif %}"></span>
+      </label>
+    </div>
+    <div class="c-section-body" id="sec-ab-body" style="{{ '' if state.ab_test_chaos else 'opacity:.45;pointer-events:none' }}">
+
+      <div style="background:#041c12;border:1px solid #065f46;border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:.76rem;color:#6ee7b7;line-height:1.7">
+        <i class="bi bi-info-circle me-2" style="color:#34d399"></i>
+        <strong style="color:#a7f3d0">How it works:</strong>
+        Pages look completely identical to users, but form IDs, button text, CSS classes, input names and data-attributes are silently swapped.
+        APM Synthetic monitors that check for specific element IDs or button text will fail. Analytics events fire with wrong labels.
+        No visual change — users won't notice. Only automated monitoring breaks.
+      </div>
+
+      <div class="cat-label">Target Pages — select which pages get mutated identifiers</div>
+      <div class="injection-grid">
+
+        <label class="injection-card {% if state.ab_test_login %}ic-active{% endif %}" id="ic-ab-login" onclick="toggleIC(this,'ab_test_login')" style="border-color:{% if state.ab_test_login %}#059669{% else %}#151c28{% endif %}">
+          <input type="checkbox" name="ab_test_login" {% if state.ab_test_login %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title" style="color:#a7f3d0">Login Page</div>
+            <div class="injection-card-desc">Mutates: form id/action, button text (Sign In → Log in), input ids &amp; placeholders. Variant markers injected as hidden fields.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.ab_test_search %}ic-active{% endif %}" id="ic-ab-search" onclick="toggleIC(this,'ab_test_search')" style="border-color:{% if state.ab_test_search %}#059669{% else %}#151c28{% endif %}">
+          <input type="checkbox" name="ab_test_search" {% if state.ab_test_search %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title" style="color:#a7f3d0">Search Pages</div>
+            <div class="injection-card-desc">Mutates: search form ids, submit button text (Search → Find), input class names. Fires fake analytics events with variant tag.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.ab_test_booking %}ic-active{% endif %}" id="ic-ab-booking" onclick="toggleIC(this,'ab_test_booking')" style="border-color:{% if state.ab_test_booking %}#059669{% else %}#151c28{% endif %}">
+          <input type="checkbox" name="ab_test_booking" {% if state.ab_test_booking %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title" style="color:#a7f3d0">Booking Pages</div>
+            <div class="injection-card-desc">Mutates: booking form ids, CTA text (Book Now → Reserve Now), data-* attributes on seat/room selectors. Breaks element-based Synthetic steps.</div>
+          </div>
+        </label>
+
+        <label class="injection-card {% if state.ab_test_profile %}ic-active{% endif %}" id="ic-ab-profile" onclick="toggleIC(this,'ab_test_profile')" style="border-color:{% if state.ab_test_profile %}#059669{% else %}#151c28{% endif %}">
+          <input type="checkbox" name="ab_test_profile" {% if state.ab_test_profile %}checked{% endif %}>
+          <div>
+            <div class="injection-card-title" style="color:#a7f3d0">Profile / Dashboard</div>
+            <div class="injection-card-desc">Mutates: profile form ids, tab class names, nav link hrefs. Analytics events fire with variant=B suffix. Session-management monitors may fail.</div>
+          </div>
+        </label>
+
+      </div><!-- /injection-grid -->
+    </div><!-- /section body -->
+  </div><!-- /section 4 -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ENGINE SETTINGS — Intensity + Webhook
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="c-section mb-4" style="border-left:3px solid #374151">
+    <div class="c-section-head">
+      <div class="c-sec-badge" style="background:#111827;color:#9ca3af"><i class="bi bi-sliders"></i></div>
+      <div style="flex:1">
+        <div class="c-section-title">Engine Settings</div>
+        <div class="c-section-sub">Global chaos intensity multiplier and webhook notifications</div>
+      </div>
+    </div>
+    <div class="c-section-body">
+
+      <!-- Intensity slider -->
+      <div class="cat-label">Chaos Intensity</div>
+      <div class="knob-row" style="align-items:center;gap:16px;flex-wrap:nowrap">
+        <input type="range" class="chaos-range flex-1" name="chaos_intensity"
+               id="intensitySlider"
+               min="0" max="3" step="1"
+               value="{{ state.chaos_intensity }}"
+               oninput="updateIntensity(this)">
+        <span id="intensityLabel" style="font-size:.8rem;font-weight:700;min-width:90px;text-align:right;font-family:'SF Mono','Fira Code',monospace"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.65rem;color:#2d4060;margin-top:4px;margin-bottom:12px;font-weight:600;letter-spacing:.04em">
+        <span>LOW</span><span>MEDIUM</span><span>HIGH</span><span>CRITICAL</span>
+      </div>
+      <div id="intensityDesc" style="font-size:.72rem;color:#475569;margin-bottom:16px;line-height:1.6"></div>
+
+      <hr class="c-divider">
+
+      <!-- Webhook -->
+      <div class="cat-label">Webhook Notifications (optional)</div>
+      <div style="font-size:.72rem;color:#475569;margin-bottom:10px;line-height:1.6">
+        POST a JSON payload to this URL when auto-chaos events start or end. Leave blank to disable.
+        Payload includes: <code style="color:#93c5fd;font-size:.68rem">event_type, chaos_type, duration_minutes, timestamp</code>
+      </div>
+      <input type="text" name="webhook_url" class="ci" placeholder="https://hooks.example.com/chaos-notify"
+             value="{{ state.webhook_url or '' }}"
+             style="font-family:'SF Mono','Fira Code',monospace;font-size:.75rem">
+
+    </div>
+  </div>
+
+  <!-- Save button -->
+  <div class="text-end mb-4">
+    <button type="submit" class="chaos-submit">
+      <i class="bi bi-save me-2"></i>Save All Chaos Settings
+    </button>
+  </div>
+
+</div><!-- /col-lg-8 -->
+
+<!-- ── RIGHT COLUMN ──────────────────────────────────────────────────── -->
+<div class="col-lg-4">
+
+  <!-- Named outage profiles -->
+  <div class="c-section s0 mb-4">
+    <div class="c-section-head">
+      <div class="c-sec-badge"><i class="bi bi-lightning"></i></div>
+      <div>
+        <div class="c-section-title">Named Outage Profiles</div>
+        <div class="c-section-sub">One-click outage presets for RCA demos</div>
+      </div>
+    </div>
+    <div class="c-section-body">
+      {# NOTE: Cannot nest <form> inside chaosForm — use fetch() instead #}
+        <input type="hidden" id="profileCsrf" value="{{ csrf_token() }}"/>
+        <div style="margin-bottom:14px">
+          {% set profile_meta = {
+            'login_storm': ('bi-shield-exclamation','Login Storm','60% failure + 800ms slowdown'),
+            'db_slowdown': ('bi-database-dash','DB Degraded','2.5s DB queries + slow checkout'),
+            'db_unavailable': ('bi-database-x','DB Down','Complete DB failure → 500s'),
+            'payment_gateway_down': ('bi-credit-card-2-front','Payment Down','All payments fail at checkout'),
+            'checkout_exceptions': ('bi-cart-x','Checkout Chaos','50% random checkout crashes'),
+            'search_upstream_timeout': ('bi-search','Search Timeout','40% search requests time out'),
+            'api_5xx_storm': ('bi-phone','API 5xx Storm','35% mobile API calls → 503'),
+            'email_service_down': ('bi-envelope-x','Email Down','All transactional emails fail silently'),
+            'cdn_failure': ('bi-cloud-slash','CDN Failure','JS/CSS/fonts fail to load — layout breaks'),
+            'maintenance_flood': ('bi-tools','Maintenance Flood','25% pages show maintenance banner'),
+            'third_party_blackout': ('bi-plug','3rd-Party Blackout','Analytics, maps, payment widgets time out'),
+          } %}
+          <div class="profile-grid">
+          {% for p in profiles %}
+          {% set meta = profile_meta.get(p, ('bi-lightning', p, '')) %}
+          <button type="button" class="profile-btn" onclick="fireProfile('{{ p }}')">
+            <span class="pb-icon"><i class="bi {{ meta[0] }}"></i></span>
+            <span class="pb-name">{{ meta[1] }}</span>
+            <span class="pb-sub">{{ meta[2] }}</span>
+          </button>
+          {% endfor %}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:.78rem;color:#64748b;white-space:nowrap">Duration:</span>
+          <input type="number" id="profileDuration" class="ci" value="15" min="1" max="120" style="width:70px;text-align:center">
+          <span style="font-size:.78rem;color:#64748b">minutes</span>
+        </div>
+    </div>
+  </div>
+
+  <!-- Current state snapshot -->
+  <div class="c-section s-info mb-4">
+    <div class="c-section-head">
+      <div class="c-sec-badge"><i class="bi bi-activity"></i></div>
+      <div>
+        <div class="c-section-title">Live Chaos State</div>
+        <div class="c-section-sub">Real-time flags — refreshes on save</div>
+      </div>
+    </div>
+    <div class="c-section-body">
+      {% macro flag(label, val) %}
+      <div class="state-row">
+        <span class="state-key">{{ label }}</span>
+        {% if val is sameas true or val == True %}
+          <span class="state-val-on">ON</span>
+        {% elif val is sameas false or val == False or val == 0 or val == 0.0 %}
+          <span class="state-val-off">off</span>
+        {% else %}
+          <span class="state-val-num">{{ val }}</span>
+        {% endif %}
+      </div>
+      {% endmacro %}
+      <div class="cat-label" style="margin-bottom:8px">§0 — Core Engine</div>
+      {{ flag('enabled', state.enabled) }}
+      {{ flag('login_failure_rate', (state.login_failure_rate*100)|int|string + '%' if state.login_failure_rate else false) }}
+      {{ flag('db_down', state.db_down) }}
+      {{ flag('db_slowdown_ms', (state.db_slowdown_ms|string + 'ms') if state.db_slowdown_ms else false) }}
+      {{ flag('payment_gw_down', state.payment_gateway_down) }}
+      {{ flag('api_5xx_rate', (state.api_5xx_rate*100)|int|string + '%' if state.api_5xx_rate else false) }}
+      <div class="cat-label" style="margin-top:12px;margin-bottom:8px">§1 — Page Load</div>
+      {{ flag('page_load_chaos', state.page_load_chaos) }}
+      {{ flag('page_delay_ms', (state.page_load_delay_ms|string + 'ms') if state.page_load_delay_ms else false) }}
+      {{ flag('inject_js_errors', state.page_load_inject_js_errors) }}
+      {{ flag('resource_failures', state.page_load_inject_resource_failures) }}
+      {{ flag('memory_pressure', state.page_load_inject_memory_pressure) }}
+      {{ flag('render_blocking', state.page_load_inject_render_blocking) }}
+      {{ flag('webfont_failure', state.page_load_webfont_failure) }}
+      {{ flag('ttfb_spike', state.page_load_ttfb_spike) }}
+      {{ flag('cache_chaos', state.page_load_cache_chaos) }}
+      <div class="cat-label" style="margin-top:12px;margin-bottom:8px">§2 — Functionality</div>
+      {{ flag('func_chaos', state.func_chaos) }}
+      {{ flag('search_empty', state.func_search_empty) }}
+      {{ flag('form_errors', state.func_form_errors) }}
+      {{ flag('broken_images', state.func_broken_images) }}
+      {{ flag('404_storm_rate', (state.func_404_storm_rate*100)|int|string + '%' if state.func_404_storm_rate else false) }}
+      {{ flag('infinite_spin', state.func_infinite_spin) }}
+      {{ flag('broken_cta', state.func_broken_cta) }}
+      {{ flag('wrong_search', state.func_wrong_search) }}
+      {{ flag('fake_soldout', state.func_fake_soldout) }}
+      {{ flag('date_picker_broken', state.func_date_picker_broken) }}
+      {{ flag('otp_invalid', state.func_otp_invalid) }}
+      {{ flag('email_chaos', state.func_email_chaos) }}
+      {{ flag('maintenance_flood', state.func_maintenance_flood) }}
+      <div class="cat-label" style="margin-top:12px;margin-bottom:8px">§3 — Components</div>
+      {{ flag('component_chaos', state.component_chaos) }}
+      {{ flag('comp_rate', state.component_chaos_rate|string + '%' if state.component_chaos else false) }}
+      {{ flag('break_search', state.component_break_search) }}
+      {{ flag('break_results', state.component_break_results) }}
+      {{ flag('break_booking', state.component_break_booking) }}
+      {{ flag('break_pricing', state.component_break_pricing) }}
+      {{ flag('break_css', state.component_break_css) }}
+      {{ flag('break_nav', state.component_break_nav) }}
+      {{ flag('break_autocomplete', state.component_break_autocomplete) }}
+      {{ flag('break_datepicker', state.component_break_datepicker) }}
+      {{ flag('break_ratings', state.component_break_ratings) }}
+      {{ flag('break_loyalty', state.component_break_loyalty) }}
+      <div class="cat-label" style="margin-top:12px;margin-bottom:8px">§4 — A/B Test</div>
+      {{ flag('ab_test_chaos', state.ab_test_chaos) }}
+      {{ flag('ab_login', state.ab_test_login) }}
+      {{ flag('ab_search', state.ab_test_search) }}
+      {{ flag('ab_booking', state.ab_test_booking) }}
+      {{ flag('ab_profile', state.ab_test_profile) }}
+      <div class="cat-label" style="margin-top:12px;margin-bottom:8px">Engine</div>
+      {% set intensity_labels = ['Low','Medium','High','Critical'] %}
+      {{ flag('intensity', intensity_labels[state.chaos_intensity] if state.chaos_intensity is not none else 'Medium') }}
+    </div>
+  </div>
+
+  <!-- Event log -->
+  <div class="c-section s-info">
+    <div class="c-section-head">
+      <div class="c-sec-badge"><i class="bi bi-list-ul"></i></div>
+      <div>
+        <div class="c-section-title">Chaos Event Log</div>
+        <div class="c-section-sub">Last 60 events</div>
+      </div>
+    </div>
+    <div class="c-section-body p-0">
+      <div class="event-log px-3 py-2">
+        {% for ev in events %}
+        <div class="event-row">
+          {% if ev.event_type in ('INJECTED_ERROR','PAGE_LOAD_DELAY') %}
+            <span class="event-badge ev-error">{{ ev.event_type }}</span>
+          {% elif ev.event_type == 'OUTAGE_START' %}
+            <span class="event-badge ev-start">▶ OUTAGE START</span>
+          {% elif ev.event_type == 'OUTAGE_END' %}
+            <span class="event-badge ev-end">■ OUTAGE END</span>
+          {% else %}
+            <span class="event-badge ev-toggle">{{ ev.event_type }}</span>
+          {% endif %}
+          <div style="flex:1;min-width:0">
+            <div class="ev-label text-truncate">{{ ev.label }}</div>
+            <div class="ev-time">{{ ev.created_at.strftime('%d %b %H:%M:%S') }}</div>
+          </div>
+        </div>
+        {% else %}
+        <div style="padding:16px;text-align:center;color:#475569;font-size:.8rem">No chaos events yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div><!-- /col-lg-4 -->
+</div><!-- /row -->
+</form>
+
+<!-- ══ CONFIRM MODAL (replaces native browser confirm()) ═════════════════ -->
+<div id="chaosConfirmOverlay" style="
+  display:none; position:fixed; inset:0; z-index:9999;
+  background:rgba(0,0,0,.72); backdrop-filter:blur(3px);
+  align-items:center; justify-content:center;">
+  <div style="
+    background:#0d1117; border:1px solid #1e2d40; border-radius:10px;
+    border-top:2px solid #dc2626;
+    padding:28px 28px 22px; max-width:420px; width:90%;
+    box-shadow:0 24px 64px rgba(0,0,0,.7);">
+    <!-- Icon row -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:36px;height:36px;border-radius:8px;background:#1a0505;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="bi bi-lightning-fill" style="color:#dc2626;font-size:1rem"></i>
+      </div>
+      <div>
+        <div style="font-size:.92rem;font-weight:700;color:#f1f5f9">Fire Outage Profile</div>
+        <div style="font-size:.72rem;color:#3d5070;margin-top:1px">This will activate a live chaos scenario</div>
+      </div>
+    </div>
+    <!-- Profile name badge -->
+    <div style="background:#080b10;border:1px solid #1e2d40;border-radius:6px;padding:12px 14px;margin-bottom:20px">
+      <div style="font-size:.68rem;color:#3d5070;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Profile</div>
+      <div id="confirmProfileName" style="font-size:.9rem;font-weight:700;color:#f87171;font-family:'SF Mono','Fira Code',monospace"></div>
+      <div id="confirmProfileDesc" style="font-size:.72rem;color:#4a6080;margin-top:4px"></div>
+    </div>
+    <!-- Buttons -->
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button type="button" onclick="closeConfirmModal()" style="
+        background:#0d1117;border:1px solid #1e2d40;color:#6b7280;
+        border-radius:6px;padding:9px 20px;font-size:.82rem;font-weight:600;
+        cursor:pointer;transition:border-color .15s">
+        Cancel
+      </button>
+      <button type="button" id="confirmFireBtn" style="
+        background:#dc2626;border:none;color:#fff;
+        border-radius:6px;padding:9px 22px;font-size:.82rem;font-weight:700;
+        cursor:pointer;transition:background .15s;letter-spacing:.01em">
+        <i class="bi bi-lightning-fill me-1"></i>Fire Profile
+      </button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+/* ── Knob badge updaters ─────────────────────────────────────────── */
+function updateBadge(inp, id, unit, mult) {
+  var v = parseFloat(inp.value);
+  document.getElementById(id).textContent = (mult ? Math.round(v*mult) : v) + unit;
+}
+function updatePageDelay(inp) {
+  var v = parseInt(inp.value);
+  var txt = v === 0 ? 'OFF' : (v >= 1000 ? (v/1000).toFixed(1)+'s' : v+'ms');
+  document.getElementById('plDelayBadge').textContent = txt;
+}
+
+/* ── Section master toggle ───────────────────────────────────────── */
+function toggleSection(bodyId, enabled) {
+  var el = document.getElementById(bodyId);
+  el.style.opacity = enabled ? '' : '0.45';
+  el.style.pointerEvents = enabled ? '' : 'none';
+}
+
+/* ── Injection card checkbox toggle ─────────────────────────────── */
+function toggleIC(card, name) {
+  var cb = card.querySelector('input[type=checkbox]');
+  cb.checked = !cb.checked;
+  card.classList.toggle('ic-active', cb.checked);
+}
+
+/* ── Target page chip toggle ─────────────────────────────────────── */
+function updateTargetChip(chipId, checked) {
+  document.getElementById(chipId).classList.toggle('tc-active', checked);
+}
+
+/* ── Clear active outage (uses fetch — can't nest forms in HTML) ─ */
+function clearOutage() {
+  var csrf = document.getElementById('profileCsrf').value;
+  fetch('{{ url_for("chaos_admin.end_outage_now") }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'csrf_token=' + encodeURIComponent(csrf)
+  }).then(function(r){ window.location.reload(); })
+    .catch(function(e){ showToast('Failed to clear outage: ' + e.message, 'error'); });
+}
+
+/* ── Lightweight toast (no browser alert) ────────────────────────── */
+function showToast(msg, type) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;padding:12px 18px;border-radius:7px;font-size:.82rem;font-weight:600;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.5);transition:opacity .4s;' + (type==='error' ? 'background:#dc2626;border:1px solid #7f1d1d' : 'background:#15803d;border:1px solid #14532d');
+  document.body.appendChild(t);
+  setTimeout(function(){ t.style.opacity='0'; setTimeout(function(){ t.remove(); }, 400); }, 3500);
+}
+
+/* ── Custom confirm modal ────────────────────────────────────────── */
+var _pendingProfile = null;
+var PROFILE_DESCS = {
+  'login_storm':            'Login Storm — 60% failure + 800ms slowdown',
+  'db_slowdown':            'DB Degraded — 2.5s DB queries + slow checkout',
+  'db_unavailable':         'DB Down — Complete DB failure → 500s',
+  'payment_gateway_down':   'Payment Down — All payments fail at checkout',
+  'checkout_exceptions':    'Checkout Chaos — 50% random checkout crashes',
+  'search_upstream_timeout':'Search Timeout — 40% search requests time out',
+  'api_5xx_storm':          'API 5xx Storm — 35% mobile API calls → 503',
+  'email_service_down':     'Email Down — All transactional emails fail silently',
+  'cdn_failure':            'CDN Failure — JS/CSS/fonts fail to load',
+  'maintenance_flood':      'Maintenance Flood — 25% pages show maintenance banner',
+  'third_party_blackout':   '3rd-Party Blackout — Analytics, maps, payment widgets time out',
+};
+
+function fireProfile(name) {
+  _pendingProfile = name;
+  var overlay = document.getElementById('chaosConfirmOverlay');
+  var dur = document.getElementById('profileDuration').value || '15';
+  document.getElementById('confirmProfileName').textContent = name.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase()});
+  document.getElementById('confirmProfileDesc').textContent = (PROFILE_DESCS[name] || name) + ' · ' + dur + ' min';
+  overlay.style.display = 'flex';
+  // Focus the fire button for keyboard users
+  setTimeout(function(){ document.getElementById('confirmFireBtn').focus(); }, 50);
+}
+
+function closeConfirmModal() {
+  _pendingProfile = null;
+  document.getElementById('chaosConfirmOverlay').style.display = 'none';
+}
+
+// Close on overlay backdrop click
+document.getElementById('chaosConfirmOverlay').addEventListener('click', function(e){
+  if (e.target === this) closeConfirmModal();
+});
+
+// Close on Escape key
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') closeConfirmModal();
+});
+
+document.getElementById('confirmFireBtn').addEventListener('click', function(){
+  if (!_pendingProfile) return;
+  var name = _pendingProfile;
+  closeConfirmModal();
+  var csrf = document.getElementById('profileCsrf').value;
+  var dur  = document.getElementById('profileDuration').value || '15';
+  var body = new URLSearchParams({csrf_token: csrf, profile: name, duration_minutes: dur});
+  fetch('{{ url_for("chaos_admin.trigger_outage") }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: body.toString()
+  }).then(function(r){ window.location.reload(); })
+    .catch(function(e){ alert('Failed to fire outage: ' + e.message); });
+});
+
+/* ── Intensity slider ────────────────────────────────────────────── */
+var INTENSITY_LABELS = [
+  '25% strength — chaos rates are scaled down. Low noise, minimal user impact.',
+  '50% strength — moderate failures. Noticeable delays and occasional errors.',
+  '75% strength — high failure rates. Significant performance degradation.',
+  '100% strength — maximum chaos. Near-total outage for affected features.'
+];
+var INTENSITY_COLORS = ['#16a34a','#d97706','#dc2626','#7c3aed'];
+function updateIntensity(inp) {
+  var v = parseInt(inp.value);
+  var el = document.getElementById('intensityLabel');
+  var desc = document.getElementById('intensityDesc');
+  var labels = ['LOW','MEDIUM','HIGH','CRITICAL'];
+  if (el) { el.textContent = labels[v]; el.style.color = INTENSITY_COLORS[v]; }
+  if (desc) desc.textContent = INTENSITY_LABELS[v];
+}
+
+/* ── Init badge values on load ───────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function(){
+  updatePageDelay(document.querySelector('[name=page_load_delay_ms]'));
+  var intensitySlider = document.getElementById('intensitySlider');
+  if (intensitySlider) updateIntensity(intensitySlider);
+});
+</script>
+{% endblock %}

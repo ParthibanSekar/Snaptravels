@@ -1,0 +1,250 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ title }} — SnapTravels Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #0f1117 !important; color: #e2e8f0; }
+@keyframes accentSlide { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+.admin-accent-bar { height:3px; background:linear-gradient(90deg,#e63950,#f97316,#facc15,#e63950); background-size:200% 100%; animation:accentSlide 3s linear infinite; }
+.admin-topbar { background:#1a1f2e; border-bottom:1px solid #1e2433; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; }
+.admin-breadcrumb { display:flex; align-items:center; gap:8px; font-size:.82rem; color:#64748b; }
+.admin-breadcrumb a { color:#64748b; text-decoration:none; }
+.admin-breadcrumb a:hover { color:#e63950; }
+.admin-breadcrumb .sep { color:#334155; }
+.admin-breadcrumb .current { color:#e2e8f0; font-weight:600; }
+.admin-nav-links { display:flex; gap:6px; }
+.admin-nav-links a { padding:6px 14px; border-radius:8px; font-size:.78rem; font-weight:600; color:#94a3b8; text-decoration:none; transition:all .2s; border:1px solid transparent; }
+.admin-nav-links a:hover { background:#1e2433; color:#e2e8f0; }
+.admin-nav-links a.active { background:rgba(230,57,80,.12); color:#e63950; border-color:rgba(230,57,80,.25); }
+
+/* ── Form Panel ──────────────────────────────────── */
+.form-panel { background:#1a1f2e; border:1px solid #1e2433; border-radius:16px; overflow:hidden; }
+.form-panel-header {
+  padding: 20px 24px; border-bottom: 1px solid #1e2433;
+  background: linear-gradient(90deg, rgba(230,57,80,.06), transparent);
+}
+.form-section-title {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .1em;
+  color: #e63950; font-weight: 700; margin-bottom: 16px;
+  padding-bottom: 8px; border-bottom: 1px solid #1e2433;
+  display: flex; align-items: center; gap: 8px;
+}
+.form-body { padding: 24px; }
+
+/* ── Dark Inputs ─────────────────────────────────── */
+.dark-label {
+  display: block; font-size: .75rem; font-weight: 700;
+  color: #94a3b8; text-transform: uppercase; letter-spacing: .05em;
+  margin-bottom: 6px;
+}
+.dark-input, .dark-select {
+  width: 100%; background: #141824; border: 1.5px solid #1e2433;
+  border-radius: 10px; color: #e2e8f0; padding: 10px 14px;
+  font-size: .88rem; transition: all .2s;
+}
+.dark-input:focus, .dark-select:focus {
+  outline: none; border-color: #e63950;
+  box-shadow: 0 0 0 3px rgba(230,57,80,.08);
+}
+.dark-input::placeholder { color: #334155; }
+.dark-select option { background: #1a1f2e; }
+.input-prefix {
+  display: flex; align-items: center;
+  background: #141824; border: 1.5px solid #1e2433; border-radius: 10px; overflow: hidden;
+  transition: border-color .2s;
+}
+.input-prefix:focus-within { border-color: #e63950; box-shadow: 0 0 0 3px rgba(230,57,80,.08); }
+.input-prefix-text {
+  padding: 10px 12px; font-size: .82rem; font-weight: 700;
+  color: #64748b; border-right: 1px solid #1e2433; white-space: nowrap;
+  background: rgba(255,255,255,.02);
+}
+.input-prefix input { background: transparent; border: none; color: #e2e8f0; padding: 10px 14px; font-size: .88rem; flex: 1; min-width: 0; }
+.input-prefix input:focus { outline: none; }
+.input-prefix input::placeholder { color: #334155; }
+
+.field-error { font-size:.72rem; color:#f87171; margin-top:4px; display:flex; align-items:center; gap:4px; }
+
+/* ── Submit Buttons ──────────────────────────────── */
+.btn-submit {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 28px; border-radius: 12px; font-size: .9rem; font-weight: 800;
+  background: linear-gradient(135deg,#e63950,#f97316); color: #fff; border: none;
+  cursor: pointer; transition: all .2s; box-shadow: 0 4px 14px rgba(230,57,80,.3);
+}
+.btn-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(230,57,80,.4); }
+.btn-cancel {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 22px; border-radius: 12px; font-size: .88rem; font-weight: 600;
+  background: transparent; border: 1px solid #1e2433; color: #94a3b8;
+  text-decoration: none; transition: all .2s;
+}
+.btn-cancel:hover { background: #1e2433; color: #e2e8f0; }
+.btn-ghost { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:10px; font-size:.8rem; font-weight:600; background:transparent; border:1px solid #1e2433; color:#94a3b8; text-decoration:none; transition:all .2s; }
+.btn-ghost:hover { background:#1e2433; color:#e2e8f0; }
+
+.form-divider {
+  border: none; border-top: 1px solid #1e2433;
+  margin: 24px 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-accent-bar"></div>
+
+<div class="admin-topbar">
+  <div class="admin-breadcrumb">
+    <i class="bi bi-speedometer2" style="color:#e63950"></i>
+    <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+    <span class="sep">›</span>
+    <a href="{{ url_for('admin.manage_flights') }}">Flights</a>
+    <span class="sep">›</span>
+    <span class="current">{{ title }}</span>
+  </div>
+  <div class="admin-nav-links">
+    <a href="{{ url_for('admin.dashboard') }}"><i class="bi bi-grid-3x3-gap me-1"></i>Dashboard</a>
+    <a href="{{ url_for('admin.manage_flights') }}" class="active"><i class="bi bi-airplane me-1"></i>Flights</a>
+    <a href="{{ url_for('admin.manage_bookings') }}"><i class="bi bi-receipt me-1"></i>Bookings</a>
+    <a href="{{ url_for('admin_ext.hotels') }}"><i class="bi bi-building me-1"></i>Hotels</a>
+  </div>
+</div>
+
+<div class="container-fluid px-4 py-4" style="max-width:900px;margin:0 auto">
+
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+      <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#64748b;font-weight:700">Flight Management</div>
+      <h2 style="font-size:1.5rem;font-weight:900;color:#e2e8f0;margin:4px 0 0">{{ title }}</h2>
+    </div>
+    <a href="{{ url_for('admin.manage_flights') }}" class="btn-ghost"><i class="bi bi-arrow-left"></i> Back to Flights</a>
+  </div>
+
+  <div class="form-panel">
+    <div class="form-panel-header">
+      <div style="font-weight:800;color:#e2e8f0;font-size:1rem">
+        <i class="bi bi-airplane me-2" style="color:#e63950"></i>{{ title }}
+      </div>
+      <div style="font-size:.78rem;color:#64748b;margin-top:4px">Fill in the details below to {{ 'update the' if 'Edit' in title else 'add a new' }} flight.</div>
+    </div>
+
+    <div class="form-body">
+      <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <!-- Airline & Flight Number -->
+        <div class="form-section-title"><i class="bi bi-airplane"></i> Airline Details</div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="dark-label">{{ form.airline.label.text }} <span style="color:#e63950">*</span></label>
+            {{ form.airline(class="dark-input", placeholder="e.g. IndiGo, Air India") }}
+            {% for error in form.airline.errors %}
+            <div class="field-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+          </div>
+          <div class="col-md-6">
+            <label class="dark-label">{{ form.flight_no.label.text }} <span style="color:#e63950">*</span></label>
+            {{ form.flight_no(class="dark-input", placeholder="e.g. 6E-201") }}
+            {% for error in form.flight_no.errors %}
+            <div class="field-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <hr class="form-divider">
+
+        <!-- Route -->
+        <div class="form-section-title"><i class="bi bi-geo-alt"></i> Route</div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="dark-label">{{ form.origin.label.text }} <span style="color:#e63950">*</span></label>
+            {{ form.origin(class="dark-input", placeholder="e.g. DEL") }}
+            {% for error in form.origin.errors %}
+            <div class="field-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+          </div>
+          <div class="col-md-6">
+            <label class="dark-label">{{ form.destination.label.text }} <span style="color:#e63950">*</span></label>
+            {{ form.destination(class="dark-input", placeholder="e.g. BOM") }}
+            {% for error in form.destination.errors %}
+            <div class="field-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <hr class="form-divider">
+
+        <!-- Schedule -->
+        <div class="form-section-title"><i class="bi bi-clock"></i> Schedule</div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="dark-label">{{ form.depart_time.label.text }} <span style="color:#e63950">*</span></label>
+            {{ form.depart_time(class="dark-input", placeholder="09:30") }}
+            {% for error in form.depart_time.errors %}
+            <div class="field-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+          </div>
+          <div class="col-md-4">
+            <label class="dark-label">{{ form.arrive_time.label.text }} <span style="color:#e63950">*</span></label>
+            {{ form.arrive_time(class="dark-input", placeholder="11:45") }}
+            {% for error in form.arrive_time.errors %}
+            <div class="field-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+          </div>
+          <div class="col-md-4">
+            <label class="dark-label">{{ form.duration_mins.label.text }}</label>
+            <div class="input-prefix">
+              <span class="input-prefix-text"><i class="bi bi-clock"></i></span>
+              {{ form.duration_mins(style="background:transparent;border:none;color:#e2e8f0;padding:10px 14px;font-size:.88rem;flex:1;min-width:0;") }}
+              <span style="padding:10px 12px;font-size:.8rem;color:#64748b;border-left:1px solid #1e2433">mins</span>
+            </div>
+            {% for error in form.duration_mins.errors %}
+            <div class="field-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <hr class="form-divider">
+
+        <!-- Pricing & Inventory -->
+        <div class="form-section-title"><i class="bi bi-currency-rupee"></i> Pricing & Inventory</div>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <label class="dark-label">{{ form.price.label.text }} <span style="color:#e63950">*</span></label>
+            <div class="input-prefix">
+              <span class="input-prefix-text">₹</span>
+              {{ form.price(style="background:transparent;border:none;color:#e2e8f0;padding:10px 14px;font-size:.88rem;flex:1;min-width:0;") }}
+            </div>
+            {% for error in form.price.errors %}
+            <div class="field-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+          </div>
+          <div class="col-md-4">
+            <label class="dark-label">{{ form.seats_left.label.text }}</label>
+            {{ form.seats_left(class="dark-input") }}
+            {% for error in form.seats_left.errors %}
+            <div class="field-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+          </div>
+          <div class="col-md-4">
+            <label class="dark-label">{{ form.cabin_class.label.text }}</label>
+            {{ form.cabin_class(class="dark-select") }}
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex align-items-center gap-3 pt-2">
+          <button type="submit" class="btn-submit">
+            <i class="bi bi-check2-circle"></i>
+            {{ form.submit.label.text }}
+          </button>
+          <a href="{{ url_for('admin.manage_flights') }}" class="btn-cancel">
+            <i class="bi bi-x"></i> Cancel
+          </a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

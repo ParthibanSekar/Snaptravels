@@ -1,0 +1,155 @@
+{% extends "layouts/base.html" %}
+{% block title %}Two-Factor Authentication — SnapTravels{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5"
+     style="background:linear-gradient(135deg,#f0f4ff 0%,#f5f0ff 100%)">
+  <div style="width:100%;max-width:420px;padding:0 1rem">
+
+    <!-- Logo -->
+    <div class="text-center mb-4">
+      <a href="{{ url_for('public.home') }}" class="text-decoration-none">
+        <span style="font-size:1.6rem;font-weight:800;color:#e63950">Snap</span><span style="font-size:1.6rem;font-weight:800;color:#2563eb">Travels</span>
+      </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <!-- Card header -->
+      <div class="p-4 text-white text-center"
+           style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)">
+        <div class="mx-auto mb-3 rounded-circle d-flex align-items-center justify-content-center bg-white bg-opacity-25"
+             style="width:60px;height:60px">
+          <i class="bi bi-shield-lock-fill" style="font-size:1.8rem"></i>
+        </div>
+        <h4 class="fw-bold mb-1">Two-Factor Authentication</h4>
+        <p class="opacity-80 small mb-0">Enter the 6-digit code from your authenticator app</p>
+      </div>
+
+      <div class="card-body p-4" id="otpPanel">
+
+        <form method="POST" action="{{ url_for('twofa.login_otp') }}" id="otpForm" autocomplete="off">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="use_backup" id="useBackupFlag" value="0">
+
+          <div class="mb-4 text-center">
+            <label class="form-label fw-semibold mb-3">Verification Code</label>
+            <input type="text" name="otp" id="otpInput"
+                   class="form-control form-control-lg text-center otp-big"
+                   placeholder="_ _ _ _ _ _"
+                   maxlength="6" pattern="\d{6}" required
+                   inputmode="numeric" autocomplete="one-time-code"
+                   autofocus>
+            <div class="text-muted small mt-2">
+              <i class="bi bi-clock me-1"></i>Code refreshes in <span id="timer">30</span>s
+            </div>
+          </div>
+
+          <!-- Remember device -->
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" name="remember_device" value="1" id="rememberDevice">
+            <label class="form-check-label small" for="rememberDevice">
+              Trust this device for 30 days
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 btn-lg"
+                  style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;font-weight:600">
+            <i class="bi bi-check2-shield me-2"></i>Verify & Sign In
+          </button>
+        </form>
+
+        <div class="text-center mt-3">
+          <button class="btn btn-link btn-sm text-muted text-decoration-none p-0"
+                  onclick="toggleBackup()">
+            <i class="bi bi-key me-1"></i>Use a backup code instead
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Backup code panel (hidden by default) -->
+      <div class="card-body p-4 border-top" id="backupPanel" style="display:none!important">
+        <h6 class="fw-semibold mb-1"><i class="bi bi-key me-1 text-warning"></i>Use Backup Code</h6>
+        <p class="text-muted small mb-3">
+          Enter one of your one-time backup codes. The code will be permanently consumed.
+        </p>
+        <form method="POST" action="{{ url_for('twofa.login_otp') }}" autocomplete="off">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="use_backup" value="1">
+          <div class="mb-3">
+            <input type="text" name="otp" class="form-control text-center"
+                   placeholder="XXXX-XXXX"
+                   required autocomplete="off"
+                   style="font-family:monospace;font-size:1.1rem;letter-spacing:.1em">
+          </div>
+          <button type="submit" class="btn btn-warning w-100 fw-semibold">
+            <i class="bi bi-box-arrow-in-right me-1"></i>Sign In with Backup Code
+          </button>
+        </form>
+        <div class="text-center mt-3">
+          <button class="btn btn-link btn-sm text-muted text-decoration-none p-0"
+                  onclick="toggleBackup()">
+            <i class="bi bi-arrow-left me-1"></i>Back to authenticator code
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer links -->
+    <div class="text-center mt-4">
+      <a href="{{ url_for('auth.logout') }}" class="text-muted small text-decoration-none">
+        <i class="bi bi-x-circle me-1"></i>Cancel and sign out
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.otp-big {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: .35em;
+  border: 2px solid #c7d2fe;
+  border-radius: 12px;
+  max-width: 220px;
+  margin: 0 auto;
+}
+.otp-big:focus { border-color: #6366f1; box-shadow: 0 0 0 .25rem rgba(99,102,241,.15) }
+.otp-big::-webkit-outer-spin-button,
+.otp-big::-webkit-inner-spin-button { -webkit-appearance: none }
+</style>
+
+{% block extra_scripts %}
+<script>
+let backupVisible = false;
+
+function toggleBackup() {
+  backupVisible = !backupVisible;
+  document.getElementById('backupPanel').style.setProperty('display', backupVisible ? 'block' : 'none', 'important');
+  document.getElementById('otpPanel').style.setProperty('display', backupVisible ? 'none' : 'block', 'important');
+}
+
+// Countdown timer
+(function() {
+  const el = document.getElementById('timer');
+  function tick() {
+    const secs = 30 - (Math.floor(Date.now() / 1000) % 30);
+    el.textContent = secs;
+    el.style.color = secs <= 5 ? '#dc2626' : '';
+    setTimeout(tick, 1000);
+  }
+  tick();
+})();
+
+// Auto-submit when 6 digits
+document.getElementById('otpInput').addEventListener('input', function() {
+  this.value = this.value.replace(/\D/g, '');
+  if (this.value.length === 6) {
+    setTimeout(() => this.form.submit(), 300);  // small delay for UX
+  }
+});
+</script>
+{% endblock %}
+{% endblock %}

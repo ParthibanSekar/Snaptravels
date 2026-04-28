@@ -1,0 +1,580 @@
+{% extends "layouts/base.html" %}
+{% block title %}Cab Booking — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f0fdfa; }
+.cabs-page { min-height: 100vh; }
+
+/* ── Hero ─────────────────────────────────────── */
+.cab-hero {
+  background: linear-gradient(135deg, rgba(19,78,74,.78), rgba(15,118,110,.65)), url('/static/images/hero/cabs-search.jpg') center/cover no-repeat;
+  padding: 32px 0 40px; position: relative; overflow: hidden;
+}
+.cab-hero::before {
+  content: ''; position: absolute; top: -40%; right: -5%; width: 55%; height: 200%;
+  background: radial-gradient(ellipse, rgba(255,255,255,.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+.search-card {
+  background: #fff; border-radius: 18px;
+  padding: 24px 28px; box-shadow: 0 8px 40px rgba(0,0,0,.18);
+}
+.search-card .form-control,
+.search-card .form-select {
+  border-radius: 10px; border: 1.5px solid #ccfbf1;
+  padding: 10px 14px; font-size: .92rem;
+  transition: border-color .2s, box-shadow .2s;
+}
+.search-card .form-control:focus,
+.search-card .form-select:focus {
+  border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20,184,166,.12);
+}
+.btn-search {
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 11px; font-weight: 700; width: 100%;
+  transition: all .2s; box-shadow: 0 4px 14px rgba(15,118,110,.3);
+}
+.btn-search:hover { background: linear-gradient(135deg, #134e4a, #0f766e); transform: translateY(-1px); }
+
+/* ── Filter sidebar ───────────────────────────── */
+.filter-panel {
+  background: #fff; border-radius: 16px;
+  padding: 20px; box-shadow: 0 2px 16px rgba(0,0,0,.06);
+  position: sticky; top: 80px;
+}
+.filter-panel h6 { font-weight: 700; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
+.filter-section { border-bottom: 1px solid #f3f4f6; padding-bottom: 16px; margin-bottom: 16px; }
+.filter-section:last-child { border-bottom: none; }
+.sort-side-btn {
+  border: 1.5px solid #ccfbf1; background: #fff; border-radius: 8px;
+  padding: 6px 12px; font-size: .82rem; cursor: pointer; transition: all .15s;
+  color: #374151; font-weight: 500; display: block; width: 100%; text-align: left; margin-bottom: 6px;
+}
+.sort-side-btn:hover, .sort-side-btn.active { background: #f0fdfa; border-color: #5eead4; color: #0f766e; }
+.type-filter-btn {
+  border: 1.5px solid #ccfbf1; background: #fff; border-radius: 8px;
+  padding: 6px 12px; font-size: .82rem; cursor: pointer; transition: all .15s;
+  color: #374151; font-weight: 600; display: flex; align-items: center; gap: 6px;
+  margin-bottom: 6px; width: 100%;
+}
+.type-filter-btn:hover { background: #f0fdfa; border-color: #5eead4; color: #0f766e; }
+.type-filter-btn.active { background: #0f766e; color: #fff; border-color: #0f766e; }
+.filter-cb { display: flex; align-items: center; gap: 8px; font-size: .83rem; margin-bottom: 7px; }
+.filter-cb input { accent-color: #0f766e; }
+
+/* ── Cab list cards ─────────────────────────────── */
+.cab-card {
+  background: #fff; border-radius: 18px;
+  border: 1.5px solid #ccfbf1;
+  box-shadow: 0 2px 14px rgba(15,118,110,.05);
+  transition: all .2s; overflow: hidden; margin-bottom: 16px;
+  position: relative;
+}
+.cab-card:hover { border-color: #5eead4; box-shadow: 0 8px 32px rgba(15,118,110,.13); transform: translateY(-2px); }
+.cab-card-top { height: 4px; background: linear-gradient(90deg, #0f766e, #5eead4); }
+
+/* Vehicle type badge */
+.vtype-badge {
+  display: inline-block; border-radius: 6px;
+  padding: 2px 9px; font-size: .68rem; font-weight: 700;
+  letter-spacing: .03em; margin-top: 4px;
+}
+.badge-economy { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
+.badge-comfort  { background: #eff6ff; color: #1e40af; border: 1px solid #93c5fd; }
+.badge-suv      { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
+.badge-premium  { background: #f5f3ff; color: #4c1d95; border: 1px solid #c4b5fd; }
+.badge-tempo    { background: #fef9c3; color: #92400e; border: 1px solid #fde68a; }
+.badge-luxury   { background: linear-gradient(135deg,#fef3c7,#fde68a); color: #78350f; border: 1px solid #f59e0b; }
+
+/* Vehicle icon block */
+.vehicle-icon-wrap {
+  width: 80px; height: 80px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #f0fdfa, #ccfbf1);
+  border-radius: 14px; font-size: 2.6rem;
+}
+
+/* Stat row */
+.stat-row { display: flex; gap: 16px; }
+.stat-item { text-align: center; }
+.stat-val { font-weight: 800; font-size: .88rem; color: #111; }
+.stat-lbl { font-size: .63rem; color: #9ca3af; margin-top: 1px; }
+
+/* Feature pills */
+.feat-pill {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 6px;
+  padding: 2px 8px; font-size: .7rem; color: #134e4a; font-weight: 600;
+}
+
+/* Price + CTA */
+.price-big { font-size: 1.35rem; font-weight: 900; color: #0f766e; line-height: 1; }
+.btn-book-cab {
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 10px 22px; font-weight: 700; font-size: .88rem;
+  transition: all .2s; box-shadow: 0 4px 12px rgba(15,118,110,.3); white-space: nowrap;
+}
+.btn-book-cab:hover { background: linear-gradient(135deg, #134e4a, #0f766e); color: #fff; transform: translateY(-1px); }
+
+/* Sort bar */
+.sort-bar {
+  background: #fff; border-radius: 12px; padding: 12px 18px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.06);
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+}
+
+/* Popular route cards */
+.route-card {
+  background: #fff; border-radius: 14px; border: 1.5px solid #ccfbf1;
+  padding: 14px 16px; cursor: pointer; transition: all .15s; text-align: center;
+}
+.route-card:hover { background: #f0fdfa; border-color: #5eead4; transform: translateY(-2px); }
+.route-name { font-weight: 700; font-size: .88rem; color: #111; }
+.route-km { font-size: .75rem; color: #9ca3af; margin-top: 3px; }
+.route-est { font-size: .78rem; font-weight: 700; color: #0f766e; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<div class="cab-hero">
+  <div class="container">
+    <div class="d-flex align-items-center gap-3 mb-4 text-white">
+      <div style="width:52px;height:52px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🚗</div>
+      <div>
+        <h1 class="fw-black mb-0" style="font-size:1.9rem;letter-spacing:-.01em">Cab Booking</h1>
+        <p class="mb-0 opacity-75" style="font-size:.88rem">Outstation cabs &amp; airport transfers — all vehicle types.</p>
+      </div>
+    </div>
+    <div class="search-card">
+      <form method="POST" action="{{ url_for('cabs.search') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-geo-alt text-success me-1"></i>Pickup City
+            </label>
+            <input type="text" name="pickup" class="form-control st-ac-city" placeholder="Chennai, Delhi…" value="{{ pickup }}" autocomplete="off" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-geo-alt-fill text-danger me-1"></i>Drop City
+            </label>
+            <input type="text" name="drop" class="form-control st-ac-city" placeholder="Bangalore, Mumbai…" value="{{ drop }}" autocomplete="off" required>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-calendar3 me-1" style="color:#0f766e"></i>Travel Date
+            </label>
+            <input type="date" name="travel_date" class="form-control" value="{{ travel_date }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">
+              <i class="bi bi-clock me-1" style="color:#0f766e"></i>Pickup Time
+            </label>
+            <input type="time" name="travel_time" class="form-control" value="{{ travel_time or '10:00' }}">
+          </div>
+          <div class="col-md-1">
+            <label class="form-label small fw-bold mb-1" style="color:#374151">Passengers</label>
+            <select name="passengers" class="form-control">
+              {% for i in range(1,9) %}
+              <option value="{{ i }}" {% if i==passengers %}selected{% endif %}>{{ i }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-1">
+            <label class="form-label small fw-bold mb-1">&nbsp;</label>
+            <button type="submit" class="btn-search btn">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULTS / LANDING ══════════════════════════════════════════════════ -->
+<div class="cabs-page">
+<div class="container py-4">
+
+{% if search_performed and cabs %}
+<div class="row g-3">
+
+  <!-- ── Filter Sidebar ── -->
+  <div class="col-lg-3 d-none d-lg-block">
+    <div class="filter-panel">
+
+      <div class="filter-section">
+        <h6 class="mb-3">Sort By</h6>
+        <button class="sort-side-btn active" onclick="sortCabs('price', this)">
+          <i class="bi bi-currency-rupee me-1"></i>Lowest Fare
+        </button>
+        <button class="sort-side-btn" onclick="sortCabs('capacity', this)">
+          <i class="bi bi-people me-1"></i>Most Seats
+        </button>
+        <button class="sort-side-btn" onclick="sortCabs('perkm', this)">
+          <i class="bi bi-signpost me-1"></i>Lowest ₹/km
+        </button>
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Vehicle Type</h6>
+        <button class="type-filter-btn active" data-vcat="all" onclick="filterCabType('all', this)">
+          🚗 All Vehicles
+        </button>
+        <button class="type-filter-btn" data-vcat="hatchback" onclick="filterCabType('hatchback', this)">
+          🚙 Hatchback
+        </button>
+        <button class="type-filter-btn" data-vcat="sedan" onclick="filterCabType('sedan', this)">
+          🚗 Sedan
+        </button>
+        <button class="type-filter-btn" data-vcat="suv" onclick="filterCabType('suv', this)">
+          🚐 SUV
+        </button>
+        <button class="type-filter-btn" data-vcat="premium" onclick="filterCabType('premium', this)">
+          ✨ Premium
+        </button>
+        <button class="type-filter-btn" data-vcat="tempo" onclick="filterCabType('tempo', this)">
+          🚌 Tempo / Van
+        </button>
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Air Conditioning</h6>
+        <label class="filter-cb">
+          <input type="checkbox" id="onlyAC" onchange="applyCabFilters()">
+          AC vehicles only
+        </label>
+      </div>
+
+      <div class="filter-section">
+        <h6 class="mb-3">Capacity</h6>
+        <label class="filter-cb">
+          <input type="checkbox" id="cap4plus" onchange="applyCabFilters()">
+          4+ passengers
+        </label>
+        <label class="filter-cb">
+          <input type="checkbox" id="cap6plus" onchange="applyCabFilters()">
+          6+ passengers
+        </label>
+      </div>
+
+      <button onclick="resetCabFilters()" class="btn btn-outline-secondary btn-sm w-100" style="border-radius:8px">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Cab Results ── -->
+  <div class="col-lg-9">
+
+    <!-- Search chips -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <span class="badge" style="background:#f0fdfa;color:#0f766e;border:1px solid #5eead4;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        📍 {{ pickup }}
+      </span>
+      <span class="badge" style="background:#fef9c3;color:#92400e;border:1px solid #fde68a;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        🏁 {{ drop }}
+      </span>
+      {% if travel_date %}
+      <span class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        📅 {{ travel_date }}
+      </span>
+      {% endif %}
+      {% if travel_time %}
+      <span class="badge" style="background:#eff6ff;color:#1e40af;border:1px solid #93c5fd;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        🕙 {{ travel_time }}
+      </span>
+      {% endif %}
+      <span class="badge" style="background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        👥 {{ passengers }} passenger{{ 's' if passengers > 1 }}
+      </span>
+      <span class="badge" style="background:#f5f3ff;color:#5b21b6;border:1px solid #ddd6fe;font-size:.8rem;padding:5px 12px;border-radius:20px">
+        📏 {{ cabs[0].distance_km }} km
+      </span>
+    </div>
+
+    <!-- Sort bar -->
+    <div class="sort-bar">
+      <div>
+        <div class="fw-bold" style="font-size:1rem;color:#111">
+          {{ pickup }} <i class="bi bi-arrow-right text-muted"></i> {{ drop }}
+        </div>
+        <div style="font-size:.8rem;color:#6b7280;margin-top:2px">
+          <span id="cabCount">{{ cabs|length }}</span> vehicle{{ 's' if cabs|length != 1 }}
+          &nbsp;·&nbsp; All-inclusive, no surge pricing
+        </div>
+      </div>
+      <div style="font-size:.8rem;color:#6b7280">
+        <i class="bi bi-shield-check me-1 text-success"></i>GPS tracked rides
+      </div>
+    </div>
+
+    <!-- Cab list cards -->
+    <div id="cabResults">
+    {% for item in cabs %}
+    {% set c = item.cab %}
+    {% set vtype = c.vehicle_type | lower %}
+    {% if 'hatchback' in vtype or 'swift' in vtype or 'alto' in vtype %}
+      {% set vcat = 'hatchback' %}{% set icon = '🚙' %}{% set badge_class = 'badge-economy' %}{% set badge_label = 'ECONOMY' %}
+    {% elif 'tempo' in vtype or 'van' in vtype or ('innova' in vtype and c.capacity >= 7) %}
+      {% set vcat = 'tempo' %}{% set icon = '🚌' %}{% set badge_class = 'badge-tempo' %}{% set badge_label = 'TEMPO / VAN' %}
+    {% elif 'luxury' in vtype or 'bmw' in vtype or 'mercedes' in vtype or 'audi' in vtype %}
+      {% set vcat = 'premium' %}{% set icon = '🏎' %}{% set badge_class = 'badge-luxury' %}{% set badge_label = 'LUXURY' %}
+    {% elif 'suv' in vtype or 'fortuner' in vtype or 'crysta' in vtype or 'innova' in vtype %}
+      {% set vcat = 'suv' %}{% set icon = '🚐' %}{% set badge_class = 'badge-suv' %}{% set badge_label = 'SUV' %}
+    {% elif 'premium' in vtype or 'accord' in vtype or 'camry' in vtype %}
+      {% set vcat = 'premium' %}{% set icon = '🚘' %}{% set badge_class = 'badge-premium' %}{% set badge_label = 'PREMIUM' %}
+    {% else %}
+      {% set vcat = 'sedan' %}{% set icon = '🚗' %}{% set badge_class = 'badge-comfort' %}{% set badge_label = 'SEDAN' %}
+    {% endif %}
+    {% set per_km = (item.estimated_fare / item.distance_km) %}
+
+    <div class="cab-card"
+         data-price="{{ item.estimated_fare }}"
+         data-capacity="{{ c.capacity }}"
+         data-perkm="{{ per_km|round(1) }}"
+         data-vcat="{{ vcat }}"
+         data-ac="{{ 'yes' if c.ac else 'no' }}">
+      <div class="cab-card-top"></div>
+
+      <div class="p-3 pb-2">
+        <div class="d-flex align-items-start gap-3">
+
+          <!-- Vehicle icon -->
+          <div class="vehicle-icon-wrap flex-shrink-0">{{ icon }}</div>
+
+          <!-- Main info block -->
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+
+              <!-- Left: name + badge + stats + features -->
+              <div>
+                <div style="font-weight:800;font-size:1rem;color:#111">{{ c.vehicle_type }}</div>
+                <div style="font-size:.76rem;color:#9ca3af;margin-bottom:4px">
+                  {{ c.brand or 'Standard Vehicle' }} · {{ 'AC' if c.ac else 'Non-AC' }}
+                </div>
+                <span class="vtype-badge {{ badge_class }}">{{ badge_label }}</span>
+
+                <!-- Stat row -->
+                <div class="stat-row mt-3">
+                  <div class="stat-item">
+                    <div class="stat-val">{{ c.capacity }}</div>
+                    <div class="stat-lbl">Seats</div>
+                  </div>
+                  <div class="stat-item" style="border-left:1px solid #e5e7eb;padding-left:16px">
+                    <div class="stat-val">{{ item.distance_km }}</div>
+                    <div class="stat-lbl">km</div>
+                  </div>
+                  <div class="stat-item" style="border-left:1px solid #e5e7eb;padding-left:16px">
+                    <div class="stat-val">₹{{ "%.0f"|format(per_km) }}</div>
+                    <div class="stat-lbl">per km</div>
+                  </div>
+                  <div class="stat-item" style="border-left:1px solid #e5e7eb;padding-left:16px">
+                    <div class="stat-val" style="color:#16a34a">4.{{ loop.index0 % 3 + 6 }}/5</div>
+                    <div class="stat-lbl">Rating</div>
+                  </div>
+                </div>
+
+                <!-- Feature pills -->
+                <div class="d-flex flex-wrap gap-1 mt-2">
+                  {% if c.ac %}<div class="feat-pill">❄️ AC</div>{% endif %}
+                  {% if c.amenities %}
+                    {% for a in c.amenities[:3] %}
+                    <div class="feat-pill">{{ a }}</div>
+                    {% endfor %}
+                  {% else %}
+                    <div class="feat-pill">📱 USB Charging</div>
+                    <div class="feat-pill">🗺 GPS Tracked</div>
+                    <div class="feat-pill">💧 Water Bottle</div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Right: price + CTA -->
+              <div class="text-md-end" style="min-width:160px">
+                <div class="price-big">₹{{ "{:,.0f}".format(item.estimated_fare) }}</div>
+                <div style="font-size:.72rem;color:#9ca3af;margin-top:2px">estimated total</div>
+                <div style="font-size:.72rem;color:#6b7280;margin-top:3px">
+                  ₹{{ "%.1f"|format(per_km) }}/km · all-inclusive
+                </div>
+                <a href="{{ url_for('cabs.select', cab_id=c.id) }}" class="btn-book-cab btn mt-3">
+                  Book Now <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="border-top mx-3 pt-2 pb-2 d-flex gap-3" style="font-size:.76rem;color:#6b7280">
+        <span><i class="bi bi-shield-check me-1 text-success"></i>Background verified driver</span>
+        <span><i class="bi bi-arrow-repeat me-1"></i>Free cancellation up to 2h before</span>
+        <span><i class="bi bi-receipt me-1"></i>No hidden charges</span>
+      </div>
+    </div>
+    {% endfor %}
+    </div>
+
+  </div><!-- /col-lg-9 -->
+</div><!-- /row -->
+
+{% elif search_performed and search_error %}
+<div style="text-align:center;padding:60px 20px;">
+  <div style="font-size:3.5rem;margin-bottom:16px;opacity:.8">⚠️</div>
+  <h4 style="font-weight:700;color:#dc2626;margin-bottom:8px">Search Failed</h4>
+  <p style="color:#64748b;max-width:480px;margin:0 auto 20px">{{ search_error }}</p>
+  <div class="d-flex justify-content-center gap-2">
+    <a href="{{ url_for('cabs.search') }}" class="btn btn-outline-secondary" style="border-radius:10px;padding:10px 24px">
+      <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+    </a>
+    <button onclick="document.querySelector('form').submit()" class="btn btn-warning" style="border-radius:10px;padding:10px 24px">
+      <i class="bi bi-arrow-repeat me-1"></i>Retry Search
+    </button>
+  </div>
+</div>
+
+{% elif search_performed and not cabs %}
+<div style="text-align:center;padding:60px 20px;">
+  <div style="font-size:3.5rem;margin-bottom:16px;opacity:.8">🚗</div>
+  <h4 style="font-weight:700;color:#1e293b;margin-bottom:8px">No cabs found</h4>
+  <p style="color:#64748b;max-width:420px;margin:0 auto 20px">
+    We couldn't find any cabs for this route. Try different cities or reduce passenger count.
+  </p>
+  <a href="{{ url_for('cabs.search') }}" class="btn btn-warning" style="border-radius:10px;padding:10px 24px">
+    <i class="bi bi-arrow-counterclockwise me-1"></i>New Search
+  </a>
+</div>
+
+{% else %}
+<!-- ── Landing state ─────────────────────────────── -->
+<!-- Popular routes -->
+<h6 class="fw-bold mb-3" style="font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:#6b7280">
+  <i class="bi bi-lightning-fill text-warning me-1"></i>Popular Outstation Routes
+</h6>
+<div class="row g-3 mb-5">
+  {% set routes = [
+    ("Chennai","Bangalore","346 km","~₹3,800"),
+    ("Mumbai","Pune","149 km","~₹1,800"),
+    ("Delhi","Agra","233 km","~₹2,600"),
+    ("Delhi","Jaipur","281 km","~₹3,100"),
+    ("Bangalore","Mysore","143 km","~₹1,600"),
+    ("Mumbai","Goa","594 km","~₹6,500")
+  ] %}
+  {% for r in routes %}
+  <div class="col-6 col-md-4 col-lg-2">
+    <form method="POST" action="{{ url_for('cabs.search') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="pickup" value="{{ r[0] }}">
+      <input type="hidden" name="drop" value="{{ r[1] }}">
+      <input type="hidden" name="passengers" value="1">
+      <button type="submit" class="route-card w-100 border-0">
+        <div class="route-name">{{ r[0] }} → {{ r[1] }}</div>
+        <div class="route-km">{{ r[2] }}</div>
+        <div class="route-est">{{ r[3] }}</div>
+      </button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Trust badges -->
+<div class="row g-3 mb-4">
+  {% for item in [("🏆","Top-rated Drivers","4.8+ avg. rating"),("🛡","Safe & Verified","GPS tracked rides"),("💸","No Hidden Charges","Fixed all-inclusive fare"),("🔄","Free Cancellation","Up to 2 hrs before")] %}
+  <div class="col-6 col-md-3">
+    <div style="background:#fff;border-radius:14px;padding:18px;text-align:center;border:1.5px solid #ccfbf1;box-shadow:0 2px 10px rgba(0,0,0,.04)">
+      <div style="font-size:2rem;margin-bottom:6px">{{ item[0] }}</div>
+      <div style="font-weight:700;font-size:.88rem;color:#111">{{ item[1] }}</div>
+      <div style="font-size:.75rem;color:#9ca3af;margin-top:3px">{{ item[2] }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const today = new Date().toISOString().split('T')[0];
+document.querySelectorAll('input[type="date"]').forEach(i => i.min = today);
+
+// ── Sort ─────────────────────────────────────────────────────────────────
+function sortCabs(key, btn) {
+  const container = document.getElementById('cabResults');
+  if (!container) return;
+  const cards = [...container.querySelectorAll('.cab-card')];
+  cards.sort((a, b) => {
+    if (key === 'price')    return parseFloat(a.dataset.price)    - parseFloat(b.dataset.price);
+    if (key === 'capacity') return parseInt(b.dataset.capacity)   - parseInt(a.dataset.capacity);
+    if (key === 'perkm')    return parseFloat(a.dataset.perkm)    - parseFloat(b.dataset.perkm);
+    return 0;
+  });
+  cards.forEach(c => container.appendChild(c));
+  document.querySelectorAll('.sort-side-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+// ── Vehicle type filter ───────────────────────────────────────────────────
+function filterCabType(vcat, btn) {
+  document.querySelectorAll('.type-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyCabFilters();
+}
+
+// ── Combined filter ───────────────────────────────────────────────────────
+function applyCabFilters() {
+  const activeVcat = document.querySelector('.type-filter-btn.active')?.dataset.vcat || 'all';
+  const onlyAC     = document.getElementById('onlyAC')?.checked;
+  const cap4       = document.getElementById('cap4plus')?.checked;
+  const cap6       = document.getElementById('cap6plus')?.checked;
+
+  document.querySelectorAll('.cab-card').forEach(card => {
+    const vcat = card.dataset.vcat || '';
+    const ac   = card.dataset.ac  === 'yes';
+    const cap  = parseInt(card.dataset.capacity) || 0;
+    let show = true;
+
+    if (activeVcat !== 'all' && vcat !== activeVcat) show = false;
+    if (onlyAC && !ac) show = false;
+    if (cap4 && cap < 4) show = false;
+    if (cap6 && cap < 6) show = false;
+
+    card.style.display = show ? '' : 'none';
+  });
+  updateCabCount();
+}
+
+function updateCabCount() {
+  const visible = document.querySelectorAll('.cab-card:not([style*="none"])').length;
+  const el = document.getElementById('cabCount');
+  if (el) el.textContent = visible;
+}
+
+function resetCabFilters() {
+  document.querySelectorAll('.type-filter-btn').forEach(b => b.classList.remove('active'));
+  const first = document.querySelector('.type-filter-btn');
+  if (first) first.classList.add('active');
+  ['onlyAC','cap4plus','cap6plus'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
+  document.querySelectorAll('.cab-card').forEach(c => c.style.display = '');
+  document.querySelectorAll('.sort-side-btn').forEach(b => b.classList.remove('active'));
+  const firstSort = document.querySelector('.sort-side-btn');
+  if (firstSort) firstSort.classList.add('active');
+  updateCabCount();
+}
+</script>
+<script>stAC(['pickup','drop']);</script>
+{% endblock %}

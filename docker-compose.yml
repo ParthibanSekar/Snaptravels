@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  snaptravels:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=change-this-in-production
+    volumes:
+      - ./snaptravels.db:/app/snaptravels.db
+      - ./assets:/app/assets
+      - ./static:/app/static
+    restart: unless-stopped
+    
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployment/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - snaptravels
+    restart: unless-stopped

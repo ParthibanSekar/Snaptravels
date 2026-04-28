@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnapTravels — Logo Concepts</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter','Plus Jakarta Sans',-apple-system,sans-serif; background:#f5f6f8; color:#1a1a2e; }
+
+  .page-header {
+    background:#fff; border-bottom:1px solid #e8e8e8; padding:32px 0;
+    text-align:center;
+  }
+  .page-header h1 { font-size:1.6rem; font-weight:800; color:#111; }
+  .page-header p { font-size:.88rem; color:#666; margin-top:6px; }
+
+  .concepts { max-width:1100px; margin:40px auto; padding:0 20px; }
+
+  /* ── Concept card ──────────────────────────────────── */
+  .concept-card {
+    background:#fff; border:2px solid #e8e8e8; border-radius:16px;
+    margin-bottom:32px; overflow:hidden; transition:border-color .2s, box-shadow .2s;
+  }
+  .concept-card:hover { border-color:#e63950; box-shadow:0 8px 32px rgba(230,57,80,.1); }
+  .concept-card.selected { border-color:#e63950; box-shadow:0 4px 20px rgba(230,57,80,.15); }
+
+  .concept-label {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px; border-bottom:1px solid #f0f0f0; background:#fafbfc;
+  }
+  .concept-label h3 { font-size:1rem; font-weight:700; color:#111; }
+  .concept-label .badge {
+    font-size:.65rem; font-weight:700; padding:4px 10px; border-radius:20px;
+    letter-spacing:.04em; text-transform:uppercase;
+  }
+  .badge-style { background:#eef6ff; color:#2563eb; }
+  .badge-bold  { background:#fef3c7; color:#b45309; }
+  .badge-minimal { background:#f0fdf4; color:#16a34a; }
+  .badge-icon  { background:#fef2f2; color:#dc2626; }
+
+  /* Mock navbar */
+  .mock-nav {
+    display:flex; align-items:center; height:62px; padding:0 24px;
+    border-bottom:1px solid #eee; position:relative;
+  }
+  .mock-nav::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, #e63950, #f97316, #e63950);
+  }
+  .mock-nav-items {
+    display:flex; align-items:center; gap:18px; margin-left:32px; flex:1;
+  }
+  .mock-nav-item {
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    font-size:.68rem; font-weight:600; color:#555; text-decoration:none; cursor:default;
+  }
+  .mock-nav-item i { font-size:1.15rem; color:#888; }
+  .mock-nav-item.active { color:#e63950; }
+  .mock-nav-item.active i { color:#e63950; }
+  .mock-nav-right {
+    display:flex; align-items:center; gap:12px; margin-left:auto;
+  }
+  .mock-pill {
+    display:flex; align-items:center; gap:7px; padding:5px 12px 5px 5px;
+    border:1px solid #dedede; border-radius:22px; font-size:.77rem; font-weight:600;
+    color:#1a1a1a;
+  }
+  .mock-avatar {
+    width:28px; height:28px; border-radius:50%;
+    background:linear-gradient(135deg,#e63950,#f97316); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.78rem; font-weight:700;
+  }
+
+  /* Concept descriptions */
+  .concept-desc {
+    padding:16px 24px; background:#fafbfc; border-top:1px solid #f0f0f0;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+  }
+  .concept-desc p { font-size:.82rem; color:#555; line-height:1.6; flex:1; }
+  .select-btn {
+    padding:9px 24px; border-radius:8px; border:2px solid #e63950;
+    background:#fff; color:#e63950; font-weight:700; font-size:.82rem;
+    cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .select-btn:hover { background:#e63950; color:#fff; }
+  .select-btn.chosen { background:#e63950; color:#fff; pointer-events:none; }
+
+  /* ── Dark variant preview row ─────────────────────── */
+  .dark-preview {
+    display:flex; align-items:center; height:62px; padding:0 24px;
+    background:#1a1a2e; position:relative;
+  }
+  .dark-preview::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, #e63950, #f97316, #e63950);
+  }
+
+  /* ── Concept-specific logo styles ─────────────────── */
+
+  /* Concept A — Agoda style: bold wordmark, no icon */
+  .logo-a {
+    display:flex; align-items:center; text-decoration:none; gap:0;
+  }
+  .logo-a-text {
+    font-family:'Plus Jakarta Sans','Inter',sans-serif;
+    font-size:1.4rem; font-weight:800; color:#e63950;
+    letter-spacing:-.8px; line-height:1;
+  }
+  .logo-a-text .light { font-weight:400; color:#1a1a2e; }
+  .dark-preview .logo-a-text .light { color:#fff; }
+
+  /* Concept B — MakeMyTrip style: colourful icon + wordmark */
+  .logo-b {
+    display:flex; align-items:center; gap:9px; text-decoration:none;
+  }
+  .logo-b-mark {
+    width:36px; height:36px; border-radius:10px; position:relative; overflow:hidden;
+    background:linear-gradient(135deg, #e63950 0%, #ff6b35 50%, #fbbf24 100%);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 8px rgba(230,57,80,.25);
+  }
+  .logo-b-mark svg { position:relative; z-index:1; }
+  .logo-b-word {
+    font-family:'Plus Jakarta Sans','Inter',sans-serif;
+    font-size:1.2rem; font-weight:800; color:#1a1a2e;
+    letter-spacing:-.5px; line-height:1;
+  }
+  .logo-b-word .accent { color:#e63950; }
+  .dark-preview .logo-b-word { color:#fff; }
+  .dark-preview .logo-b-word .accent { color:#ff6b35; }
+
+  /* Concept C — Minimal: thin circle mark + clean type */
+  .logo-c {
+    display:flex; align-items:center; gap:10px; text-decoration:none;
+  }
+  .logo-c-mark {
+    width:34px; height:34px; border-radius:50%; border:2.5px solid #e63950;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .logo-c-mark svg { transform:rotate(-45deg); }
+  .logo-c-word {
+    font-family:'Inter',sans-serif;
+    font-size:1.1rem; font-weight:600; color:#1a1a2e;
+    letter-spacing:-.2px; line-height:1;
+  }
+  .logo-c-word strong { font-weight:800; }
+  .dark-preview .logo-c-word { color:#fff; }
+
+  /* Concept D — Pill badge: rounded bg behind "ST" monogram + wordmark */
+  .logo-d {
+    display:flex; align-items:center; gap:10px; text-decoration:none;
+  }
+  .logo-d-pill {
+    display:flex; align-items:center; justify-content:center;
+    width:38px; height:38px; border-radius:12px;
+    background:#1a1a2e; color:#fff;
+    font-family:'Plus Jakarta Sans','Inter',sans-serif;
+    font-size:.92rem; font-weight:900; letter-spacing:-.5px;
+    box-shadow:0 2px 8px rgba(26,26,46,.2);
+    position:relative; overflow:hidden;
+  }
+  .logo-d-pill::after {
+    content:''; position:absolute; bottom:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, #e63950, #f97316);
+  }
+  .logo-d-word {
+    font-family:'Plus Jakarta Sans','Inter',sans-serif;
+    font-size:1.15rem; font-weight:300; color:#1a1a2e;
+    letter-spacing:-.3px; line-height:1;
+  }
+  .logo-d-word strong { font-weight:800; color:#e63950; }
+  .dark-preview .logo-d-pill { background:#fff; color:#1a1a2e; }
+  .dark-preview .logo-d-word { color:#fff; }
+  .dark-preview .logo-d-word strong { color:#ff6b35; }
+
+  /* Concept E — Gradient text wordmark with subtle flight arc */
+  .logo-e {
+    display:flex; align-items:center; gap:8px; text-decoration:none;
+  }
+  .logo-e-arc {
+    width:32px; height:32px; position:relative;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .logo-e-word {
+    font-family:'Plus Jakarta Sans','Inter',sans-serif;
+    font-size:1.3rem; font-weight:800; letter-spacing:-.6px; line-height:1;
+    background:linear-gradient(135deg, #e63950, #f97316);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    background-clip:text;
+  }
+  .dark-preview .logo-e-word {
+    background:linear-gradient(135deg, #ff6b6b, #fbbf24);
+    -webkit-background-clip:text; background-clip:text;
+  }
+
+  /* Concept F — Rounded rect icon with stylised "S" route */
+  .logo-f {
+    display:flex; align-items:center; gap:10px; text-decoration:none;
+  }
+  .logo-f-mark {
+    width:36px; height:36px; border-radius:10px;
+    background:linear-gradient(145deg, #e63950 0%, #d1293e 100%);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 10px rgba(230,57,80,.3);
+  }
+  .logo-f-word {
+    font-family:'Plus Jakarta Sans','Inter',sans-serif;
+    font-size:1.15rem; font-weight:700; color:#1a1a2e;
+    letter-spacing:-.4px; line-height:1;
+  }
+  .logo-f-word .thin { font-weight:400; }
+  .dark-preview .logo-f-word { color:#fff; }
+
+  .footer-note {
+    max-width:1100px; margin:0 auto 60px; padding:0 20px;
+    text-align:center; color:#999; font-size:.78rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>SnapTravels — Logo Concepts</h1>
+  <p>Pick the logo that suits the brand best. Each shows a light navbar + dark footer preview.</p>
+</div>
+
+<div class="concepts">
+
+<!-- ═══════════════════════════════════════════════════════
+     CONCEPT A — Agoda-style bold wordmark (no icon)
+═══════════════════════════════════════════════════════ -->
+<div class="concept-card" id="card-a">
+  <div class="concept-label">
+    <h3>Concept A — Bold Wordmark <small style="color:#999;font-weight:400">(Agoda style)</small></h3>
+    <span class="badge badge-style">Wordmark Only</span>
+  </div>
+  <!-- Light nav -->
+  <div class="mock-nav">
+    <a class="logo-a" href="#">
+      <span class="logo-a-text"><span class="light">snap</span>travels</span>
+    </a>
+    <div class="mock-nav-items">
+      <span class="mock-nav-item active"><i class="bi bi-airplane"></i>Flights</span>
+      <span class="mock-nav-item"><i class="bi bi-building"></i>Hotels</span>
+      <span class="mock-nav-item"><i class="bi bi-train-front-fill"></i>Trains</span>
+      <span class="mock-nav-item"><i class="bi bi-bus-front-fill"></i>Buses</span>
+      <span class="mock-nav-item"><i class="bi bi-car-front-fill"></i>Cabs</span>
+    </div>
+    <div class="mock-nav-right">
+      <div class="mock-pill"><div class="mock-avatar">A</div>Admin <i class="bi bi-chevron-down" style="font-size:.55rem;opacity:.5"></i></div>
+    </div>
+  </div>
+  <!-- Dark footer preview -->
+  <div class="dark-preview">
+    <a class="logo-a" href="#">
+      <span class="logo-a-text"><span class="light">snap</span>travels</span>
+    </a>
+  </div>
+  <div class="concept-desc">
+    <p><strong>Pure typography.</strong> Lowercase "snap" in regular weight + "travels" in bold red (#e63950). Clean, Agoda-inspired — the brand colour IS the logo. No icon needed; scales well at any size.</p>
+    <button class="select-btn" onclick="choose('a')">Choose A</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     CONCEPT B — MakeMyTrip-style colourful icon + wordmark
+═══════════════════════════════════════════════════════ -->
+<div class="concept-card" id="card-b">
+  <div class="concept-label">
+    <h3>Concept B — Gradient Icon + Wordmark <small style="color:#999;font-weight:400">(MakeMyTrip style)</small></h3>
+    <span class="badge badge-bold">Icon + Text</span>
+  </div>
+  <div class="mock-nav">
+    <a class="logo-b" href="#">
+      <div class="logo-b-mark">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+          <path d="M21 16v-2l-8-5V3.5C13 2.67 12.33 2 11.5 2S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="white" fill-opacity=".95"/>
+        </svg>
+      </div>
+      <span class="logo-b-word">Snap<span class="accent">Travels</span></span>
+    </a>
+    <div class="mock-nav-items">
+      <span class="mock-nav-item active"><i class="bi bi-airplane"></i>Flights</span>
+      <span class="mock-nav-item"><i class="bi bi-building"></i>Hotels</span>
+      <span class="mock-nav-item"><i class="bi bi-train-front-fill"></i>Trains</span>
+      <span class="mock-nav-item"><i class="bi bi-bus-front-fill"></i>Buses</span>
+      <span class="mock-nav-item"><i class="bi bi-car-front-fill"></i>Cabs</span>
+    </div>
+    <div class="mock-nav-right">
+      <div class="mock-pill"><div class="mock-avatar">A</div>Admin <i class="bi bi-chevron-down" style="font-size:.55rem;opacity:.5"></i></div>
+    </div>
+  </div>
+  <div class="dark-preview">
+    <a class="logo-b" href="#">
+      <div class="logo-b-mark">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+          <path d="M21 16v-2l-8-5V3.5C13 2.67 12.33 2 11.5 2S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="white" fill-opacity=".95"/>
+        </svg>
+      </div>
+      <span class="logo-b-word">Snap<span class="accent">Travels</span></span>
+    </a>
+  </div>
+  <div class="concept-desc">
+    <p><strong>Colourful & bold.</strong> A warm gradient icon (coral → orange → gold) with a flight silhouette inside a rounded square. "Snap" in dark + "Travels" in brand red. Feels like a real OTA app icon.</p>
+    <button class="select-btn" onclick="choose('b')">Choose B</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     CONCEPT C — Minimal outlined circle + clean type
+═══════════════════════════════════════════════════════ -->
+<div class="concept-card" id="card-c">
+  <div class="concept-label">
+    <h3>Concept C — Outlined Circle + Clean Type <small style="color:#999;font-weight:400">(Cleartrip / Airbnb minimal)</small></h3>
+    <span class="badge badge-minimal">Minimal</span>
+  </div>
+  <div class="mock-nav">
+    <a class="logo-c" href="#">
+      <div class="logo-c-mark">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+          <path d="M21 16v-2l-8-5V3.5C13 2.67 12.33 2 11.5 2S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="#e63950"/>
+        </svg>
+      </div>
+      <span class="logo-c-word"><strong>Snap</strong>Travels</span>
+    </a>
+    <div class="mock-nav-items">
+      <span class="mock-nav-item active"><i class="bi bi-airplane"></i>Flights</span>
+      <span class="mock-nav-item"><i class="bi bi-building"></i>Hotels</span>
+      <span class="mock-nav-item"><i class="bi bi-train-front-fill"></i>Trains</span>
+      <span class="mock-nav-item"><i class="bi bi-bus-front-fill"></i>Buses</span>
+      <span class="mock-nav-item"><i class="bi bi-car-front-fill"></i>Cabs</span>
+    </div>
+    <div class="mock-nav-right">
+      <div class="mock-pill"><div class="mock-avatar">A</div>Admin <i class="bi bi-chevron-down" style="font-size:.55rem;opacity:.5"></i></div>
+    </div>
+  </div>
+  <div class="dark-preview">
+    <a class="logo-c" href="#">
+      <div class="logo-c-mark" style="border-color:#ff6b6b">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+          <path d="M21 16v-2l-8-5V3.5C13 2.67 12.33 2 11.5 2S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="#ff6b6b"/>
+        </svg>
+      </div>
+      <span class="logo-c-word" style="color:#fff"><strong>Snap</strong>Travels</span>
+    </a>
+  </div>
+  <div class="concept-desc">
+    <p><strong>Clean & understated.</strong> An outlined circle with a small plane inside. "Snap" bold + "Travels" regular. Minimal, modern, Cleartrip/Airbnb aesthetic. Breathes space and confidence.</p>
+    <button class="select-btn" onclick="choose('c')">Choose C</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     CONCEPT D — Dark monogram pill "ST" + light type
+═══════════════════════════════════════════════════════ -->
+<div class="concept-card" id="card-d">
+  <div class="concept-label">
+    <h3>Concept D — Monogram Badge + Type <small style="color:#999;font-weight:400">(Premium / fintech)</small></h3>
+    <span class="badge badge-icon">Monogram</span>
+  </div>
+  <div class="mock-nav">
+    <a class="logo-d" href="#">
+      <div class="logo-d-pill">ST</div>
+      <span class="logo-d-word">snap<strong>travels</strong></span>
+    </a>
+    <div class="mock-nav-items">
+      <span class="mock-nav-item active"><i class="bi bi-airplane"></i>Flights</span>
+      <span class="mock-nav-item"><i class="bi bi-building"></i>Hotels</span>
+      <span class="mock-nav-item"><i class="bi bi-train-front-fill"></i>Trains</span>
+      <span class="mock-nav-item"><i class="bi bi-bus-front-fill"></i>Buses</span>
+      <span class="mock-nav-item"><i class="bi bi-car-front-fill"></i>Cabs</span>
+    </div>
+    <div class="mock-nav-right">
+      <div class="mock-pill"><div class="mock-avatar">A</div>Admin <i class="bi bi-chevron-down" style="font-size:.55rem;opacity:.5"></i></div>
+    </div>
+  </div>
+  <div class="dark-preview">
+    <a class="logo-d" href="#">
+      <div class="logo-d-pill">ST</div>
+      <span class="logo-d-word">snap<strong>travels</strong></span>
+    </a>
+  </div>
+  <div class="concept-desc">
+    <p><strong>Corporate & premium.</strong> A dark "ST" monogram badge with a gradient accent bar at the bottom. "snap" in thin weight + "travels" in bold red. Feels like a fintech or premium brand. Works great as a favicon too.</p>
+    <button class="select-btn" onclick="choose('d')">Choose D</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     CONCEPT E — Gradient text wordmark with flight arc
+═══════════════════════════════════════════════════════ -->
+<div class="concept-card" id="card-e">
+  <div class="concept-label">
+    <h3>Concept E — Gradient Wordmark + Flight Arc <small style="color:#999;font-weight:400">(Vibrant / startup)</small></h3>
+    <span class="badge badge-bold">Gradient Text</span>
+  </div>
+  <div class="mock-nav">
+    <a class="logo-e" href="#">
+      <div class="logo-e-arc">
+        <!-- Flight arc SVG -->
+        <svg viewBox="0 0 32 32" width="32" height="32" fill="none">
+          <path d="M6 22 Q16 4 28 14" stroke="#e63950" stroke-width="2" fill="none" stroke-linecap="round" opacity=".35"/>
+          <path d="M24 12 L28 14 L24.5 15.5" stroke="#e63950" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".6"/>
+          <circle cx="7" cy="21" r="2.5" fill="#e63950" opacity=".2"/>
+          <circle cx="7" cy="21" r="1.2" fill="#e63950" opacity=".6"/>
+        </svg>
+      </div>
+      <span class="logo-e-word">SnapTravels</span>
+    </a>
+    <div class="mock-nav-items">
+      <span class="mock-nav-item active"><i class="bi bi-airplane"></i>Flights</span>
+      <span class="mock-nav-item"><i class="bi bi-building"></i>Hotels</span>
+      <span class="mock-nav-item"><i class="bi bi-train-front-fill"></i>Trains</span>
+      <span class="mock-nav-item"><i class="bi bi-bus-front-fill"></i>Buses</span>
+      <span class="mock-nav-item"><i class="bi bi-car-front-fill"></i>Cabs</span>
+    </div>
+    <div class="mock-nav-right">
+      <div class="mock-pill"><div class="mock-avatar">A</div>Admin <i class="bi bi-chevron-down" style="font-size:.55rem;opacity:.5"></i></div>
+    </div>
+  </div>
+  <div class="dark-preview">
+    <a class="logo-e" href="#">
+      <div class="logo-e-arc">
+        <svg viewBox="0 0 32 32" width="32" height="32" fill="none">
+          <path d="M6 22 Q16 4 28 14" stroke="#ff6b6b" stroke-width="2" fill="none" stroke-linecap="round" opacity=".4"/>
+          <path d="M24 12 L28 14 L24.5 15.5" stroke="#ff6b6b" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".6"/>
+          <circle cx="7" cy="21" r="2.5" fill="#ff6b6b" opacity=".2"/>
+          <circle cx="7" cy="21" r="1.2" fill="#ff6b6b" opacity=".6"/>
+        </svg>
+      </div>
+      <span class="logo-e-word">SnapTravels</span>
+    </a>
+  </div>
+  <div class="concept-desc">
+    <p><strong>Vibrant & energetic.</strong> A gradient text wordmark (coral → orange) with a subtle flight trajectory arc on the left. The arc shows a departure point and flight path. Eye-catching, startup energy.</p>
+    <button class="select-btn" onclick="choose('e')">Choose E</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     CONCEPT F — Rounded square icon with route "S" + type
+═══════════════════════════════════════════════════════ -->
+<div class="concept-card" id="card-f">
+  <div class="concept-label">
+    <h3>Concept F — Route Icon + Type <small style="color:#999;font-weight:400">(App icon / Google Travel)</small></h3>
+    <span class="badge badge-icon">App Icon</span>
+  </div>
+  <div class="mock-nav">
+    <a class="logo-f" href="#">
+      <div class="logo-f-mark">
+        <!-- S-shaped travel route with dots -->
+        <svg viewBox="0 0 36 36" width="22" height="22" fill="none">
+          <path d="M10 10 C10 10 26 6 26 14 C26 22 10 18 10 26" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".9"/>
+          <circle cx="10" cy="10" r="2.5" fill="white" opacity=".9"/>
+          <circle cx="10" cy="26" r="2.5" fill="white" opacity=".9"/>
+          <!-- Small plane on the path -->
+          <path d="M25 13 L28 14.5 L25 16" fill="white" opacity=".7"/>
+        </svg>
+      </div>
+      <span class="logo-f-word"><span class="thin">Snap</span>Travels</span>
+    </a>
+    <div class="mock-nav-items">
+      <span class="mock-nav-item active"><i class="bi bi-airplane"></i>Flights</span>
+      <span class="mock-nav-item"><i class="bi bi-building"></i>Hotels</span>
+      <span class="mock-nav-item"><i class="bi bi-train-front-fill"></i>Trains</span>
+      <span class="mock-nav-item"><i class="bi bi-bus-front-fill"></i>Buses</span>
+      <span class="mock-nav-item"><i class="bi bi-car-front-fill"></i>Cabs</span>
+    </div>
+    <div class="mock-nav-right">
+      <div class="mock-pill"><div class="mock-avatar">A</div>Admin <i class="bi bi-chevron-down" style="font-size:.55rem;opacity:.5"></i></div>
+    </div>
+  </div>
+  <div class="dark-preview">
+    <a class="logo-f" href="#">
+      <div class="logo-f-mark">
+        <svg viewBox="0 0 36 36" width="22" height="22" fill="none">
+          <path d="M10 10 C10 10 26 6 26 14 C26 22 10 18 10 26" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".9"/>
+          <circle cx="10" cy="10" r="2.5" fill="white" opacity=".9"/>
+          <circle cx="10" cy="26" r="2.5" fill="white" opacity=".9"/>
+          <path d="M25 13 L28 14.5 L25 16" fill="white" opacity=".7"/>
+        </svg>
+      </div>
+      <span class="logo-f-word" style="color:#fff"><span class="thin">Snap</span>Travels</span>
+    </a>
+  </div>
+  <div class="concept-desc">
+    <p><strong>Travel-native.</strong> A crimson rounded square icon with a stylised "S" route path connecting two city dots. "Snap" in light weight + "Travels" in bold. The icon doubles as a perfect app icon and favicon.</p>
+    <button class="select-btn" onclick="choose('f')">Choose F</button>
+  </div>
+</div>
+
+</div><!-- /concepts -->
+
+<div class="footer-note">
+  Pick any concept above and the selected design will be applied to the full SnapTravels app — navbar, footer, page loader, and favicon.
+</div>
+
+<script>
+function choose(id) {
+  // Reset all
+  document.querySelectorAll('.concept-card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.select-btn').forEach(b => { b.classList.remove('chosen'); b.textContent = 'Choose ' + b.textContent.slice(-1); });
+  // Select this one
+  document.getElementById('card-' + id).classList.add('selected');
+  var btn = document.querySelector('#card-' + id + ' .select-btn');
+  btn.classList.add('chosen');
+  btn.textContent = 'Selected';
+
+  // Scroll smoothly
+  document.getElementById('card-' + id).scrollIntoView({ behavior:'smooth', block:'center' });
+}
+</script>
+
+</body>
+</html>

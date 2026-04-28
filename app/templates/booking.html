@@ -1,0 +1,754 @@
+{% extends "layouts/base.html" %}
+{% block title %}Complete Booking — SnapTravels{% endblock %}
+
+{% block extra_head %}
+{% set is_flight = flight is not none %}
+{% set is_hotel  = hotel is not none %}
+{% set accent    = '#1d4ed8' if is_flight else '#0f766e' %}
+{% set accent2   = '#3b82f6' if is_flight else '#14b8a6' %}
+{% set bg_page   = '#f0f4ff' if is_flight else '#f0fdfa' %}
+{% set border_c  = '#e0e7ff' if is_flight else '#ccfbf1' %}
+{% set focus_c   = 'rgba(59,130,246,.12)' if is_flight else 'rgba(20,184,166,.12)' %}
+<style>
+body { background: {{ bg_page }}; }
+
+/* ── Hero ─────────────────────────────────────── */
+.booking-hero {
+  background: {% if is_flight %}linear-gradient(135deg,#1e1b4b 0%,#1d4ed8 60%,#3b82f6 100%){% else %}linear-gradient(135deg,#134e4a 0%,#0f766e 55%,#14b8a6 100%){% endif %};
+  padding: 24px 0 32px;
+}
+
+/* Step indicator */
+.step-indicator { display:flex; align-items:center; gap:0; }
+.step { display:flex; align-items:center; gap:6px; }
+.step-dot { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700; }
+.step-dot-done { background:{{ '#dbeafe' if is_flight else '#ccfbf1' }};color:{{ '#1e40af' if is_flight else '#134e4a' }}; }
+.step-dot-active { background:{{ accent }};color:#fff; }
+.step-dot-pending { background:rgba(255,255,255,.2);color:rgba(255,255,255,.5); }
+.step-label { font-size:.75rem;color:rgba(255,255,255,.75);font-weight:600; }
+.step-label.active-label { color:#fff;font-weight:700; }
+.step-line { flex:1;height:2px;background:rgba(255,255,255,.25);margin:0 6px;min-width:20px; }
+.step-line-done { background:{{ '#93c5fd' if is_flight else '#5eead4' }}; }
+
+/* Trip card */
+.trip-card {
+  background:#fff; border-radius:18px;
+  padding:20px 24px; box-shadow:0 8px 36px rgba(0,0,0,.16);
+}
+.route-time-lg { font-size:1.35rem;font-weight:900;color:#0f172a;line-height:1; }
+.route-station-sm { font-size:.72rem;color:#9ca3af;margin-top:3px; }
+.route-bar { flex:1;height:2px;background:linear-gradient(90deg,{{ accent }},{{ accent2 }},{{ accent }}); }
+.dur-pill { display:inline-flex;align-items:center;gap:5px;background:{{ '#eef2ff' if is_flight else '#f0fdfa' }};border:1.5px solid {{ '#c7d2fe' if is_flight else '#ccfbf1' }};border-radius:20px;padding:5px 14px;font-size:.78rem;font-weight:700;color:{{ accent }}; }
+
+/* Form cards */
+.form-card { background:#fff;border-radius:18px;box-shadow:0 2px 16px rgba(0,0,0,.07);overflow:hidden;margin-bottom:18px; }
+.form-card-header { padding:16px 22px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px; }
+.form-card-header .icon { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem; }
+.form-card-body { padding:22px; }
+.form-label { font-weight:600;font-size:.84rem;color:#374151;margin-bottom:6px; }
+.form-control,.form-select {
+  border-radius:10px;border:1.5px solid {{ border_c }};
+  padding:10px 14px;font-size:.9rem;
+  transition:border-color .2s,box-shadow .2s;
+}
+.form-control:focus,.form-select:focus {
+  border-color:{{ accent2 }};box-shadow:0 0 0 3px {{ focus_c }};outline:none;
+}
+.form-control.is-invalid { border-color:#ef4444; }
+.invalid-feedback { font-size:.78rem;color:#ef4444;margin-top:4px; }
+
+/* Payment tabs */
+.pay-tab { border:2px solid {{ border_c }};border-radius:12px;padding:12px 14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:10px;flex:1;min-width:120px; }
+.pay-tab:hover { border-color:{{ accent2 }};background:{{ bg_page }}; }
+.pay-tab.active { border-color:{{ accent }};background:{{ '#eef2ff' if is_flight else '#f0fdfa' }}; }
+.pay-tab-icon { font-size:1.3rem;flex-shrink:0; }
+.pay-tab-label { font-weight:700;font-size:.8rem;color:#374151; }
+.pay-tab-sub { font-size:.68rem;color:#9ca3af; }
+
+/* Card input */
+.card-input-wrap { position:relative; }
+.card-input-wrap input { padding-left:44px; }
+.card-input-wrap .card-icon { position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:1.1rem;pointer-events:none; }
+
+/* Card brand icons row */
+.card-brands { display:flex;gap:6px;margin-top:6px; }
+.card-brand { width:42px;height:26px;border-radius:5px;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#6b7280;background:#f9fafb; }
+
+/* UPI apps */
+.upi-app { border:1.5px solid {{ border_c }};border-radius:10px;padding:10px 14px;cursor:pointer;text-align:center;font-size:.8rem;font-weight:700;transition:all .15s; }
+.upi-app:hover,.upi-app.selected { border-color:{{ accent }};background:{{ bg_page }}; }
+
+/* Summary panel */
+.summary-panel { background:#fff;border-radius:18px;box-shadow:0 2px 16px rgba(0,0,0,.07);position:sticky;top:80px;overflow:hidden; }
+.panel-header { background:linear-gradient(135deg,{{ accent }},{{ accent2 }});color:#fff;padding:18px 22px; }
+.info-row { display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:.83rem; }
+.info-row:last-child { border-bottom:none; }
+.info-label { color:#6b7280; }
+.info-val { font-weight:700;color:#111;text-align:right;max-width:55%; }
+.price-total { display:flex;justify-content:space-between;padding:12px 0;font-weight:900;font-size:1.05rem;color:#111; }
+
+/* Promo */
+.promo-wrap { display:flex;gap:8px; }
+.promo-wrap input { border-radius:10px;border:1.5px solid {{ border_c }};padding:9px 14px;flex:1;font-size:.88rem; }
+.promo-wrap input:focus { border-color:{{ accent2 }};outline:none; }
+.promo-wrap button { border-radius:10px;border:none;background:linear-gradient(135deg,{{ accent }},{{ accent2 }});color:#fff;padding:9px 18px;font-weight:700;font-size:.85rem;white-space:nowrap; }
+
+/* Confirm button */
+.btn-confirm {
+  background:linear-gradient(135deg,{{ accent }},{{ accent2 }});
+  color:#fff;border:none;border-radius:14px;
+  padding:16px;font-weight:800;font-size:1rem;
+  width:100%;transition:all .2s;
+  box-shadow:0 4px 18px rgba(0,0,0,.2);
+}
+.btn-confirm:hover { filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,0,0,.25); }
+.btn-confirm:disabled { opacity:.6;cursor:not-allowed;transform:none; }
+.btn-confirm .spinner { display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Inclusion list */
+.inclusion-item { display:flex;align-items:center;gap:8px;font-size:.81rem;color:#374151;padding:4px 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+{# Re-declare scoped vars from extra_head — Jinja2 block scope doesn't cross blocks #}
+{% set is_flight = flight is not none %}
+{% set is_hotel  = hotel is not none %}
+{% set accent    = '#1d4ed8' if is_flight else '#0f766e' %}
+{% set accent2   = '#3b82f6' if is_flight else '#14b8a6' %}
+<!-- ══ HERO ══════════════════════════════════════════════════════════════ -->
+<div class="booking-hero">
+  <div class="container">
+
+    <!-- Step indicator -->
+    <div class="step-indicator mb-4">
+      <div class="step">
+        <div class="step-dot step-dot-done"><i class="bi bi-check"></i></div>
+        <span class="step-label">Search</span>
+      </div>
+      <div class="step-line step-line-done"></div>
+      <div class="step">
+        <div class="step-dot step-dot-done"><i class="bi bi-check"></i></div>
+        <span class="step-label">{% if is_flight %}Select Seat{% else %}Select Room{% endif %}</span>
+      </div>
+      <div class="step-line step-line-done"></div>
+      <div class="step">
+        <div class="step-dot step-dot-active">3</div>
+        <span class="step-label active-label">Passenger &amp; Payment</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-dot step-dot-pending">4</div>
+        <span class="step-label">Confirmation</span>
+      </div>
+    </div>
+
+    <!-- Trip card -->
+    <div class="trip-card">
+      {% if is_flight %}
+      <div class="row align-items-center g-3">
+        <div class="col-auto">
+          <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#eef2ff,#e0e7ff);display:flex;align-items:center;justify-content:center;font-size:1.6rem">✈️</div>
+        </div>
+        <div class="col-auto">
+          <div style="font-weight:800;font-size:.98rem;color:#111">{{ flight.airline }}</div>
+          <div style="font-size:.75rem;color:#9ca3af">{{ flight.flight_no }} · {{ flight.cabin_class }}</div>
+          {% if selected_seats %}
+          <span style="background:#eef2ff;color:#1d4ed8;border:1px solid #c7d2fe;border-radius:6px;padding:2px 9px;font-size:.7rem;font-weight:700;margin-top:4px;display:inline-block">
+            💺 Seats: {{ selected_seats }}
+          </span>
+          {% endif %}
+        </div>
+        <div class="col d-flex align-items-center gap-3 justify-content-center">
+          <div class="text-center">
+            <div class="route-time-lg">{{ flight.depart_time }}</div>
+            <div class="route-station-sm">{{ flight.origin }}</div>
+          </div>
+          <div class="d-flex align-items-center gap-2" style="flex:1;max-width:220px">
+            <div class="route-bar"></div>
+            <div class="dur-pill">✈️ {{ flight.duration_mins // 60 }}h {{ flight.duration_mins % 60 }}m</div>
+            <div class="route-bar"></div>
+          </div>
+          <div class="text-center">
+            <div class="route-time-lg">{{ flight.arrive_time }}</div>
+            <div class="route-station-sm">{{ flight.destination }}</div>
+          </div>
+        </div>
+        <div class="col-auto text-end">
+          <div style="font-size:.78rem;color:#9ca3af">Total fare</div>
+          <div style="font-size:1.5rem;font-weight:900;color:#1d4ed8">₹{{ "{:,.0f}".format(total_amount) }}</div>
+          <div style="font-size:.72rem;color:#6b7280">incl. taxes &amp; fees</div>
+        </div>
+      </div>
+      {% elif is_hotel %}
+      <div class="row align-items-center g-3">
+        <div class="col-auto">
+          <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#f0fdfa,#ccfbf1);display:flex;align-items:center;justify-content:center;font-size:1.6rem">🏨</div>
+        </div>
+        <div class="col-auto" style="max-width:260px">
+          <div style="font-weight:800;font-size:.98rem;color:#111">{{ hotel.name }}</div>
+          <div style="font-size:.75rem;color:#9ca3af">{{ hotel.city }} · ⭐ {{ hotel.rating }}/5</div>
+          {% if selected_room_name %}
+          <span style="background:#f0fdfa;color:#0f766e;border:1px solid #5eead4;border-radius:6px;padding:2px 9px;font-size:.7rem;font-weight:700;margin-top:4px;display:inline-block">
+            🛏 {{ selected_room_name }}
+          </span>
+          {% endif %}
+        </div>
+        <div class="col d-flex align-items-center gap-3 justify-content-center flex-wrap">
+          <div class="dur-pill">🌙 {{ nights }} Night{{ 's' if nights > 1 }}</div>
+          <div style="font-size:.8rem;color:#6b7280">
+            <i class="bi bi-calendar-check me-1"></i>
+            {{ hotel.city }} stay
+          </div>
+        </div>
+        <div class="col-auto text-end">
+          <div style="font-size:.78rem;color:#9ca3af">Total ({{ nights }} night{{ 's' if nights > 1 }})</div>
+          <div style="font-size:1.5rem;font-weight:900;color:#0f766e">₹{{ "{:,.0f}".format(total_amount) }}</div>
+          <div style="font-size:.72rem;color:#6b7280">incl. taxes &amp; fees</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ FORMS + SUMMARY ════════════════════════════════════════════════════ -->
+<div class="container py-4">
+<div class="row g-4">
+
+  <!-- ── Left column ── -->
+  <div class="col-lg-8">
+    <form method="POST" id="bookingForm" novalidate>
+      {{ form.hidden_tag() }}
+      <input type="hidden" id="finalAmount" name="final_amount" value="{{ total_amount }}">
+      <input type="hidden" id="appliedCode" name="promo_code" value="">
+      <input type="hidden" id="paymentMethodField" name="payment_method" value="card">
+
+      <!-- ① Passenger Details -->
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="icon" style="background:{{ '#eef2ff' if is_flight else '#f0fdfa' }}">👤</div>
+          <div>
+            <div style="font-weight:700;font-size:.95rem;color:#111">Passenger Details</div>
+            <div style="font-size:.75rem;color:#9ca3af">{% if is_flight %}Enter details as on your government ID{% else %}Contact person for hotel confirmation{% endif %}</div>
+          </div>
+        </div>
+        <div class="form-card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-person me-1" style="color:{{ accent }}"></i>Full Name *</label>
+              {{ form.customer_name(class="form-control" + (" is-invalid" if form.customer_name.errors else ""), value=(user.name if user else ''), placeholder="As on government ID") }}
+              {% for e in form.customer_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-envelope me-1" style="color:{{ accent }}"></i>Email Address *</label>
+              {{ form.customer_email(class="form-control" + (" is-invalid" if form.customer_email.errors else ""), value=(user.email if user else ''), placeholder="you@email.com") }}
+              {% for e in form.customer_email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-phone me-1" style="color:{{ accent }}"></i>Mobile Number *</label>
+              {{ form.customer_phone(class="form-control" + (" is-invalid" if form.customer_phone.errors else ""), placeholder="+91 98765 43210") }}
+              {% for e in form.customer_phone.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            {% if is_flight %}
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-shield-person me-1" style="color:{{ accent }}"></i>Date of Birth</label>
+              <input type="text" class="form-control" id="dob_display" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" autocomplete="off">
+              <input type="hidden" name="dob" id="dob_hidden">
+              <div class="form-text" style="font-size:.72rem;color:#9ca3af">Required for boarding pass (as on Aadhaar)</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-person-badge me-1" style="color:{{ accent }}"></i>ID Type</label>
+              <select class="form-control" name="id_type">
+                <option value="">Select ID type</option>
+                <option value="AADHAAR">Aadhaar Card</option>
+                <option value="PASSPORT">Passport</option>
+                <option value="VOTER">Voter ID</option>
+                <option value="PAN">PAN Card</option>
+                <option value="DL">Driving Licence</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-hash me-1" style="color:{{ accent }}"></i>ID Number</label>
+              <input type="text" class="form-control" name="id_number" placeholder="e.g. XXXX-XXXX-XXXX">
+            </div>
+            {% else %}
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-calendar-check me-1" style="color:{{ accent }}"></i>Special Request <span class="text-muted fw-normal">(optional)</span></label>
+              <select class="form-control" name="special_request">
+                <option value="">No special request</option>
+                <option>Early check-in (subject to availability)</option>
+                <option>Late check-out (subject to availability)</option>
+                <option>High floor room</option>
+                <option>Non-smoking room</option>
+                <option>Extra bed / cot</option>
+                <option>Airport shuttle</option>
+              </select>
+            </div>
+            {% endif %}
+          </div>
+
+          {% if is_flight %}
+          <div class="mt-3 p-3" style="background:{{ '#eef2ff' if is_flight else '#f0fdfa' }};border-radius:12px;border:1px solid {{ '#c7d2fe' if is_flight else '#ccfbf1' }}">
+            <div style="font-size:.8rem;color:{{ accent }};font-weight:600">
+              <i class="bi bi-info-circle me-1"></i>Name must match your government-issued photo ID. Mismatches may result in boarding denial.
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ② GST / Business Travel (optional) -->
+      <div class="form-card">
+        <div class="form-card-header" style="cursor:pointer" onclick="toggleGST()">
+          <div class="icon" style="background:#fef9c3">🏢</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:.95rem;color:#111">GST Invoice <span class="text-muted fw-normal" style="font-size:.8rem">(Optional — for business travel)</span></div>
+            <div style="font-size:.75rem;color:#9ca3af">Add GSTIN to get a tax invoice</div>
+          </div>
+          <i class="bi bi-chevron-down" id="gstChevron" style="color:#9ca3af;transition:transform .2s"></i>
+        </div>
+        <div id="gstPanel" style="display:none">
+          <div class="form-card-body" style="border-top:1px solid #f3f4f6">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Company GSTIN</label>
+                <input type="text" class="form-control" name="gstin" placeholder="22AAAAA0000A1Z5" maxlength="15">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Company Name</label>
+                <input type="text" class="form-control" name="company_name" placeholder="Your Company Pvt Ltd">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Registered Address</label>
+                <input type="text" class="form-control" name="company_address" placeholder="Flat / Street, City, PIN">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ Payment Method -->
+      <div class="form-card">
+        <div class="form-card-header">
+          <div class="icon" style="background:#fef9c3">💳</div>
+          <div>
+            <div style="font-weight:700;font-size:.95rem;color:#111">Payment Method</div>
+            <div style="font-size:.75rem;color:#9ca3af">Demo mode — no real charge will be made</div>
+          </div>
+          <div class="ms-auto d-flex align-items-center gap-1" style="font-size:.72rem;color:#6b7280">
+            <i class="bi bi-lock-fill text-success"></i>256-bit SSL
+          </div>
+        </div>
+        <div class="form-card-body">
+
+          <!-- Payment tabs -->
+          <div class="d-flex gap-2 mb-4 flex-wrap">
+            <div class="pay-tab active" onclick="switchPay('card',this)">
+              <div class="pay-tab-icon">💳</div>
+              <div>
+                <div class="pay-tab-label">Card</div>
+                <div class="pay-tab-sub">Credit / Debit / RuPay</div>
+              </div>
+            </div>
+            <div class="pay-tab" onclick="switchPay('upi',this)">
+              <div class="pay-tab-icon">📱</div>
+              <div>
+                <div class="pay-tab-label">UPI</div>
+                <div class="pay-tab-sub">GPay, PhonePe, BHIM</div>
+              </div>
+            </div>
+            <div class="pay-tab" onclick="switchPay('netbanking',this)">
+              <div class="pay-tab-icon">🏦</div>
+              <div>
+                <div class="pay-tab-label">Net Banking</div>
+                <div class="pay-tab-sub">All major banks</div>
+              </div>
+            </div>
+            <div class="pay-tab" onclick="switchPay('wallets',this)">
+              <div class="pay-tab-icon">👛</div>
+              <div>
+                <div class="pay-tab-label">Wallets</div>
+                <div class="pay-tab-sub">Paytm, Amazon Pay</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── CARD ── -->
+          <div id="pay-card">
+            <div class="alert py-2 mb-3" style="background:{{ '#eef2ff' if is_flight else '#f0fdfa' }};border:1px solid {{ '#c7d2fe' if is_flight else '#ccfbf1' }};border-radius:10px;font-size:.82rem;color:{{ accent }}">
+              <i class="bi bi-info-circle me-1"></i>Demo mode — use any values. No real charge.
+            </div>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Card Number</label>
+                <div class="card-input-wrap">
+                  <span class="card-icon" id="cardTypeIcon">💳</span>
+                  {{ form.card_number(class="form-control", placeholder="4242 4242 4242 4242", maxlength="19", id="cardNum") }}
+                </div>
+                <div class="card-brands mt-1">
+                  <div class="card-brand" style="color:#1a1f71;font-size:.7rem;font-weight:800">VISA</div>
+                  <div class="card-brand" style="color:#eb001b;font-size:.55rem;font-weight:800">MASTER</div>
+                  <div class="card-brand" style="color:#ff6600;font-size:.55rem;font-weight:800">RuPay</div>
+                  <div class="card-brand" style="color:#016fd0;font-size:.55rem;font-weight:700">AMEX</div>
+                </div>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label">Name on Card</label>
+                {{ form.card_name(class="form-control", placeholder="JOHN DOE") }}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Expiry</label>
+                <div class="d-flex gap-2">
+                  {{ form.expiry_month(class="form-select") }}
+                  {{ form.expiry_year(class="form-select") }}
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">CVV <i class="bi bi-question-circle text-muted" title="3-4 digits on back of card"></i></label>
+                {{ form.cvv(class="form-control", placeholder="•••", maxlength="4", id="cvvInput", type="password") }}
+              </div>
+            </div>
+            <div class="mt-3 d-flex align-items-center gap-2" style="font-size:.75rem;color:#6b7280">
+              <i class="bi bi-shield-lock-fill text-success"></i>Your card details are encrypted and never stored
+            </div>
+          </div>
+
+          <!-- ── UPI ── -->
+          <div id="pay-upi" style="display:none">
+            <label class="form-label">UPI ID</label>
+            <div class="input-group mb-3">
+              <span class="input-group-text" style="border-color:{{ border_c }};border-radius:10px 0 0 10px;font-size:.85rem">📱</span>
+              <input type="text" class="form-control" placeholder="yourname@upi" name="upi_id" style="border-radius:0 10px 10px 0">
+            </div>
+            <div style="font-size:.8rem;color:#6b7280;font-weight:600;margin-bottom:10px">— or pay with —</div>
+            <div class="d-flex gap-2 flex-wrap">
+              {% for app, icon in [("GPay","🟢"),("PhonePe","🟣"),("Paytm","🔵"),("BHIM","🟠"),("Amazon Pay","🔶"),("Cred","⚪")] %}
+              <div class="upi-app" onclick="selectUpiApp(this, '{{ app }}')" data-app="{{ app }}">{{ icon }} {{ app }}</div>
+              {% endfor %}
+            </div>
+            <div id="upiSelected" class="mt-2" style="font-size:.78rem;color:{{ accent }};font-weight:600;display:none">
+              <i class="bi bi-check-circle me-1"></i><span id="upiAppName"></span> selected
+            </div>
+          </div>
+
+          <!-- ── NET BANKING ── -->
+          <div id="pay-netbanking" style="display:none">
+            <label class="form-label">Select Your Bank</label>
+            <div class="row g-2 mb-3">
+              {% for bank in ["State Bank of India","HDFC Bank","ICICI Bank","Axis Bank","Kotak Mahindra","Yes Bank","Punjab National Bank","Bank of Baroda"] %}
+              <div class="col-6 col-md-3">
+                <div class="upi-app text-center" style="font-size:.78rem" onclick="selectBank(this)">🏦 {{ bank }}</div>
+              </div>
+              {% endfor %}
+            </div>
+            <div style="font-size:.8rem;color:#6b7280;margin-bottom:6px">— or select other bank —</div>
+            <select class="form-control" name="bank_other">
+              <option value="">Search / select bank…</option>
+              {% for bank in ["Canara Bank","Union Bank","Indian Bank","Central Bank","Bank of India","IndusInd Bank","Federal Bank","South Indian Bank","Karur Vysya Bank","City Union Bank"] %}
+              <option>{{ bank }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- ── WALLETS ── -->
+          <div id="pay-wallets" style="display:none">
+            <div class="row g-3">
+              {% for w, icon, bal in [("Paytm Wallet","🔵","₹2,450 available"),("Amazon Pay","🔶","₹1,200 available"),("Mobikwik","🔴","₹850 available"),("Freecharge","🟢","₹340 available")] %}
+              <div class="col-6">
+                <div class="upi-app d-flex align-items-center gap-2" onclick="selectWallet(this)">
+                  <span style="font-size:1.3rem">{{ icon }}</span>
+                  <div>
+                    <div style="font-weight:700;font-size:.83rem">{{ w }}</div>
+                    <div style="font-size:.7rem;color:#16a34a">{{ bal }}</div>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Terms -->
+          <div class="mt-4 mb-3 d-flex align-items-start gap-2" style="font-size:.8rem;color:#6b7280">
+            <input type="checkbox" id="termsCheck" required style="accent-color:{{ accent }};margin-top:2px;flex-shrink:0">
+            <label for="termsCheck">I agree to the <a href="#" style="color:{{ accent }}">Terms &amp; Conditions</a>, <a href="#" style="color:{{ accent }}">Fare Rules</a>, and <a href="#" style="color:{{ accent }}">Privacy Policy</a> of SnapTravels.</label>
+          </div>
+
+          <!-- Pay button -->
+          <button type="submit" class="btn-confirm" id="confirmBtn" onclick="handleSubmit(event)">
+            <span class="spinner" id="btnSpinner"></span>
+            <i class="bi bi-lock-fill me-2" id="btnIcon"></i>
+            <span id="btnText">Pay Securely — ₹{{ "{:,.0f}".format(total_amount) }}</span>
+          </button>
+
+          <div class="mt-3 text-center" style="font-size:.75rem;color:#9ca3af">
+            <i class="bi bi-shield-check me-1 text-success"></i>Secured by 256-bit SSL encryption
+            &nbsp;·&nbsp;
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Free cancellation within 24h
+          </div>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- ── Right: Sticky Summary ── -->
+  <div class="col-lg-4">
+    <div class="summary-panel">
+      <div class="panel-header">
+        <div class="fw-bold" style="font-size:1rem">Booking Summary</div>
+        <div style="font-size:.8rem;opacity:.8;margin-top:2px">
+          {% if is_flight %}{{ flight.origin }} → {{ flight.destination }}{% else %}{{ hotel.city }}{% endif %}
+        </div>
+      </div>
+      <div class="p-4">
+
+        {% if is_flight %}
+        <div class="info-row"><span class="info-label">Airline</span><span class="info-val">{{ flight.airline }}</span></div>
+        <div class="info-row"><span class="info-label">Flight</span><span class="info-val">{{ flight.flight_no }}</span></div>
+        <div class="info-row"><span class="info-label">Class</span><span class="info-val">{{ flight.cabin_class }}</span></div>
+        <div class="info-row"><span class="info-label">Departure</span><span class="info-val">{{ flight.depart_time }}, {{ flight.origin }}</span></div>
+        <div class="info-row"><span class="info-label">Arrival</span><span class="info-val">{{ flight.arrive_time }}, {{ flight.destination }}</span></div>
+        <div class="info-row"><span class="info-label">Duration</span><span class="info-val">{{ flight.duration_mins // 60 }}h {{ flight.duration_mins % 60 }}m</span></div>
+        {% if selected_seats %}<div class="info-row"><span class="info-label">Seats</span><span class="info-val">{{ selected_seats }}</span></div>{% endif %}
+        {% else %}
+        <div class="info-row"><span class="info-label">Hotel</span><span class="info-val">{{ hotel.name }}</span></div>
+        <div class="info-row"><span class="info-label">City</span><span class="info-val">{{ hotel.city }}</span></div>
+        <div class="info-row"><span class="info-label">Rating</span><span class="info-val">⭐ {{ hotel.rating }}/5</span></div>
+        <div class="info-row"><span class="info-label">Nights</span><span class="info-val">{{ nights }}</span></div>
+        {% if selected_room_name %}<div class="info-row"><span class="info-label">Room</span><span class="info-val">{{ selected_room_name }}</span></div>{% endif %}
+        {% endif %}
+
+        <div style="border-top:2px solid #f3f4f6;margin:12px 0 8px"></div>
+
+        {% if is_flight %}
+        <div class="info-row"><span class="info-label">Base fare</span><span class="info-val">₹{{ "{:,.0f}".format(total_amount * 0.78) }}</span></div>
+        <div class="info-row"><span class="info-label">Fuel surcharge</span><span class="info-val">₹{{ "{:,.0f}".format(total_amount * 0.12) }}</span></div>
+        <div class="info-row"><span class="info-label">Taxes &amp; fees</span><span class="info-val">₹{{ "{:,.0f}".format(total_amount * 0.10) }}</span></div>
+        {% else %}
+        <div class="info-row"><span class="info-label">₹{{ "{:,.0f}".format(hotel.price_per_night) }} × {{ nights }} night{{ 's' if nights > 1 }}</span><span class="info-val">₹{{ "{:,.0f}".format(total_amount * 0.88) }}</span></div>
+        <div class="info-row"><span class="info-label">Taxes &amp; fees (12%)</span><span class="info-val">₹{{ "{:,.0f}".format(total_amount * 0.12) }}</span></div>
+        {% endif %}
+
+        <!-- Promo code -->
+        <div class="mt-3">
+          <label class="form-label" style="font-size:.78rem;color:#374151;font-weight:600">Promo Code</label>
+          <div class="promo-wrap mb-1">
+            <input type="text" id="promoInput" placeholder="e.g. SNAP20">
+            <button type="button" onclick="applyPromo()">Apply</button>
+          </div>
+          <div id="promoMsg" style="font-size:.78rem;min-height:18px"></div>
+        </div>
+
+        <div style="border-top:2px solid #f3f4f6;margin:10px 0 4px"></div>
+        <div class="info-row"><span class="info-label text-muted">Subtotal</span><span id="subtotalDisplay" class="info-val">₹{{ "{:,.0f}".format(total_amount) }}</span></div>
+        <div class="info-row text-success d-none" id="discountRow">
+          <span class="info-label text-success">Discount</span>
+          <span id="discountDisplay" class="info-val text-success">—</span>
+        </div>
+        <div class="price-total">
+          <span>Total</span>
+          <span id="grandTotal" style="color:{{ accent }}">₹{{ "{:,.0f}".format(total_amount) }}</span>
+        </div>
+
+        <!-- Inclusions -->
+        <div class="mt-3 p-3" style="background:{{ '#eef2ff' if is_flight else '#f0fdfa' }};border-radius:12px;border:1px solid {{ '#c7d2fe' if is_flight else '#ccfbf1' }}">
+          <div style="font-weight:700;font-size:.78rem;color:{{ accent }};margin-bottom:8px">✅ What's Included</div>
+          {% if is_flight %}
+          {% for item in ['1 check-in bag (15 kg)','1 cabin bag (7 kg)','Seat selection','Meal (on select routes)','Flight insurance (₹50L cover)'] %}
+          <div class="inclusion-item"><i class="bi bi-check-circle-fill text-success" style="font-size:.75rem"></i>{{ item }}</div>
+          {% endfor %}
+          {% else %}
+          {% for item in ['Free cancellation (24h before)','Complimentary breakfast (select rooms)','Free Wi-Fi','24/7 reception','Instant confirmation'] %}
+          <div class="inclusion-item"><i class="bi bi-check-circle-fill text-success" style="font-size:.75rem"></i>{{ item }}</div>
+          {% endfor %}
+          {% endif %}
+        </div>
+
+        <!-- Trust -->
+        <div class="mt-3 p-3" style="background:#f8fafc;border-radius:12px;border:1px solid #e5e7eb">
+          <div class="d-flex flex-column gap-2" style="font-size:.75rem;color:#6b7280">
+            <div><i class="bi bi-shield-check text-success me-1"></i><strong>Secure Payment</strong> — 256-bit SSL encrypted</div>
+            <div><i class="bi bi-envelope-check me-1" style="color:{{ accent }}"></i>E-ticket sent to your email instantly</div>
+            <div><i class="bi bi-headset me-1" style="color:{{ accent }}"></i>24/7 customer support</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const subtotalVal = {{ total_amount }};
+
+// ── Payment method switcher ────────────────────────────────────────────
+function switchPay(method, el) {
+  ['card','upi','netbanking','wallets'].forEach(m => {
+    const panel = document.getElementById('pay-' + m);
+    if (panel) panel.style.display = (m === method) ? '' : 'none';
+  });
+  document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  // Capture selected payment method
+  var pmf = document.getElementById('paymentMethodField');
+  if (pmf) pmf.value = method;
+}
+
+// ── UPI app selector ───────────────────────────────────────────────────
+function selectUpiApp(el, appName) {
+  document.querySelectorAll('#pay-upi .upi-app').forEach(a => a.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('upiAppName').textContent = appName;
+  document.getElementById('upiSelected').style.display = '';
+}
+
+// ── Bank selector ──────────────────────────────────────────────────────
+function selectBank(el) {
+  document.querySelectorAll('#pay-netbanking .upi-app').forEach(a => a.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ── Wallet selector ────────────────────────────────────────────────────
+function selectWallet(el) {
+  document.querySelectorAll('#pay-wallets .upi-app').forEach(a => a.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ── GST toggle ─────────────────────────────────────────────────────────
+function toggleGST() {
+  const panel = document.getElementById('gstPanel');
+  const chevron = document.getElementById('gstChevron');
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : '';
+  chevron.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+// ── Card number formatting ─────────────────────────────────────────────
+const cardNumInput = document.getElementById('cardNum');
+if (cardNumInput) {
+  cardNumInput.addEventListener('input', function() {
+    let v = this.value.replace(/\D/g,'').slice(0,16);
+    this.value = v.replace(/(.{4})/g,'$1 ').trim();
+    // Card type detection
+    const icon = document.getElementById('cardTypeIcon');
+    if (v.startsWith('4')) icon.textContent = '💙'; // Visa
+    else if (v.startsWith('5') || v.startsWith('2')) icon.textContent = '🔴'; // MC
+    else if (v.startsWith('3')) icon.textContent = '🟢'; // Amex
+    else icon.textContent = '💳';
+  });
+}
+
+// ── CVV toggle visibility ─────────────────────────────────────────────
+const cvvInput = document.getElementById('cvvInput');
+if (cvvInput) {
+  cvvInput.addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g,'').slice(0,4);
+  });
+}
+
+// ── Phone number formatting ────────────────────────────────────────────
+document.querySelectorAll('input[name="customer_phone"]').forEach(el => {
+  el.addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g,'').slice(0,10);
+  });
+});
+
+// ── Promo code ─────────────────────────────────────────────────────────
+function applyPromo() {
+  const code = document.getElementById('promoInput').value.trim().toUpperCase();
+  const msg  = document.getElementById('promoMsg');
+  if (!code) { msg.innerHTML = '<span style="color:#9ca3af">Enter a promo code</span>'; return; }
+
+  msg.innerHTML = '<span style="color:#6b7280"><i class="bi bi-hourglass-split me-1"></i>Validating…</span>';
+
+  fetch('/promo/validate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, amount: subtotalVal })
+  }).then(r => r.json()).then(d => {
+    if (d.valid) {
+      document.getElementById('appliedCode').value = code;
+      document.getElementById('discountDisplay').textContent = '–₹' + Math.round(d.discount).toLocaleString('en-IN');
+      document.getElementById('grandTotal').textContent = '₹' + Math.round(d.final).toLocaleString('en-IN');
+      document.getElementById('finalAmount').value = d.final;
+      document.getElementById('discountRow').classList.remove('d-none');
+      document.getElementById('btnText').textContent = 'Pay Securely — ₹' + Math.round(d.final).toLocaleString('en-IN');
+      msg.innerHTML = `<span style="color:#16a34a"><i class="bi bi-check-circle me-1"></i>${d.message}</span>`;
+    } else {
+      document.getElementById('appliedCode').value = '';
+      document.getElementById('discountRow').classList.add('d-none');
+      document.getElementById('grandTotal').textContent = '₹' + subtotalVal.toLocaleString('en-IN', {maximumFractionDigits:0});
+      msg.innerHTML = `<span style="color:#dc2626"><i class="bi bi-x-circle me-1"></i>${d.message}</span>`;
+    }
+  }).catch(() => {
+    msg.innerHTML = '<span style="color:#dc2626">Could not validate. Try again.</span>';
+  });
+}
+
+// ── Form submit + loading state ────────────────────────────────────────
+function handleSubmit(e) {
+  const terms = document.getElementById('termsCheck');
+  if (!terms.checked) {
+    e.preventDefault();
+    terms.style.outline = '2px solid #ef4444';
+    terms.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  // Show spinner immediately but defer disabling the button —
+  // disabling a submit button inside its onclick can cancel form submission.
+  const btn = document.getElementById('confirmBtn');
+  const spinner = document.getElementById('btnSpinner');
+  const icon = document.getElementById('btnIcon');
+  const txt = document.getElementById('btnText');
+  spinner.style.display = 'inline-block';
+  icon.style.display = 'none';
+  txt.textContent = 'Processing payment…';
+  setTimeout(function(){ btn.disabled = true; }, 50);
+}
+
+// ── Expiry month/year: disable past months ────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().split('T')[0];
+  document.querySelectorAll('input[type="date"]').forEach(i => {
+    if (!i.value) i.min = today;
+  });
+
+  // ── DOB text input: auto-format DD/MM/YYYY and sync hidden field ────
+  const dobDisplay = document.getElementById('dob_display');
+  const dobHidden  = document.getElementById('dob_hidden');
+  if (dobDisplay && dobHidden) {
+    dobDisplay.addEventListener('input', function() {
+      let v = this.value.replace(/[^0-9]/g, '');           // digits only
+      if (v.length > 8) v = v.slice(0, 8);
+      // auto-insert slashes: DD/MM/YYYY
+      if (v.length > 4) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4);
+      else if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2);
+      this.value = v;
+
+      // sync hidden field in YYYY-MM-DD when complete
+      const parts = v.split('/');
+      if (parts.length === 3 && parts[2].length === 4) {
+        const dd = parts[0], mm = parts[1], yyyy = parts[2];
+        const d = new Date(yyyy + '-' + mm + '-' + dd);
+        if (!isNaN(d.getTime()) && d <= new Date()) {
+          dobHidden.value = yyyy + '-' + mm + '-' + dd;
+          this.style.borderColor = '';
+        } else {
+          dobHidden.value = '';
+          this.style.borderColor = '#ef4444';
+        }
+      } else {
+        dobHidden.value = '';
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

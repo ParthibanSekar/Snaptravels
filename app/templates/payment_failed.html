@@ -1,0 +1,330 @@
+{% extends "layouts/base.html" %}
+{% block title %}Payment Failed — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Page shell ─────────────────────────────────────────────── */
+.pay-fail-page { background: #fff5f5; min-height: 100vh; padding: 3rem 0 5rem; }
+
+/* ── Error icon ─────────────────────────────────────────────── */
+.fail-icon-wrap {
+  width: 90px; height: 90px; margin: 0 auto 1.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 0 rgba(239,68,68,.5);
+  animation: shake .5s ease-in-out 1, pulse-red 1.8s ease-out 2;
+}
+.fail-icon-wrap i { font-size: 2.8rem; color: #fff; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  15%      { transform: translateX(-6px); }
+  30%      { transform: translateX(6px); }
+  45%      { transform: translateX(-4px); }
+  60%      { transform: translateX(4px); }
+  75%      { transform: translateX(-2px); }
+}
+@keyframes pulse-red {
+  0%   { box-shadow: 0 0 0 0 rgba(239,68,68,.45); }
+  70%  { box-shadow: 0 0 0 20px rgba(239,68,68,0); }
+  100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.fail-card {
+  border-radius: 16px; border: none;
+  border-top: 4px solid #ef4444;
+  box-shadow: 0 4px 24px rgba(239,68,68,.10);
+  overflow: hidden;
+}
+.fail-card-header {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #fff; padding: 1.25rem 1.5rem;
+}
+.fail-card-header h5 { margin: 0; font-size: 1rem; font-weight: 600; }
+
+/* ── Payment stepper ─────────────────────────────────────────── */
+.pay-stepper {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin: 1.5rem 0 1rem;
+}
+.step-node {
+  display: flex; flex-direction: column; align-items: center; gap: .25rem;
+  font-size: .72rem; color: #64748b; width: 80px;
+}
+.step-node .sn-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: .85rem;
+}
+.sn-done { background: #dcfce7; color: #16a34a; }
+.sn-fail { background: #fee2e2; color: #dc2626; animation: blink-fail 1s step-end 5; }
+.sn-grey { background: #f1f5f9; color: #94a3b8; }
+.step-line-ok   { flex: 1; height: 2px; background: #86efac; margin-bottom: 1.2rem; }
+.step-line-fail { flex: 1; height: 2px; background: #fca5a5; margin-bottom: 1.2rem; }
+.step-line-grey { flex: 1; height: 2px; background: #e2e8f0; margin-bottom: 1.2rem; }
+@keyframes blink-fail {
+  0%,100% { opacity: 1; } 50% { opacity: .3; }
+}
+
+/* ── Error detail rows ───────────────────────────────────────── */
+.err-row {
+  display: flex; align-items: flex-start; gap: .85rem;
+  padding: .85rem 0; border-bottom: 1px solid #fef2f2;
+}
+.err-row:last-child { border-bottom: none; }
+.err-row .e-icon {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+.e-icon-red  { background: #fee2e2; color: #dc2626; }
+.e-icon-amber{ background: #fef3c7; color: #d97706; }
+.e-icon-blue { background: #dbeafe; color: #2563eb; }
+.err-row .e-label { font-weight: 600; font-size: .88rem; color: #1e293b; }
+.err-row .e-value { font-size: .82rem; color: #64748b; }
+
+/* ── Incident box ────────────────────────────────────────────── */
+.incident-box {
+  background: #1e293b; border-radius: 10px;
+  padding: .8rem 1.1rem; font-family: monospace; font-size: .8rem;
+  color: #94a3b8; word-break: break-all;
+}
+.incident-box span { color: #f8fafc; }
+
+/* ── What-happened breakdown ─────────────────────────────────── */
+.chain-wrap {
+  background: #f8fafc; border-radius: 12px; padding: 1.2rem 1.4rem;
+}
+.chain-item {
+  display: flex; align-items: center; gap: .75rem;
+  font-size: .88rem; margin-bottom: .55rem;
+}
+.chain-item:last-child { margin-bottom: 0; }
+.chain-dot {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 700;
+}
+.cd-ok   { background: #dcfce7; color: #16a34a; }
+.cd-fail { background: #fee2e2; color: #dc2626; }
+.cd-skip { background: #f1f5f9; color: #94a3b8; }
+.chain-label-ok   { color: #16a34a; font-weight: 600; }
+.chain-label-fail { color: #dc2626; font-weight: 600; }
+.chain-label-skip { color: #94a3b8; }
+
+/* ── CTA buttons ─────────────────────────────────────────────── */
+.btn-retry {
+  background: #dc2626; color: #fff; border: none;
+  border-radius: 30px; padding: .65rem 1.8rem; font-weight: 600;
+}
+.btn-retry:hover { background: #b91c1c; color: #fff; }
+.btn-outline-red {
+  border: 2px solid #dc2626; color: #dc2626; border-radius: 30px;
+  padding: .65rem 1.8rem; font-weight: 600; background: transparent;
+}
+.btn-outline-red:hover { background: #fff5f5; }
+.btn-outline-grey {
+  border: 2px solid #cbd5e1; color: #475569; border-radius: 30px;
+  padding: .65rem 1.8rem; font-weight: 600; background: transparent;
+}
+.btn-outline-grey:hover { background: #f8fafc; }
+
+/* ── Support box ─────────────────────────────────────────────── */
+.support-box {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border-radius: 14px; padding: 1.4rem 1.75rem;
+  color: #f8fafc; margin-top: 1.5rem;
+}
+.support-box h6 { font-weight: 700; margin-bottom: .75rem; font-size: .9rem; }
+.support-item { display: flex; align-items: center; gap: .6rem; font-size: .86rem; margin-bottom: .4rem; }
+.support-item a { color: #93c5fd; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pay-fail-page">
+<div class="container">
+<div class="row justify-content-center">
+<div class="col-lg-7">
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <div class="text-center mb-4">
+    <div class="fail-icon-wrap"><i class="bi bi-x-lg"></i></div>
+    <h2 class="fw-bold text-danger mb-1">{{ title }}</h2>
+    <p class="text-muted mb-0">{{ subtitle }}</p>
+  </div>
+
+  <!-- ── Payment stepper showing where it failed ───────────────── -->
+  <div class="pay-stepper">
+    <div class="step-node">
+      <div class="sn-dot sn-done"><i class="bi bi-search"></i></div>
+      <span>Search</span>
+    </div>
+    <div class="step-line-ok"></div>
+    <div class="step-node">
+      <div class="sn-dot sn-done"><i class="bi bi-person-check"></i></div>
+      <span>Details</span>
+    </div>
+    {% if error_stage == 'checkout' %}
+      <div class="step-line-fail"></div>
+      <div class="step-node">
+        <div class="sn-dot sn-fail"><i class="bi bi-x"></i></div>
+        <span class="text-danger">Checkout</span>
+      </div>
+      <div class="step-line-grey"></div>
+      <div class="step-node">
+        <div class="sn-dot sn-grey"><i class="bi bi-credit-card"></i></div>
+        <span>Payment</span>
+      </div>
+    {% elif error_stage == 'db' %}
+      <div class="step-line-fail"></div>
+      <div class="step-node">
+        <div class="sn-dot sn-fail"><i class="bi bi-x"></i></div>
+        <span class="text-danger">Checkout</span>
+      </div>
+      <div class="step-line-grey"></div>
+      <div class="step-node">
+        <div class="sn-dot sn-grey"><i class="bi bi-credit-card"></i></div>
+        <span>Payment</span>
+      </div>
+    {% else %}
+      <div class="step-line-ok"></div>
+      <div class="step-node">
+        <div class="sn-dot sn-done"><i class="bi bi-bag-check"></i></div>
+        <span>Checkout</span>
+      </div>
+      <div class="step-line-fail"></div>
+      <div class="step-node">
+        <div class="sn-dot sn-fail"><i class="bi bi-x"></i></div>
+        <span class="text-danger">Payment</span>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Error detail card ─────────────────────────────────────── -->
+  <div class="card fail-card mb-3">
+    <div class="fail-card-header">
+      <h5><i class="bi bi-exclamation-triangle me-2"></i>Error Details</h5>
+    </div>
+    <div class="card-body p-4">
+
+      <div class="err-row">
+        <div class="e-icon e-icon-red"><i class="bi bi-x-circle"></i></div>
+        <div>
+          <div class="e-label">Error Type</div>
+          <div class="e-value">{{ error_type }}</div>
+        </div>
+      </div>
+
+      <div class="err-row">
+        <div class="e-icon e-icon-amber"><i class="bi bi-info-circle"></i></div>
+        <div>
+          <div class="e-label">What happened?</div>
+          <div class="e-value">{{ error_detail }}</div>
+        </div>
+      </div>
+
+      <div class="err-row">
+        <div class="e-icon e-icon-blue"><i class="bi bi-clock-history"></i></div>
+        <div>
+          <div class="e-label">Time of Failure</div>
+          <div class="e-value">{{ failed_at }}</div>
+        </div>
+      </div>
+
+      {% if trace_id %}
+      <div class="err-row">
+        <div class="e-icon e-icon-blue"><i class="bi bi-code-slash"></i></div>
+        <div>
+          <div class="e-label">Incident / Trace ID <small class="text-muted">(share this with support)</small></div>
+          <div class="incident-box mt-1"><span>{{ trace_id }}</span></div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <!-- ── What happened in the chain ───────────────────────────── -->
+  <div class="card fail-card mb-3">
+    <div class="card-body p-4">
+      <h6 class="fw-bold mb-3 text-secondary"><i class="bi bi-diagram-3 me-1"></i>Transaction Chain Breakdown</h6>
+      <div class="chain-wrap">
+        <div class="chain-item">
+          <div class="chain-dot cd-ok"><i class="bi bi-check"></i></div>
+          <span class="chain-label-ok">Search &amp; Fare Calculation</span>
+          <span class="text-muted ms-auto small">✓ OK</span>
+        </div>
+        <div class="chain-item">
+          <div class="chain-dot cd-ok"><i class="bi bi-check"></i></div>
+          <span class="chain-label-ok">Passenger Details Validated</span>
+          <span class="text-muted ms-auto small">✓ OK</span>
+        </div>
+        {% if error_stage in ('payment',) %}
+        <div class="chain-item">
+          <div class="chain-dot cd-ok"><i class="bi bi-check"></i></div>
+          <span class="chain-label-ok">Booking Session Created</span>
+          <span class="text-muted ms-auto small">✓ OK</span>
+        </div>
+        {% endif %}
+        <div class="chain-item">
+          <div class="chain-dot cd-fail"><i class="bi bi-x"></i></div>
+          <span class="chain-label-fail">{{ chain_fail_label }}</span>
+          <span class="text-danger ms-auto small">✗ Failed</span>
+        </div>
+        {% if error_stage in ('checkout','db') %}
+        <div class="chain-item">
+          <div class="chain-dot cd-skip">—</div>
+          <span class="chain-label-skip">Payment Processing</span>
+          <span class="text-muted ms-auto small">skipped</span>
+        </div>
+        {% endif %}
+        <div class="chain-item">
+          <div class="chain-dot cd-skip">—</div>
+          <span class="chain-label-skip">E-Ticket Issuance</span>
+          <span class="text-muted ms-auto small">skipped</span>
+        </div>
+      </div>
+
+      {% if resolution %}
+      <div class="alert alert-warning border-0 mt-3 mb-0 rounded-3" style="font-size:.88rem;">
+        <i class="bi bi-hourglass-split me-1"></i>
+        <strong>Estimated resolution:</strong> {{ resolution }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── No charge notice ─────────────────────────────────────── -->
+  <div class="alert alert-success border-0 rounded-3 mb-3" style="font-size:.88rem;">
+    <i class="bi bi-shield-check me-2 text-success"></i>
+    <strong>No charge was made.</strong> Your payment method has not been debited. Any pending authorization will be released within 2–3 business days.
+  </div>
+
+  <!-- ── Action buttons ─────────────────────────────────────────── -->
+  <div class="text-center d-flex flex-wrap justify-content-center gap-3 mb-4">
+    {% if retry_url %}
+    <a href="{{ retry_url }}" class="btn btn-retry">
+      <i class="bi bi-arrow-clockwise me-1"></i> Try Again
+    </a>
+    {% endif %}
+    <a href="{{ url_for('public.home') }}" class="btn btn-outline-grey">
+      <i class="bi bi-house me-1"></i> Back to Home
+    </a>
+  </div>
+
+  <!-- ── Support footer ─────────────────────────────────────────── -->
+  <div class="support-box">
+    <h6><i class="bi bi-headset me-1"></i> Need Help?</h6>
+    <div class="support-item"><i class="bi bi-envelope"></i> Email us at <a href="mailto:support@snaptravels.com">support@snaptravels.com</a></div>
+    <div class="support-item"><i class="bi bi-chat-dots"></i> Live chat available 24×7 via the Help icon</div>
+    {% if trace_id %}
+    <div class="support-item mt-2" style="font-size:.78rem; color:#64748b;">
+      <i class="bi bi-bug"></i> Reference: <code style="color:#93c5fd;">{{ trace_id }}</code>
+    </div>
+    {% endif %}
+  </div>
+
+</div><!-- /col -->
+</div><!-- /row -->
+</div><!-- /container -->
+</div><!-- /pay-fail-page -->
+{% endblock %}

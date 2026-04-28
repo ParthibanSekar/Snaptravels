@@ -1,0 +1,9 @@
+<svg viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Airplane icon -->
+  <g transform="translate(10, 8)">
+    <path d="M20 5 L28 15 L20 20 L20 25 L35 18 L20 11 Z" fill="#008cff" stroke="#008cff" stroke-width="1" stroke-linejoin="round"/>
+    <circle cx="14" cy="17" r="3" fill="#008cff"/>
+  </g>
+  <!-- Text -->
+  <text x="50" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#008cff">SnapTravels</text>
+</svg>

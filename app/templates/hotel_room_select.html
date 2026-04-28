@@ -1,0 +1,449 @@
+{% extends "layouts/base.html" %}
+{% block title %}Choose Your Room — {{ hotel.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background: #f0fdf4; }
+
+/* ── Hero ─────────────────────────────────────── */
+.room-hero {
+  background: linear-gradient(135deg, #064e3b 0%, #047857 55%, #059669 100%);
+  padding: 28px 0 36px;
+}
+
+/* Steps */
+.step-indicator { display: flex; align-items: center; gap: 0; }
+.step { display: flex; align-items: center; gap: 6px; }
+.step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; }
+.step-dot-done { background: #d1fae5; color: #065f46; }
+.step-dot-active { background: #059669; color: #fff; }
+.step-dot-pending { background: rgba(255,255,255,.2); color: rgba(255,255,255,.5); }
+.step-label { font-size: .75rem; color: rgba(255,255,255,.75); font-weight: 600; }
+.step-label.fw-bold { color: #fff; }
+.step-line { flex: 1; height: 2px; background: rgba(255,255,255,.25); margin: 0 6px; min-width: 20px; }
+.step-line-done { background: #6ee7b7; }
+
+/* Hotel summary card */
+.hotel-summary {
+  background: #fff; border-radius: 18px;
+  padding: 20px 24px; box-shadow: 0 8px 36px rgba(0,0,0,.16);
+}
+.hotel-thumb {
+  width: 64px; height: 64px; border-radius: 12px;
+  background: linear-gradient(135deg, #047857, #059669);
+  display: flex; align-items: center; justify-content: center; font-size: 2rem;
+  flex-shrink: 0;
+}
+
+/* ── Room type cards ─────────────────────────── */
+.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+.room-card {
+  background: #fff; border-radius: 18px;
+  border: 2.5px solid #d1fae5;
+  box-shadow: 0 2px 16px rgba(5,150,105,.06);
+  overflow: hidden; transition: all .2s; cursor: pointer;
+  position: relative;
+}
+.room-card:hover { border-color: #059669; box-shadow: 0 8px 30px rgba(5,150,105,.18); transform: translateY(-3px); }
+.room-card.selected { border-color: #059669; box-shadow: 0 8px 30px rgba(5,150,105,.3); }
+.room-card.selected::after {
+  content: '✓'; position: absolute; top: 12px; right: 12px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #059669; color: #fff; display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: .9rem;
+}
+
+.room-img-band { height: 160px; position: relative; overflow: hidden; }
+.room-img-band .badge-type {
+  position: absolute; bottom: 10px; left: 10px;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+  color: #fff; border-radius: 6px; padding: 3px 10px;
+  font-size: .72rem; font-weight: 700; letter-spacing: .03em;
+}
+
+.room-body { padding: 18px; }
+.room-name { font-weight: 800; font-size: 1rem; color: #111; margin-bottom: 6px; }
+.room-desc { font-size: .82rem; color: #6b7280; margin-bottom: 12px; line-height: 1.5; }
+
+.room-feat { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.room-feat-item {
+  display: flex; align-items: center; gap: 4px;
+  background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;
+  padding: 3px 8px; font-size: .72rem; color: #166534; font-weight: 600;
+}
+
+.room-pricing { border-top: 1px solid #f3f4f6; padding-top: 14px; }
+.room-price { font-size: 1.3rem; font-weight: 900; color: #059669; line-height: 1; }
+.room-price-sub { font-size: .72rem; color: #9ca3af; margin-top: 2px; }
+.room-price-badge {
+  display: inline-block; background: #ecfdf5; color: #047857;
+  border-radius: 6px; padding: 2px 8px; font-size: .72rem; font-weight: 700;
+  border: 1px solid #6ee7b7; margin-top: 4px;
+}
+.btn-select-room {
+  background: linear-gradient(135deg, #047857, #059669);
+  color: #fff; border: none; border-radius: 12px;
+  padding: 10px 20px; font-weight: 700; font-size: .88rem;
+  width: 100%; margin-top: 12px;
+  transition: all .2s; box-shadow: 0 3px 12px rgba(5,150,105,.25);
+}
+.btn-select-room:hover { background: linear-gradient(135deg, #065f46, #047857); color: #fff; }
+.btn-select-room.selected-btn {
+  background: linear-gradient(135deg, #065f46, #047857);
+}
+
+/* Summary panel */
+.summary-panel { background: #fff; border-radius: 18px; box-shadow: 0 2px 16px rgba(0,0,0,.07); position: sticky; top: 80px; overflow: hidden; }
+.summary-header { background: linear-gradient(135deg, #047857, #059669); color: #fff; padding: 18px 22px; }
+.price-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f3f4f6; font-size: .83rem; }
+.price-total-row { display: flex; justify-content: space-between; padding: 10px 0; font-weight: 900; font-size: .98rem; color: #111; }
+.btn-proceed {
+  background: linear-gradient(135deg, #047857, #059669);
+  color: #fff; border: none; border-radius: 14px;
+  padding: 14px; font-weight: 800; font-size: 1rem;
+  width: 100%; transition: all .2s;
+  box-shadow: 0 4px 16px rgba(5,150,105,.3);
+}
+.btn-proceed:hover:not(:disabled) { background: linear-gradient(135deg, #065f46, #047857); transform: translateY(-1px); }
+.btn-proceed:disabled { opacity: .5; cursor: not-allowed; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<div class="room-hero">
+  <div class="container">
+    <!-- Steps -->
+    <div class="step-indicator mb-4">
+      <div class="step">
+        <div class="step-dot step-dot-done"><i class="bi bi-check"></i></div>
+        <span class="step-label">Search</span>
+      </div>
+      <div class="step-line step-line-done"></div>
+      <div class="step">
+        <div class="step-dot step-dot-done"><i class="bi bi-check"></i></div>
+        <span class="step-label">Select Hotel</span>
+      </div>
+      <div class="step-line step-line-done"></div>
+      <div class="step">
+        <div class="step-dot step-dot-active">3</div>
+        <span class="step-label fw-bold">Choose Room</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-dot step-dot-pending">4</div>
+        <span class="step-label">Guest Details</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-dot step-dot-pending">5</div>
+        <span class="step-label">Confirm &amp; Pay</span>
+      </div>
+    </div>
+
+    <!-- Hotel summary -->
+    <div class="hotel-summary">
+      <div class="row align-items-center g-3">
+        <div class="col-auto">
+          <div class="hotel-thumb">🏨</div>
+        </div>
+        <div class="col">
+          <div style="font-weight:800;font-size:1.05rem;color:#111">{{ hotel.name }}</div>
+          <div style="font-size:.8rem;color:#6b7280;margin-top:3px">
+            <i class="bi bi-geo-alt-fill text-success me-1"></i>{{ hotel.city }}
+            &nbsp;·&nbsp; ⭐ {{ hotel.rating }}
+            &nbsp;·&nbsp; <i class="bi bi-calendar3 me-1"></i>
+            {% if checkin and checkout %}{{ checkin }} – {{ checkout }} ({{ nights }} night{{ 's' if nights != 1 }}){% endif %}
+          </div>
+          {% if hotel.amenities %}
+          <div class="mt-1">
+            {% for a in hotel.amenities[:5] %}
+            <span style="background:#ecfdf5;color:#065f46;border:1px solid #bbf7d0;border-radius:4px;padding:1px 7px;font-size:.68rem;font-weight:600;margin-right:4px">{{ a }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="col-auto text-end">
+          <div style="font-size:.78rem;color:#9ca3af">Starting from</div>
+          <div style="font-size:1.5rem;font-weight:900;color:#059669">₹{{ "{:,.0f}".format(hotel.price_per_night) }}</div>
+          <div style="font-size:.72rem;color:#6b7280">per night</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ROOM SELECTION ══════════════════════════════════════════════════════ -->
+<div class="container py-4">
+  <div class="row g-4">
+
+    <!-- ── Room cards ── -->
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0">Select Your Room Type</h5>
+        <span style="font-size:.82rem;color:#6b7280">
+          <i class="bi bi-info-circle me-1"></i>{{ rooms }} room{{ 's' if rooms > 1 }} · {{ guests }} guest{{ 's' if guests > 1 }}
+        </span>
+      </div>
+
+      <div class="room-grid">
+
+        <!-- Standard Single -->
+        <div class="room-card" id="card-standard" onclick="selectRoom('standard', {{ hotel.price_per_night }}, 'Standard Single Room')">
+          <div class="room-img-band" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0)">
+            <div style="font-size:4rem;text-align:center;padding-top:30px">🛏</div>
+            <span class="badge-type">Standard</span>
+          </div>
+          <div class="room-body">
+            <div class="room-name">Standard Single Room</div>
+            <div class="room-desc">Comfortable single-bed room with all essential amenities. Perfect for solo travellers.</div>
+            <div class="room-feat">
+              <div class="room-feat-item"><i class="bi bi-wifi"></i> Free Wi-Fi</div>
+              <div class="room-feat-item"><i class="bi bi-thermometer-half"></i> AC</div>
+              <div class="room-feat-item"><i class="bi bi-tv"></i> TV</div>
+              <div class="room-feat-item"><i class="bi bi-cup-hot"></i> Kettle</div>
+            </div>
+            <div class="room-pricing">
+              <div class="d-flex align-items-end justify-content-between">
+                <div>
+                  <div class="room-price">₹{{ "{:,.0f}".format(hotel.price_per_night) }}</div>
+                  <div class="room-price-sub">per night</div>
+                  <span class="room-price-badge">✓ Free Cancellation</span>
+                </div>
+                <div style="font-size:.75rem;color:#6b7280">1 bed · 20 m²</div>
+              </div>
+              <button class="btn-select-room" id="btn-standard">Select Room</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dorm Bed -->
+        <div class="room-card" id="card-dorm" onclick="selectRoom('dorm', {{ (hotel.price_per_night * 0.35)|round|int }}, 'Dorm Bed (Shared)')">
+          <div class="room-img-band" style="background:linear-gradient(135deg,#e0f2fe,#bae6fd)">
+            <div style="font-size:4rem;text-align:center;padding-top:30px">🏠</div>
+            <span class="badge-type">Dormitory</span>
+          </div>
+          <div class="room-body">
+            <div class="room-name">Dorm Bed <span style="font-size:.75rem;color:#6b7280;font-weight:400">(Shared Room)</span></div>
+            <div class="room-desc">Budget-friendly bunk bed in a shared dormitory. Great for backpackers and budget travellers.</div>
+            <div class="room-feat">
+              <div class="room-feat-item"><i class="bi bi-wifi"></i> Free Wi-Fi</div>
+              <div class="room-feat-item"><i class="bi bi-lock"></i> Locker</div>
+              <div class="room-feat-item"><i class="bi bi-people"></i> Shared Bath</div>
+              <div class="room-feat-item"><i class="bi bi-lightning"></i> Power Point</div>
+            </div>
+            <div class="room-pricing">
+              <div class="d-flex align-items-end justify-content-between">
+                <div>
+                  <div class="room-price">₹{{ "{:,.0f}".format((hotel.price_per_night * 0.35)|round|int) }}</div>
+                  <div class="room-price-sub">per bed / night</div>
+                  <span class="room-price-badge" style="background:#fef9c3;color:#92400e;border-color:#fde68a">⚡ Best Budget Deal</span>
+                </div>
+                <div style="font-size:.75rem;color:#6b7280">6–8 bed dorm</div>
+              </div>
+              <button class="btn-select-room" id="btn-dorm">Select Room</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deluxe Double -->
+        <div class="room-card" id="card-deluxe" onclick="selectRoom('deluxe', {{ (hotel.price_per_night * 1.6)|round|int }}, 'Deluxe Double Room')">
+          <div class="room-img-band" style="background:linear-gradient(135deg,#fef3c7,#fde68a)">
+            <div style="font-size:4rem;text-align:center;padding-top:30px">🌟</div>
+            <span class="badge-type" style="background:rgba(180,130,0,.6)">Deluxe</span>
+          </div>
+          <div class="room-body">
+            <div class="room-name">Deluxe Double Room</div>
+            <div class="room-desc">Spacious room with king-sized bed, premium furnishings, and city/garden views.</div>
+            <div class="room-feat">
+              <div class="room-feat-item"><i class="bi bi-wifi"></i> Free Wi-Fi</div>
+              <div class="room-feat-item"><i class="bi bi-thermometer-half"></i> AC</div>
+              <div class="room-feat-item"><i class="bi bi-tv"></i> Smart TV</div>
+              <div class="room-feat-item"><i class="bi bi-eye"></i> City View</div>
+              <div class="room-feat-item"><i class="bi bi-cup-hot"></i> Mini Bar</div>
+              <div class="room-feat-item"><i class="bi bi-bucket"></i> Bathtub</div>
+            </div>
+            <div class="room-pricing">
+              <div class="d-flex align-items-end justify-content-between">
+                <div>
+                  <div class="room-price">₹{{ "{:,.0f}".format((hotel.price_per_night * 1.6)|round|int) }}</div>
+                  <div class="room-price-sub">per night</div>
+                  <span class="room-price-badge">✓ Breakfast Included</span>
+                </div>
+                <div style="font-size:.75rem;color:#6b7280">1 king bed · 32 m²</div>
+              </div>
+              <button class="btn-select-room" id="btn-deluxe">Select Room</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Premium Suite -->
+        <div class="room-card" id="card-premium" onclick="selectRoom('premium', {{ (hotel.price_per_night * 2.8)|round|int }}, 'Premium Suite')">
+          <div class="room-img-band" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe)">
+            <div style="font-size:4rem;text-align:center;padding-top:30px">👑</div>
+            <span class="badge-type" style="background:rgba(90,50,200,.55)">Suite</span>
+          </div>
+          <div class="room-body">
+            <div class="room-name">Premium Suite
+              <span style="background:#f5f3ff;color:#5b21b6;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #ddd6fe;margin-left:5px">LUXURY</span>
+            </div>
+            <div class="room-desc">Opulent suite with separate living area, panoramic views, butler service &amp; exclusive amenities.</div>
+            <div class="room-feat">
+              <div class="room-feat-item"><i class="bi bi-wifi"></i> High-Speed Wi-Fi</div>
+              <div class="room-feat-item"><i class="bi bi-stars"></i> Butler Service</div>
+              <div class="room-feat-item"><i class="bi bi-eye"></i> Panoramic View</div>
+              <div class="room-feat-item"><i class="bi bi-cup-hot"></i> Full Bar</div>
+              <div class="room-feat-item"><i class="bi bi-water"></i> Jacuzzi</div>
+              <div class="room-feat-item"><i class="bi bi-car-front"></i> Complimentary Transfer</div>
+            </div>
+            <div class="room-pricing">
+              <div class="d-flex align-items-end justify-content-between">
+                <div>
+                  <div class="room-price">₹{{ "{:,.0f}".format((hotel.price_per_night * 2.8)|round|int) }}</div>
+                  <div class="room-price-sub">per night</div>
+                  <span class="room-price-badge" style="background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe">🍳 Breakfast + Dinner</span>
+                </div>
+                <div style="font-size:.75rem;color:#6b7280">2 king beds · 65 m²</div>
+              </div>
+              <button class="btn-select-room" id="btn-premium">Select Room</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /col-lg-8 -->
+
+    <!-- ── Summary Panel ── -->
+    <div class="col-lg-4">
+      <div class="summary-panel">
+        <div class="summary-header">
+          <div class="fw-bold" style="font-size:1rem">Booking Summary</div>
+          <div style="font-size:.8rem;opacity:.8;margin-top:2px">{{ hotel.name }}</div>
+        </div>
+        <div class="p-4">
+
+          <!-- Selection status -->
+          <div class="mb-3 p-3" style="background:#f0fdf4;border-radius:12px;border:1px solid #bbf7d0">
+            <div style="font-size:.8rem;font-weight:700;color:#374151;margin-bottom:4px">Selected Room</div>
+            <div id="selectedRoomName" style="font-size:.9rem;color:#059669;font-weight:700">
+              Please select a room type above
+            </div>
+          </div>
+
+          <!-- Stay info -->
+          <div class="price-row">
+            <span>Check-in</span>
+            <span class="fw-semibold">{{ checkin or '—' }}</span>
+          </div>
+          <div class="price-row">
+            <span>Check-out</span>
+            <span class="fw-semibold">{{ checkout or '—' }}</span>
+          </div>
+          <div class="price-row">
+            <span>Duration</span>
+            <span class="fw-semibold">{{ nights }} night{{ 's' if nights != 1 }}</span>
+          </div>
+          <div class="price-row">
+            <span>Guests · Rooms</span>
+            <span class="fw-semibold">{{ guests }} guests · {{ rooms }} room{{ 's' if rooms > 1 }}</span>
+          </div>
+
+          <!-- Price breakdown -->
+          <div class="price-row mt-2">
+            <span>Room rate / night</span>
+            <span class="fw-semibold" id="pricePerNight">—</span>
+          </div>
+          <div class="price-row">
+            <span>Nights × Rooms</span>
+            <span class="fw-semibold" id="nightsRooms">{{ nights }} × {{ rooms }}</span>
+          </div>
+          <div class="price-row">
+            <span>Taxes &amp; service (12%)</span>
+            <span class="fw-semibold" id="taxAmt">—</span>
+          </div>
+          <div class="price-total-row">
+            <span>Total</span>
+            <span id="grandTotal" style="color:#059669">—</span>
+          </div>
+
+          <!-- Proceed form -->
+          <form method="POST" action="{{ url_for('public.hotel_room_select', hotel_id=hotel.id) }}" id="roomForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="room_type" id="hiddenRoomType" value="">
+            <input type="hidden" name="room_price" id="hiddenRoomPrice" value="">
+            <input type="hidden" name="room_name" id="hiddenRoomName" value="">
+            <button type="submit" class="btn-proceed" id="proceedBtn" disabled>
+              <i class="bi bi-arrow-right-circle me-2"></i>Continue to Guest Details
+            </button>
+          </form>
+
+          <div class="mt-3 text-center">
+            <a href="{{ url_for('public.hotels') }}" class="text-muted" style="font-size:.8rem">
+              <i class="bi bi-arrow-left me-1"></i>Back to hotels
+            </a>
+          </div>
+
+          <!-- Perks -->
+          <div class="mt-4 p-3" style="background:#f0fdf4;border-radius:12px;border:1px solid #bbf7d0">
+            <div style="font-size:.75rem;color:#166534">
+              <i class="bi bi-shield-check me-1"></i><strong>Free cancellation</strong> up to 24 hrs before check-in.
+            </div>
+            <div style="font-size:.75rem;color:#6b7280;margin-top:5px">
+              <i class="bi bi-check-circle me-1 text-success"></i>No hidden charges — price shown is final.
+            </div>
+            <div style="font-size:.75rem;color:#6b7280;margin-top:5px">
+              <i class="bi bi-star me-1 text-warning"></i>Earn SnapPoints on every stay.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const NIGHTS = {{ nights }};
+const ROOMS = {{ rooms }};
+let selectedRoomType = null;
+let selectedPrice = 0;
+
+function selectRoom(type, pricePerNight, name) {
+  // Deselect all
+  document.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.btn-select-room').forEach(b => {
+    b.textContent = 'Select Room';
+    b.classList.remove('selected-btn');
+  });
+
+  // Select chosen
+  document.getElementById('card-' + type).classList.add('selected');
+  const btn = document.getElementById('btn-' + type);
+  btn.textContent = '✓ Room Selected';
+  btn.classList.add('selected-btn');
+
+  selectedRoomType = type;
+  selectedPrice = pricePerNight;
+
+  // Update panel
+  document.getElementById('selectedRoomName').textContent = name;
+  document.getElementById('pricePerNight').textContent = '₹' + pricePerNight.toLocaleString('en-IN');
+  const subtotal = pricePerNight * NIGHTS * ROOMS;
+  const tax = Math.round(subtotal * 0.12);
+  const total = subtotal + tax;
+  document.getElementById('taxAmt').textContent = '₹' + tax.toLocaleString('en-IN');
+  document.getElementById('grandTotal').textContent = '₹' + total.toLocaleString('en-IN');
+
+  // Hidden fields
+  document.getElementById('hiddenRoomType').value = type;
+  document.getElementById('hiddenRoomPrice').value = pricePerNight;
+  document.getElementById('hiddenRoomName').value = name;
+
+  // Enable proceed
+  document.getElementById('proceedBtn').disabled = false;
+  document.getElementById('proceedBtn').innerHTML = '<i class="bi bi-arrow-right-circle me-2"></i>Continue to Guest Details';
+}
+</script>
+{% endblock %}
