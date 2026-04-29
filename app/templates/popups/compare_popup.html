@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Compare Flights — {{ origin }} to {{ destination }}</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+body { background:#f0f4ff; font-family:-apple-system,'Inter',sans-serif; padding:20px; }
+.popup-header { background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; border-radius:14px; padding:18px 22px; margin-bottom:20px; }
+.flight-card { background:#fff; border:2px solid #e5e7eb; border-radius:12px; padding:16px; margin-bottom:12px; cursor:pointer; transition:all .2s; }
+.flight-card:hover { border-color:#3b82f6; box-shadow:0 4px 16px rgba(59,130,246,.15); }
+.flight-card.selected { border-color:#1d4ed8; background:#eff6ff; }
+</style>
+</head>
+<body>
+
+<div class="popup-header">
+  <div style="font-weight:800;font-size:1rem"><i class="bi bi-airplane me-2"></i>Compare Flights</div>
+  <div style="font-size:.82rem;opacity:.8">{{ origin }} → {{ destination }} — Select the best option</div>
+</div>
+
+{% if flights %}
+{% for f in flights %}
+<div class="flight-card" onclick="selectFlight(this, '{{ f.airline }} {{ f.flight_no }}')">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-weight:800;color:#0f172a">{{ f.airline }}</div>
+      <div style="font-size:.75rem;color:#6b7280">{{ f.flight_no }} · {{ f.cabin_class }}</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-weight:800;font-size:1.1rem;color:#0f172a">{{ f.depart_time }}</div>
+      <div style="font-size:.7rem;color:#6b7280">{{ f.origin }}</div>
+    </div>
+    <div style="text-align:center">
+      <svg viewBox="0 0 100 20" width="80" height="16">
+        <circle cx="5" cy="10" r="3" fill="#1d4ed8"/>
+        <path d="M10 10 Q50 0, 90 10" stroke="#93c5fd" stroke-width="1.5" fill="none"/>
+        <text x="50" y="8" text-anchor="middle" font-size="7" fill="#1d4ed8">&#9992;</text>
+        <circle cx="95" cy="10" r="3" fill="#1d4ed8"/>
+      </svg>
+      <div style="font-size:.65rem;color:#6b7280">{{ f.duration_mins // 60 }}h {{ f.duration_mins % 60 }}m</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-weight:800;font-size:1.1rem;color:#0f172a">{{ f.arrive_time }}</div>
+      <div style="font-size:.7rem;color:#6b7280">{{ f.destination }}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-weight:900;font-size:1.2rem;color:#1d4ed8">₹{{ "{:,.0f}".format(f.price) }}</div>
+      <div style="font-size:.68rem;color:#6b7280">per person</div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div style="text-align:center;padding:40px;color:#6b7280">No flights found for this route.</div>
+{% endif %}
+
+<div style="text-align:center;margin-top:16px">
+  <button onclick="confirmSelection()" id="confirmBtn" disabled
+          style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;border:none;border-radius:10px;padding:12px 30px;font-weight:700;font-size:.9rem;cursor:pointer;opacity:.5">
+    <i class="bi bi-check2-circle me-1"></i>Confirm & Send to Trip Planner
+  </button>
+</div>
+
+<script>
+var selectedFlight = '';
+function selectFlight(el, name) {
+  document.querySelectorAll('.flight-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedFlight = name;
+  var btn = document.getElementById('confirmBtn');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+}
+function confirmSelection() {
+  if (window.opener && selectedFlight) {
+    window.opener.postMessage({type:'flight_selected', flight:selectedFlight}, '*');
+    window.close();
+  }
+}
+</script>
+</body>
+</html>

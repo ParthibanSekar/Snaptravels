@@ -115,6 +115,13 @@
 .route-line-wrap { width: 100%; display: flex; align-items: center; }
 .route-dot { width: 8px; height: 8px; border-radius: 50%; background: #1d4ed8; flex-shrink: 0; }
 .route-bar { flex: 1; height: 2px; background: linear-gradient(90deg, #1d4ed8, #93c5fd, #1d4ed8); }
+/* SVG route map */
+.route-svg { width: 100%; height: 32px; }
+.route-svg .path-line { stroke: #93c5fd; stroke-width: 2; fill: none; stroke-dasharray: 6 3; }
+.route-svg .path-active { stroke: #1d4ed8; stroke-width: 2.5; fill: none; stroke-dasharray: 200; stroke-dashoffset: 200; animation: drawRoute 2s ease forwards; }
+.route-svg .dot-origin, .route-svg .dot-dest { fill: #1d4ed8; }
+.route-svg .plane-icon { fill: #1d4ed8; font-size: 11px; }
+@keyframes drawRoute { to { stroke-dashoffset: 0; } }
 .route-plane { font-size: .9rem; color: #2563eb; margin: 0 6px; flex-shrink: 0; }
 .route-tag {
   font-size: .68rem; font-weight: 700; letter-spacing: .03em;
@@ -462,11 +469,13 @@
                       {{ flight.duration_mins // 60 }}h {{ flight.duration_mins % 60 }}m
                     </div>
                     <div class="route-line-wrap">
-                      <div class="route-dot"></div>
-                      <div class="route-bar"></div>
-                      <span class="route-plane">✈</span>
-                      <div class="route-bar"></div>
-                      <div class="route-dot"></div>
+                      <svg class="route-svg" viewBox="0 0 220 32" xmlns="http://www.w3.org/2000/svg">
+                        <circle class="dot-origin" cx="8" cy="16" r="4"/>
+                        <path class="path-line" d="M12 16 Q60 4, 110 16 Q160 28, 208 16"/>
+                        <path class="path-active" d="M12 16 Q60 4, 110 16 Q160 28, 208 16"/>
+                        <text class="plane-icon" x="105" y="13" text-anchor="middle">&#9992;</text>
+                        <circle class="dot-dest" cx="212" cy="16" r="4"/>
+                      </svg>
                     </div>
                     <span class="route-tag tag-nonstop">Non-stop</span>
                   </div>

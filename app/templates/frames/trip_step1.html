@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+body { margin:0; padding:16px; font-family:-apple-system,'Inter',sans-serif; background:#fff; }
+h3 { font-size:.95rem; font-weight:800; color:#0f172a; margin:0 0 4px; }
+.desc { font-size:.75rem; color:#6b7280; margin-bottom:14px; }
+.map-wrap { background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px; padding:14px; margin-bottom:14px; }
+.dest-chip {
+  display:inline-flex; align-items:center; gap:5px;
+  background:#fff; border:2px solid #e5e7eb; border-radius:8px;
+  padding:7px 12px; cursor:pointer; transition:all .2s; font-size:.8rem; font-weight:600; color:#374151;
+}
+.dest-chip:hover { border-color:#3b82f6; background:#eff6ff; }
+.dest-chip.selected { border-color:#1d4ed8; background:#1d4ed8; color:#fff; }
+.city-dot { cursor:pointer; transition:r .2s; }
+.route-anim { stroke-dasharray:500; stroke-dashoffset:500; transition:stroke-dashoffset 2s ease; }
+</style>
+</head>
+<body>
+
+<h3><i class="bi bi-geo-alt" style="color:#1d4ed8;margin-right:4px">&#x1F4CD;</i> Choose Your Destination</h3>
+<div class="desc">Click two cities on the map — first is origin, second is destination</div>
+
+<div class="map-wrap">
+  <svg viewBox="0 0 500 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto" id="tripMap">
+    <path d="M180 25 L250 20 L290 45 L310 35 L330 55 L340 90 L350 120 L360 150 L370 185 L350 220 L330 250 L310 275 L280 300 L250 310 L220 305 L195 290 L175 265 L165 235 L155 205 L145 175 L140 145 L148 115 L155 85 L165 60 L175 40 Z"
+          fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+
+    {% set cities = [('Delhi',200,65),('Mumbai',155,180),('Goa',175,240),('Bangalore',250,245),('Chennai',290,220),('Kolkata',330,145),('Jaipur',195,100),('Kerala',215,285)] %}
+    {% for name, cx, cy in cities %}
+    <g data-city="{{ name }}" onclick="selectCity('{{ name }}')" style="cursor:pointer">
+      <circle cx="{{ cx }}" cy="{{ cy }}" r="7" fill="#1d4ed8" opacity=".12"/>
+      <circle cx="{{ cx }}" cy="{{ cy }}" r="4.5" fill="#1d4ed8" class="city-dot" id="dot-{{ name }}"/>
+      <text x="{{ cx }}" y="{{ cy - 10 }}" text-anchor="middle" font-size="9" font-weight="700" fill="#1e40af">{{ name }}</text>
+    </g>
+    {% endfor %}
+
+    <path id="routePath" d="" stroke="#1d4ed8" stroke-width="2.5" fill="none" class="route-anim"/>
+
+    <rect x="360" y="15" width="130" height="85" rx="8" fill="#fff" stroke="#e5e7eb"/>
+    <text x="372" y="35" font-size="9" font-weight="800" fill="#0f172a">Selected Route</text>
+    <text x="372" y="52" font-size="8" fill="#6b7280" id="routeFrom">From: --</text>
+    <text x="372" y="66" font-size="8" fill="#6b7280" id="routeTo">To: --</text>
+    <text x="372" y="86" font-size="9" font-weight="800" fill="#1d4ed8" id="routeStatus">Click a city</text>
+  </svg>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+  {% for dest in destinations %}
+  <div class="dest-chip" onclick="selectCity('{{ dest }}')" id="chip-{{ dest }}">{{ dest }}</div>
+  {% endfor %}
+</div>
+
+<script>
+var selectedFrom = null, selectedTo = null;
+var cityCoords = { {% for name, cx, cy in [('Delhi',200,65),('Mumbai',155,180),('Goa',175,240),('Bangalore',250,245),('Chennai',290,220),('Kolkata',330,145),('Jaipur',195,100),('Kerala',215,285)] %}'{{ name }}':[{{ cx }},{{ cy }}],{% endfor %} };
+
+function selectCity(name) {
+  if (!selectedFrom) {
+    selectedFrom = name;
+    document.getElementById('routeFrom').textContent = 'From: ' + name;
+    document.getElementById('routeStatus').textContent = 'Pick destination';
+    setDot(name, '#16a34a');
+  } else if (!selectedTo && name !== selectedFrom) {
+    selectedTo = name;
+    document.getElementById('routeTo').textContent = 'To: ' + name;
+    document.getElementById('routeStatus').textContent = 'Route ready!';
+    setDot(name, '#dc2626');
+    drawRoute();
+    // Notify parent
+    window.parent.postMessage({type:'destination_selected', origin:selectedFrom, destination:selectedTo}, '*');
+  } else {
+    document.querySelectorAll('.city-dot').forEach(d => d.setAttribute('fill','#1d4ed8'));
+    document.getElementById('routePath').setAttribute('d','');
+    selectedFrom = name; selectedTo = null;
+    document.getElementById('routeFrom').textContent = 'From: ' + name;
+    document.getElementById('routeTo').textContent = 'To: --';
+    document.getElementById('routeStatus').textContent = 'Pick destination';
+    setDot(name, '#16a34a');
+  }
+  document.querySelectorAll('.dest-chip').forEach(c => c.classList.remove('selected'));
+  if (selectedFrom) { var c=document.getElementById('chip-'+selectedFrom); if(c) c.classList.add('selected'); }
+}
+
+function setDot(name, color) {
+  var d = document.getElementById('dot-'+name);
+  if (d) d.setAttribute('fill', color);
+}
+
+function drawRoute() {
+  var a=cityCoords[selectedFrom], b=cityCoords[selectedTo];
+  if (!a||!b) return;
+  var mx=(a[0]+b[0])/2, my=Math.min(a[1],b[1])-25;
+  var el=document.getElementById('routePath');
+  el.setAttribute('d','M'+a[0]+' '+a[1]+' Q'+mx+' '+my+', '+b[0]+' '+b[1]);
+  el.style.strokeDashoffset='500';
+  setTimeout(function(){ el.style.strokeDashoffset='0'; }, 50);
+}
+</script>
+</body>
+</html>

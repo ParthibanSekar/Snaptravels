@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify, g
-from app.models import Flight, Hotel, Booking, Package, PromoCode
+from app import db
+from app.models import Flight, Hotel, Booking, BookingItem, Package, PromoCode
 from app.forms import RoundTripSearchForm, HotelSearchForm, BookingForm
 from app.services.search import SearchService
 from app.services.booking import BookingService
@@ -354,6 +355,198 @@ def booking_confirmation(booking_id):
     booking = Booking.query.filter_by(id=booking_id, user_id=session['user_id']).first_or_404()
     user = get_current_user()
     return render_template('booking_confirmation.html', booking=booking, user=user)
+
+
+# ── Frames / Frameset pages ────────────────────────────────────────────────
+@public_bp.route('/travel-dashboard')
+def travel_dashboard():
+    """Multi-frame travel dashboard with SVG charts, iframes, and live data."""
+    user = get_current_user()
+    return render_template('travel_dashboard.html', user=user)
+
+@public_bp.route('/travel-dashboard/stats-frame')
+def stats_frame():
+    """Stats frame content for the travel dashboard."""
+    from app.models import Flight, Hotel, Booking
+    stats = {
+        'flights': Flight.query.count(),
+        'hotels': Hotel.query.count(),
+        'bookings': Booking.query.count(),
+    }
+    return render_template('frames/stats_frame.html', stats=stats)
+
+@public_bp.route('/travel-dashboard/chart-frame')
+def chart_frame():
+    """SVG chart frame content."""
+    from app.models import Booking
+    from sqlalchemy import func
+    # Get bookings by type
+    data = {}
+    for row in db.session.query(
+        func.coalesce(BookingItem.type, 'OTHER'),
+        func.count()
+    ).group_by(BookingItem.type).all():
+        data[row[0]] = row[1]
+    return render_template('frames/chart_frame.html', data=data)
+
+@public_bp.route('/travel-dashboard/map-frame')
+def map_frame():
+    """SVG map frame content."""
+    return render_template('frames/map_frame.html')
+
+@public_bp.route('/travel-dashboard/feed-frame')
+def feed_frame():
+    """Live feed frame content."""
+    from app.models import Booking
+    recent = Booking.query.order_by(Booking.created_at.desc()).limit(10).all()
+    return render_template('frames/feed_frame.html', bookings=recent)
+
+
+# ── Trip Planner (popup/new-window/SVG interaction flows) ─────────────────
+@public_bp.route('/trip-planner')
+def trip_planner():
+    """Multi-step trip planner with popups, SVG interactions, and cross-window actions."""
+    user = get_current_user()
+    destinations = db.session.query(Flight.destination).distinct().limit(8).all()
+    destinations = [d[0] for d in destinations]
+    return render_template('trip_planner.html', user=user, destinations=destinations)
+
+@public_bp.route('/trip-planner/step1-frame')
+def trip_step1_frame():
+    """Step 1 frame: SVG map destination picker."""
+    destinations = db.session.query(Flight.destination).distinct().limit(8).all()
+    destinations = [d[0] for d in destinations]
+    return render_template('frames/trip_step1.html', destinations=destinations)
+
+@public_bp.route('/trip-planner/step5-frame')
+def trip_step5_frame():
+    """Step 5 frame: Review & Save."""
+    user = get_current_user()
+    return render_template('frames/trip_step5.html', user=user)
+
+@public_bp.route('/trip-planner/compare-popup')
+def compare_popup():
+    """Opens in a popup — frameset with flight list frame + action frame."""
+    origin = request.args.get('origin', 'Delhi')
+    destination = request.args.get('destination', 'Mumbai')
+    return render_template('popups/compare_frameset.html', origin=origin, destination=destination)
+
+@public_bp.route('/trip-planner/compare-popup/flights-frame')
+def compare_flights_frame():
+    """Top frame: flight list with selectable cards."""
+    origin = request.args.get('origin', 'Delhi')
+    destination = request.args.get('destination', 'Mumbai')
+    flights = Flight.query.filter_by(origin=origin, destination=destination).limit(6).all()
+    if not flights:
+        flights = Flight.query.limit(6).all()
+    return render_template('popups/compare_flights_frame.html', flights=flights, origin=origin, destination=destination)
+
+@public_bp.route('/trip-planner/compare-popup/action-frame')
+def compare_action_frame():
+    """Bottom frame: confirm button + selected flight display."""
+    return render_template('popups/compare_action_frame.html')
+
+@public_bp.route('/trip-planner/seat-preview-popup')
+def seat_preview_popup():
+    """Opens in a popup — interactive SVG seat map preview."""
+    flight_id = request.args.get('flight_id', 1, type=int)
+    flight = Flight.query.get(flight_id)
+    if not flight:
+        flight = Flight.query.first()
+    return render_template('popups/seat_preview_popup.html', flight=flight)
+
+@public_bp.route('/trip-planner/price-alert-popup')
+def price_alert_popup():
+    """Opens in a popup — set price alert with form submission back to parent."""
+    destination = request.args.get('destination', 'Goa')
+    return render_template('popups/price_alert_popup.html', destination=destination)
+
+@public_bp.route('/trip-planner/save-redirect')
+@login_required
+def save_trip_redirect():
+    """GET-based save for iframe step5 (can't POST with CSRF from iframe)."""
+    from app.models import Trip, TripItem, Notification
+    destination = request.args.get('destination', '').strip()
+    origin = request.args.get('origin', '').strip()
+    flight_choice = request.args.get('flight_choice', '').strip()
+    seat_choice = request.args.get('seat_choice', '').strip()
+    price_alert = request.args.get('price_alert', '').strip()
+
+    if not destination:
+        flash('Please select a destination first.', 'warning')
+        return redirect(url_for('public.trip_planner'))
+
+    trip_name = f"{origin} → {destination}" if origin else f"Trip to {destination}"
+    trip = Trip(user_id=session['user_id'], name=trip_name, destination=destination, notes="Planned via Trip Planner")
+    db.session.add(trip)
+    db.session.flush()
+    if origin and destination:
+        db.session.add(TripItem(trip_id=trip.id, item_type='FLIGHT', day_number=1,
+                                title=f"Flight: {origin} → {destination}", notes=flight_choice or 'Not selected'))
+    if seat_choice:
+        db.session.add(TripItem(trip_id=trip.id, item_type='NOTE', day_number=1, title=f"Preferred Seat: {seat_choice}"))
+    if price_alert:
+        db.session.add(TripItem(trip_id=trip.id, item_type='NOTE', day_number=1, title=f"Price Alert: {price_alert}"))
+    notif = Notification(user_id=session['user_id'], type='INFO', title='Trip Planned!',
+                         message=f"Your trip to {destination} has been saved.",
+                         link=url_for('trips.detail', trip_id=trip.id))
+    db.session.add(notif)
+    db.session.commit()
+    flash(f'Trip to {destination} saved!', 'success')
+    return redirect(url_for('trips.detail', trip_id=trip.id))
+
+@public_bp.route('/trip-planner/save', methods=['POST'])
+@login_required
+def save_trip():
+    """Save the planned trip to the user's account."""
+    from app.models import Trip, TripItem, Notification
+    destination = request.form.get('destination', '').strip()
+    flight_choice = request.form.get('flight_choice', '').strip()
+    seat_choice = request.form.get('seat_choice', '').strip()
+    price_alert = request.form.get('price_alert', '').strip()
+    origin = request.form.get('origin', '').strip()
+
+    if not destination:
+        flash('Please select a destination first.', 'warning')
+        return redirect(url_for('public.trip_planner'))
+
+    trip_name = f"Trip to {destination}"
+    if origin:
+        trip_name = f"{origin} → {destination}"
+
+    trip = Trip(
+        user_id=session['user_id'],
+        name=trip_name,
+        destination=destination,
+        notes=f"Planned via Trip Planner",
+    )
+    db.session.add(trip)
+    db.session.flush()
+
+    # Add items from each step
+    if origin and destination:
+        db.session.add(TripItem(trip_id=trip.id, item_type='FLIGHT', day_number=1,
+                                title=f"Flight: {origin} → {destination}",
+                                notes=flight_choice or 'Not selected'))
+    if seat_choice:
+        db.session.add(TripItem(trip_id=trip.id, item_type='NOTE', day_number=1,
+                                title=f"Preferred Seat: {seat_choice}"))
+    if price_alert:
+        db.session.add(TripItem(trip_id=trip.id, item_type='NOTE', day_number=1,
+                                title=f"Price Alert: {price_alert}"))
+
+    # Notification
+    notif = Notification(
+        user_id=session['user_id'], type='INFO',
+        title='Trip Planned!',
+        message=f"Your trip to {destination} has been saved.",
+        link=url_for('trips.detail', trip_id=trip.id),
+    )
+    db.session.add(notif)
+    db.session.commit()
+
+    flash(f'Trip to {destination} saved! View it in My Trips.', 'success')
+    return redirect(url_for('trips.detail', trip_id=trip.id))
 
 
 # ── Chaos-safe helper ───────────────────────────────────────────────────────

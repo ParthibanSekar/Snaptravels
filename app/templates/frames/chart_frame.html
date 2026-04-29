@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+body { margin:0; padding:16px; font-family:-apple-system,'Inter',sans-serif; background:#fff; display:flex; align-items:center; justify-content:center; min-height:160px; }
+.legend { margin-top:10px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+.legend-item { display:flex; align-items:center; gap:4px; font-size:.72rem; color:#374151; font-weight:600; }
+.legend-dot { width:10px; height:10px; border-radius:3px; }
+</style>
+</head>
+<body>
+<div style="text-align:center">
+{% set colors = {'FLIGHT':'#2563eb','HOTEL':'#16a34a','TRAIN':'#7c3aed','BUS':'#d97706','CAB':'#06b6d4','PACKAGE':'#ec4899','ACTIVITY':'#f43f5e','INSURANCE':'#8b5cf6','OTHER':'#6b7280'} %}
+{% set total = data.values()|sum or 1 %}
+<svg viewBox="0 0 160 160" width="130" height="130">
+  {% set ns = namespace(offset=0) %}
+  {% for type, count in data.items() %}
+  {% set pct = count / total * 100 %}
+  {% set dash = pct * 3.14159 * 60 / 100 %}
+  {% set gap = 3.14159 * 60 - dash %}
+  <circle cx="80" cy="80" r="60" fill="none"
+          stroke="{{ colors.get(type, '#6b7280') }}" stroke-width="20"
+          stroke-dasharray="{{ dash }} {{ gap }}"
+          stroke-dashoffset="{{ -ns.offset }}"
+          transform="rotate(-90 80 80)"
+          opacity="0.85">
+    <animate attributeName="stroke-dasharray" from="0 188.5" to="{{ dash }} {{ gap }}" dur="1s" fill="freeze"/>
+  </circle>
+  {% set ns.offset = ns.offset + dash + 0.5 %}
+  {% endfor %}
+  <circle cx="80" cy="80" r="45" fill="#fff"/>
+  <text x="80" y="76" text-anchor="middle" font-size="18" font-weight="900" fill="#0f172a">{{ total|int }}</text>
+  <text x="80" y="92" text-anchor="middle" font-size="8" fill="#6b7280" font-weight="600">BOOKINGS</text>
+</svg>
+<div class="legend">
+  {% for type, count in data.items() %}
+  <span class="legend-item"><span class="legend-dot" style="background:{{ colors.get(type, '#6b7280') }}"></span>{{ type }} ({{ count }})</span>
+  {% endfor %}
+</div>
+</div>
+</body>
+</html>

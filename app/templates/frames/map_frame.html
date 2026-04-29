@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+body { margin:0; padding:10px; font-family:-apple-system,'Inter',sans-serif; background:#f8fafc; display:flex; align-items:center; justify-content:center; }
+.city-dot { cursor:pointer; transition:r .2s; }
+.city-dot:hover { r:8; }
+.city-label { font-size:9px; fill:#374151; font-weight:700; pointer-events:none; }
+.route-path { stroke-dasharray:300; stroke-dashoffset:300; animation:drawPath 3s ease forwards; }
+@keyframes drawPath { to { stroke-dashoffset:0; } }
+.pulse { animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto">
+  <!-- India outline (simplified) -->
+  <path d="M200 30 L280 25 L320 50 L340 40 L360 60 L370 100 L380 130 L390 160 L400 200 L380 240 L360 270 L340 300 L310 330 L280 350 L250 370 L220 360 L200 340 L180 310 L170 280 L160 250 L150 220 L140 190 L145 160 L155 130 L165 100 L175 70 L190 45 Z"
+        fill="#eef2ff" stroke="#c7d2fe" stroke-width="1.5"/>
+
+  <!-- Cities -->
+  <circle class="city-dot" cx="220" cy="80" r="5" fill="#dc2626"/>
+  <text class="city-label" x="230" y="78">Delhi</text>
+
+  <circle class="city-dot" cx="175" cy="200" r="5" fill="#2563eb"/>
+  <text class="city-label" x="132" y="203">Mumbai</text>
+
+  <circle class="city-dot" cx="270" cy="120" r="4" fill="#7c3aed"/>
+  <text class="city-label" x="280" y="118">Jaipur</text>
+
+  <circle class="city-dot" cx="290" cy="260" r="5" fill="#16a34a"/>
+  <text class="city-label" x="300" y="258">Bangalore</text>
+
+  <circle class="city-dot" cx="320" cy="230" r="5" fill="#0ea5e9"/>
+  <text class="city-label" x="330" y="228">Chennai</text>
+
+  <circle class="city-dot" cx="310" cy="135" r="4" fill="#f59e0b"/>
+  <text class="city-label" x="320" y="133">Varanasi</text>
+
+  <circle class="city-dot" cx="360" cy="170" r="4" fill="#ec4899"/>
+  <text class="city-label" x="370" y="168">Kolkata</text>
+
+  <circle class="city-dot" cx="200" cy="330" r="4" fill="#14b8a6"/>
+  <text class="city-label" x="210" y="328">Kochi</text>
+
+  <circle class="city-dot" cx="230" cy="280" r="4" fill="#f43f5e"/>
+  <text class="city-label" x="195" y="278">Goa</text>
+
+  <circle class="city-dot" cx="195" cy="130" r="4" fill="#8b5cf6"/>
+  <text class="city-label" x="155" y="128">Udaipur</text>
+
+  <!-- Animated Routes -->
+  <path class="route-path" d="M220 80 Q200 140, 175 200" stroke="#dc2626" stroke-width="2" fill="none" opacity=".6"/>
+  <path class="route-path" d="M175 200 Q230 230, 290 260" stroke="#2563eb" stroke-width="2" fill="none" opacity=".6" style="animation-delay:.5s"/>
+  <path class="route-path" d="M290 260 Q305 245, 320 230" stroke="#16a34a" stroke-width="2" fill="none" opacity=".6" style="animation-delay:1s"/>
+  <path class="route-path" d="M220 80 Q265 100, 310 135" stroke="#f59e0b" stroke-width="1.5" fill="none" opacity=".4" style="animation-delay:1.5s"/>
+  <path class="route-path" d="M310 135 Q335 150, 360 170" stroke="#ec4899" stroke-width="1.5" fill="none" opacity=".4" style="animation-delay:2s"/>
+  <path class="route-path" d="M175 200 Q215 240, 230 280" stroke="#f43f5e" stroke-width="1.5" fill="none" opacity=".4" style="animation-delay:2.5s"/>
+
+  <!-- Plane icons on routes -->
+  <text x="198" y="138" font-size="10" fill="#dc2626">&#9992;</text>
+  <text x="232" y="228" font-size="10" fill="#2563eb">&#9992;</text>
+  <text x="305" y="243" font-size="10" fill="#16a34a">&#9992;</text>
+
+  <!-- Live indicator -->
+  <circle cx="25" cy="20" r="5" fill="#22c55e" class="pulse"/>
+  <text x="35" y="24" font-size="9" fill="#6b7280" font-weight="600">LIVE</text>
+
+  <!-- Title -->
+  <text x="250" y="395" text-anchor="middle" font-size="10" fill="#9ca3af">India Route Network — SVG Interactive Map</text>
+</svg>
+</body>
+</html>

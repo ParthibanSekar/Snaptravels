@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Compare Flights — {{ origin }} → {{ destination }}</title>
+<style>
+body { margin:0; padding:0; background:#f0f4ff; font-family:-apple-system,'Inter',sans-serif; }
+.frameset-container { display:flex; flex-direction:column; height:100vh; }
+.frame-top { flex:1; border:none; }
+.frame-divider {
+  background:linear-gradient(90deg,#e5e7eb,#1d4ed8,#e5e7eb);
+  height:3px; flex-shrink:0;
+}
+.frame-bottom { height:140px; flex-shrink:0; border:none; }
+</style>
+</head>
+<body>
+<div class="frameset-container">
+  <!-- Top frame: Flight list -->
+  <iframe src="/trip-planner/compare-popup/flights-frame?origin={{ origin }}&destination={{ destination }}"
+          class="frame-top" id="flightsFrame" name="flightsFrame" title="Flight List"></iframe>
+
+  <!-- Divider -->
+  <div class="frame-divider"></div>
+
+  <!-- Bottom frame: Action bar -->
+  <iframe src="/trip-planner/compare-popup/action-frame"
+          class="frame-bottom" id="actionFrame" name="actionFrame" title="Actions"></iframe>
+</div>
+
+<script>
+// Cross-frame communication: flights frame → action frame
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'flight_hover') {
+    // Forward to action frame
+    document.getElementById('actionFrame').contentWindow.postMessage(e.data, '*');
+  }
+  if (e.data && e.data.type === 'flight_selected_in_frame') {
+    // Forward to action frame
+    document.getElementById('actionFrame').contentWindow.postMessage(e.data, '*');
+  }
+  if (e.data && e.data.type === 'confirm_to_parent') {
+    // Forward to opener (trip planner page)
+    if (window.opener) {
+      window.opener.postMessage({type:'flight_selected', flight:e.data.flight}, '*');
+      window.close();
+    }
+  }
+});
+</script>
+</body>
+</html>

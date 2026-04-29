@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Seat Map — {{ flight.airline if flight else 'Flight' }}</title>
+<style>
+body { background:#f0f4ff; font-family:-apple-system,'Inter',sans-serif; padding:20px; margin:0; }
+.header { background:linear-gradient(135deg,#d97706,#f59e0b); color:#fff; border-radius:12px; padding:16px 20px; margin-bottom:16px; }
+.seat { width:32px; height:32px; border-radius:6px; border:2px solid #d1d5db; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:700; color:#6b7280; transition:all .15s; }
+.seat:hover { border-color:#1d4ed8; background:#eff6ff; }
+.seat.selected { background:#1d4ed8; color:#fff; border-color:#1d4ed8; }
+.seat.taken { background:#f3f4f6; color:#d1d5db; cursor:not-allowed; border-color:#e5e7eb; }
+.aisle { width:20px; }
+.row-label { width:24px; font-size:.7rem; font-weight:700; color:#9ca3af; display:flex; align-items:center; justify-content:center; }
+.legend { display:flex; gap:16px; justify-content:center; margin:16px 0; font-size:.72rem; color:#6b7280; }
+.legend-item { display:flex; align-items:center; gap:4px; }
+.legend-box { width:16px; height:16px; border-radius:4px; border:1.5px solid #d1d5db; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="font-weight:800;font-size:.95rem"><i style="margin-right:6px">&#9992;</i>{{ flight.airline if flight else 'Flight' }} — Seat Map</div>
+  <div style="font-size:.78rem;opacity:.85">{{ flight.flight_no if flight else '' }} · {{ flight.origin if flight else '' }} → {{ flight.destination if flight else '' }}</div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-box" style="background:#fff"></div> Available</div>
+  <div class="legend-item"><div class="legend-box" style="background:#1d4ed8;border-color:#1d4ed8"></div> Selected</div>
+  <div class="legend-item"><div class="legend-box" style="background:#f3f4f6;border-color:#e5e7eb"></div> Taken</div>
+</div>
+
+<!-- SVG Seat Map -->
+<svg viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:300px;display:block;margin:0 auto" id="seatSvg">
+  <!-- Fuselage -->
+  <rect x="20" y="10" width="260" height="400" rx="30" fill="#f8fafc" stroke="#d1d5db" stroke-width="1.5"/>
+
+  <!-- Column headers -->
+  <text x="60" y="35" text-anchor="middle" font-size="9" font-weight="800" fill="#6b7280">A</text>
+  <text x="100" y="35" text-anchor="middle" font-size="9" font-weight="800" fill="#6b7280">B</text>
+  <text x="140" y="35" text-anchor="middle" font-size="9" font-weight="800" fill="#6b7280">C</text>
+  <text x="170" y="35" text-anchor="middle" font-size="8" fill="#d1d5db">|</text>
+  <text x="200" y="35" text-anchor="middle" font-size="9" font-weight="800" fill="#6b7280">D</text>
+  <text x="240" y="35" text-anchor="middle" font-size="9" font-weight="800" fill="#6b7280">E</text>
+
+  <!-- Seats (10 rows × 5 seats) -->
+  <script type="text/javascript">
+  <![CDATA[
+    var taken = [2,5,8,11,14,17,22,25,31,38,42,45];
+    var selected = null;
+    var svg = document.getElementById('seatSvg');
+
+    for (var row = 0; row < 10; row++) {
+      var y = 48 + row * 36;
+      var cols = [60, 100, 140, 200, 240];
+      var labels = ['A','B','C','D','E'];
+
+      // Row number
+      var rl = document.createElementNS('http://www.w3.org/2000/svg','text');
+      rl.setAttribute('x','35'); rl.setAttribute('y', y+14);
+      rl.setAttribute('text-anchor','middle'); rl.setAttribute('font-size','8');
+      rl.setAttribute('font-weight','700'); rl.setAttribute('fill','#9ca3af');
+      rl.textContent = (row+1);
+      svg.appendChild(rl);
+
+      for (var col = 0; col < 5; col++) {
+        var idx = row * 5 + col;
+        var seatId = (row+1) + labels[col];
+        var isTaken = taken.indexOf(idx) !== -1;
+
+        var rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        rect.setAttribute('x', cols[col]-14); rect.setAttribute('y', y);
+        rect.setAttribute('width','28'); rect.setAttribute('height','28');
+        rect.setAttribute('rx','5');
+        rect.setAttribute('data-seat', seatId);
+        rect.setAttribute('data-idx', idx);
+
+        if (isTaken) {
+          rect.setAttribute('fill','#f3f4f6');
+          rect.setAttribute('stroke','#e5e7eb');
+          rect.setAttribute('stroke-width','1.5');
+          rect.style.cursor = 'not-allowed';
+        } else {
+          rect.setAttribute('fill','#fff');
+          rect.setAttribute('stroke','#d1d5db');
+          rect.setAttribute('stroke-width','1.5');
+          rect.style.cursor = 'pointer';
+          rect.onclick = (function(r, sid) {
+            return function() {
+              // Deselect previous
+              if (selected) {
+                selected.setAttribute('fill','#fff');
+                selected.setAttribute('stroke','#d1d5db');
+              }
+              r.setAttribute('fill','#1d4ed8');
+              r.setAttribute('stroke','#1d4ed8');
+              selected = r;
+              document.getElementById('selectedSeat').textContent = sid;
+              document.getElementById('confirmBtn').style.opacity = '1';
+              document.getElementById('confirmBtn').disabled = false;
+            };
+          })(rect, seatId);
+        }
+        svg.appendChild(rect);
+
+        // Seat label
+        var txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+        txt.setAttribute('x', cols[col]); txt.setAttribute('y', y+17);
+        txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','7');
+        txt.setAttribute('font-weight','600'); txt.setAttribute('pointer-events','none');
+        txt.setAttribute('fill', isTaken ? '#d1d5db' : '#6b7280');
+        txt.textContent = seatId;
+        svg.appendChild(txt);
+      }
+    }
+  ]]>
+  </script>
+</svg>
+
+<div style="text-align:center;margin-top:16px">
+  <div style="font-size:.82rem;color:#374151;margin-bottom:10px">
+    Selected: <strong id="selectedSeat" style="color:#1d4ed8">None</strong>
+  </div>
+  <button id="confirmBtn" onclick="confirmSeat()" disabled
+          style="background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;border-radius:10px;padding:12px 28px;font-weight:700;font-size:.88rem;cursor:pointer;opacity:.5">
+    Confirm Seat & Close
+  </button>
+</div>
+
+<script>
+function confirmSeat() {
+  var seat = document.getElementById('selectedSeat').textContent;
+  if (window.opener && seat !== 'None') {
+    window.opener.postMessage({type:'seat_selected', seat:seat}, '*');
+    window.close();
+  }
+}
+</script>
+</body>
+</html>

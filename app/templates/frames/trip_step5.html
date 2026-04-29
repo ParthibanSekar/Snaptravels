@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+body { margin:0; padding:20px; font-family:-apple-system,'Inter',sans-serif; background:#fff; }
+h3 { font-size:.95rem; font-weight:800; color:#0f172a; margin:0 0 14px; }
+.summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:18px; }
+.summary-item { background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; }
+.summary-label { font-size:.68rem; color:#9ca3af; text-transform:uppercase; letter-spacing:.04em; font-weight:600; }
+.summary-value { font-size:.88rem; font-weight:700; color:#0f172a; margin-top:4px; }
+.summary-value.empty { color:#d1d5db; font-style:italic; font-weight:400; }
+.save-btn {
+  background:linear-gradient(135deg,#16a34a,#22c55e);
+  color:#fff; border:none; border-radius:10px;
+  padding:12px 28px; font-weight:800; font-size:.88rem;
+  cursor:pointer; transition:all .2s;
+  box-shadow:0 4px 14px rgba(22,163,74,.3);
+}
+.save-btn:hover { transform:translateY(-2px); filter:brightness(1.1); }
+.trips-link { font-size:.82rem; color:#3b82f6; text-decoration:none; font-weight:600; margin-left:16px; }
+</style>
+</head>
+<body>
+
+<h3><i class="bi bi-check2-circle" style="color:#16a34a;margin-right:4px"></i> Review & Save Your Trip</h3>
+
+<div class="summary-grid">
+  <div class="summary-item">
+    <div class="summary-label">Route</div>
+    <div class="summary-value empty" id="sRoute">Select cities in Step 1</div>
+  </div>
+  <div class="summary-item">
+    <div class="summary-label">Flight</div>
+    <div class="summary-value empty" id="sFlight">Compare in Step 2</div>
+  </div>
+  <div class="summary-item">
+    <div class="summary-label">Seat</div>
+    <div class="summary-value empty" id="sSeat">Pick in Step 3</div>
+  </div>
+  <div class="summary-item">
+    <div class="summary-label">Price Alert</div>
+    <div class="summary-value empty" id="sAlert">Set in Step 4</div>
+  </div>
+</div>
+
+<form method="POST" action="/trip-planner/save" id="saveForm">
+  <input type="hidden" name="csrf_token" value="">
+  <input type="hidden" name="origin" id="fOrigin" value="">
+  <input type="hidden" name="destination" id="fDest" value="">
+  <input type="hidden" name="flight_choice" id="fFlight" value="">
+  <input type="hidden" name="seat_choice" id="fSeat" value="">
+  <input type="hidden" name="price_alert" id="fAlert" value="">
+  <button type="submit" class="save-btn" id="saveBtn">
+    <i class="bi bi-check2-circle me-2"></i>Save Trip to My Account
+  </button>
+  <a href="/my-trips/" class="trips-link" target="_top"><i class="bi bi-list-ul me-1"></i>View My Trips</a>
+</form>
+
+<script>
+// Get CSRF token from parent page cookies
+try {
+  var cookies = document.cookie.split(';');
+  // Fallback: fetch csrf from parent
+} catch(e) {}
+
+// Listen for summary updates from parent
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'update_summary') {
+    var d = e.data.data;
+    if (d.origin && d.destination) {
+      setText('sRoute', d.origin + ' → ' + d.destination);
+      document.getElementById('fOrigin').value = d.origin;
+      document.getElementById('fDest').value = d.destination;
+    }
+    if (d.flight) {
+      setText('sFlight', d.flight);
+      document.getElementById('fFlight').value = d.flight;
+    }
+    if (d.seat) {
+      setText('sSeat', 'Seat ' + d.seat);
+      document.getElementById('fSeat').value = d.seat;
+    }
+    if (d.alert) {
+      setText('sAlert', d.alert);
+      document.getElementById('fAlert').value = d.alert;
+    }
+  }
+});
+
+function setText(id, val) {
+  var el = document.getElementById(id);
+  el.textContent = val;
+  el.classList.remove('empty');
+}
+
+// Handle form submit — post to parent window so CSRF works
+document.getElementById('saveForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  // Navigate the parent (top) window to save the trip
+  var params = new URLSearchParams({
+    origin: document.getElementById('fOrigin').value,
+    destination: document.getElementById('fDest').value,
+    flight_choice: document.getElementById('fFlight').value,
+    seat_choice: document.getElementById('fSeat').value,
+    price_alert: document.getElementById('fAlert').value,
+  });
+  // Use top-level navigation with GET params to trigger save
+  window.top.location.href = '/trip-planner/save-redirect?' + params.toString();
+});
+</script>
+</body>
+</html>

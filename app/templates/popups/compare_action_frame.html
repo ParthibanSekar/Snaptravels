@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Actions</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+body {
+  margin:0; padding:0; font-family:-apple-system,'Inter',sans-serif;
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+  color:#fff; display:flex; align-items:center; justify-content:center; height:100vh;
+}
+.action-bar { text-align:center; width:100%; padding:0 20px; }
+.selected-info {
+  font-size:.82rem; color:#94a3b8; margin-bottom:12px;
+  min-height:24px; transition:all .3s;
+}
+.selected-name { font-weight:800; color:#60a5fa; font-size:.95rem; }
+.confirm-btn {
+  background:linear-gradient(135deg,#16a34a,#22c55e);
+  color:#fff; border:none; border-radius:10px;
+  padding:12px 32px; font-weight:800; font-size:.9rem;
+  cursor:pointer; transition:all .2s;
+  box-shadow:0 4px 16px rgba(22,163,74,.3);
+  opacity:.4; pointer-events:none;
+}
+.confirm-btn.active { opacity:1; pointer-events:auto; }
+.confirm-btn:hover { transform:translateY(-2px); filter:brightness(1.1); }
+.hover-hint { font-size:.7rem; color:#475569; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<div class="action-bar">
+  <div class="selected-info">
+    <span id="hoverText" style="color:#475569">Hover over a flight to preview</span>
+    <div id="selectedText" style="display:none">
+      Selected: <span class="selected-name" id="flightName"></span>
+    </div>
+  </div>
+  <button class="confirm-btn" id="confirmBtn" onclick="confirmAndClose()">
+    <i class="bi bi-check2-circle me-2"></i>Confirm & Send to Trip Planner
+  </button>
+  <div class="hover-hint" id="hoverHint">Select a flight in the frame above</div>
+</div>
+
+<script>
+var selectedFlight = '';
+
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'flight_hover') {
+    document.getElementById('hoverText').textContent = 'Previewing: ' + e.data.flight;
+  }
+  if (e.data && e.data.type === 'flight_selected_in_frame') {
+    selectedFlight = e.data.flight;
+    document.getElementById('hoverText').style.display = 'none';
+    document.getElementById('selectedText').style.display = '';
+    document.getElementById('flightName').textContent = e.data.flight;
+    document.getElementById('confirmBtn').classList.add('active');
+    document.getElementById('hoverHint').textContent = 'Click confirm to send selection back';
+  }
+});
+
+function confirmAndClose() {
+  if (selectedFlight) {
+    window.parent.postMessage({type:'confirm_to_parent', flight:selectedFlight}, '*');
+  }
+}
+</script>
+</body>
+</html>

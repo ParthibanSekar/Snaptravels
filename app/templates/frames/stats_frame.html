@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+body { margin:0; padding:20px; font-family:-apple-system,'Inter',sans-serif; background:#fff; }
+.grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+.stat { background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px; padding:20px; text-align:center; }
+.stat-icon { width:40px; height:40px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; margin-bottom:10px; }
+.stat-val { font-size:1.6rem; font-weight:900; color:#0f172a; }
+.stat-label { font-size:.72rem; color:#6b7280; font-weight:600; text-transform:uppercase; letter-spacing:.05em; margin-top:4px; }
+.stat-bar { height:4px; border-radius:2px; margin-top:10px; background:#e5e7eb; overflow:hidden; }
+.stat-bar-fill { height:100%; border-radius:2px; animation:grow 1.5s ease forwards; }
+@keyframes grow { from { width:0 } }
+</style>
+</head>
+<body>
+<div class="grid">
+  <div class="stat">
+    <div class="stat-icon" style="background:#eff6ff;color:#2563eb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l9-14H3l9 14z"/></svg></div>
+    <div class="stat-val">{{ stats.flights }}</div>
+    <div class="stat-label">Flights</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:{{ [stats.flights, 100]|min }}%;background:#2563eb"></div></div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon" style="background:#f0fdf4;color:#16a34a"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M3 11h18"/></svg></div>
+    <div class="stat-val">{{ stats.hotels }}</div>
+    <div class="stat-label">Hotels</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:{{ [stats.hotels, 100]|min }}%;background:#16a34a"></div></div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon" style="background:#fef3c7;color:#d97706"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></div>
+    <div class="stat-val">{{ stats.bookings }}</div>
+    <div class="stat-label">Bookings</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:{{ [stats.bookings / 10, 100]|min }}%;background:#d97706"></div></div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon" style="background:#fdf2f8;color:#db2777"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M12 6v6l4 2"/></svg></div>
+    <div class="stat-val" id="uptime">99.9%</div>
+    <div class="stat-label">Uptime</div>
+    <div class="stat-bar"><div class="stat-bar-fill" style="width:99.9%;background:#db2777"></div></div>
+  </div>
+</div>
+</body>
+</html>
