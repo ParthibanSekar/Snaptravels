@@ -418,6 +418,21 @@ def trip_step1_frame():
     destinations = [d[0] for d in destinations]
     return render_template('frames/trip_step1.html', destinations=destinations)
 
+@public_bp.route('/trip-planner/step2-frame')
+def trip_step2_frame():
+    """Step 2 frame: Compare flights trigger."""
+    return render_template('frames/trip_step2.html')
+
+@public_bp.route('/trip-planner/step3-frame')
+def trip_step3_frame():
+    """Step 3 frame: Seat map trigger."""
+    return render_template('frames/trip_step3.html')
+
+@public_bp.route('/trip-planner/step4-frame')
+def trip_step4_frame():
+    """Step 4 frame: Price alert trigger."""
+    return render_template('frames/trip_step4.html')
+
 @public_bp.route('/trip-planner/step5-frame')
 def trip_step5_frame():
     """Step 5 frame: Review & Save."""

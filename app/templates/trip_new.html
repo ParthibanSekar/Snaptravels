@@ -1,21 +1,78 @@
 {% extends "layouts/base.html" %}
 {% block title %}Plan New Trip — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background:#f0f4ff; }
+.new-hero {
+  background:linear-gradient(135deg, rgba(15,23,42,.85), rgba(30,58,138,.75)), url('/static/images/hero/travel-hero.jpg') center/cover no-repeat;
+  padding:28px 0 24px;
+}
+.form-card { background:#fff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; box-shadow:0 2px 16px rgba(0,0,0,.06); }
+.form-header { background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; padding:18px 24px; }
+.form-body { padding:24px; }
+.form-body .form-label { font-weight:600; font-size:.84rem; color:#374151; margin-bottom:5px; }
+.form-body .form-control, .form-body .form-select {
+  border-radius:10px; border:1.5px solid #e0e7ff; padding:10px 14px; font-size:.9rem;
+}
+.form-body .form-control:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+.btn-create {
+  background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; border:none;
+  border-radius:10px; padding:12px 28px; font-weight:700; font-size:.9rem;
+  cursor:pointer; transition:all .2s; box-shadow:0 4px 14px rgba(29,78,216,.3);
+}
+.btn-create:hover { filter:brightness(1.1); transform:translateY(-1px); }
+.btn-cancel {
+  background:#f3f4f6; color:#374151; border:1px solid #e5e7eb;
+  border-radius:10px; padding:12px 20px; font-weight:600; font-size:.88rem;
+  cursor:pointer; text-decoration:none; transition:all .2s;
+}
+.btn-cancel:hover { background:#e5e7eb; }
+.icon-input { position:relative; }
+.icon-input i { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#9ca3af; }
+.icon-input input, .icon-input textarea { padding-left:40px; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-5" style="max-width:600px">
-  <h2 class="fw-bold mb-4"><i class="bi bi-map"></i> Plan a New Trip</h2>
-  <div class="card border-0 shadow-sm">
-    <div class="card-body">
+<div class="new-hero">
+  <div class="container">
+    <div style="color:rgba(255,255,255,.5);font-size:.72rem;margin-bottom:6px">
+      <a href="/" style="color:rgba(255,255,255,.5);text-decoration:none">Home</a> /
+      <a href="{{ url_for('trips.listing') }}" style="color:rgba(255,255,255,.5);text-decoration:none">My Trips</a> / New Trip
+    </div>
+    <h1 style="color:#fff;font-weight:800;font-size:1.3rem;margin:0">
+      <i class="bi bi-plus-circle me-2" style="color:#60a5fa"></i>Plan a New Trip
+    </h1>
+    <div style="color:rgba(255,255,255,.5);font-size:.82rem;margin-top:4px">
+      Create a trip itinerary and add flights, hotels, activities
+    </div>
+  </div>
+</div>
+
+<div class="container py-4" style="max-width:640px">
+  <div class="form-card">
+    <div class="form-header">
+      <div style="font-weight:800;font-size:.95rem"><i class="bi bi-map me-2"></i>Trip Details</div>
+      <div style="font-size:.75rem;opacity:.8">Fill in the basics — you can add items after creating</div>
+    </div>
+    <div class="form-body">
       <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-        <div class="mb-3">
+
+        <div class="mb-3 icon-input">
           <label class="form-label">Trip Name *</label>
-          <input type="text" name="name" class="form-control" placeholder="e.g. Goa Trip 2026" required>
+          <i class="bi bi-pencil"></i>
+          <input type="text" name="name" class="form-control" placeholder="e.g. Goa Beach Getaway 2026" required>
         </div>
-        <div class="mb-3">
+
+        <div class="mb-3 icon-input">
           <label class="form-label">Primary Destination</label>
-          <input type="text" name="destination" class="form-control" placeholder="e.g. Goa">
+          <i class="bi bi-geo-alt"></i>
+          <input type="text" name="destination" class="form-control" placeholder="e.g. Goa, Kerala, Rajasthan">
         </div>
-        <div class="row g-2 mb-3">
+
+        <div class="row g-3 mb-3">
           <div class="col-6">
             <label class="form-label">Start Date</label>
             <input type="date" name="start_date" class="form-control">
@@ -25,21 +82,31 @@
             <input type="date" name="end_date" class="form-control">
           </div>
         </div>
-        <div class="mb-3">
+
+        <div class="mb-4 icon-input">
           <label class="form-label">Notes</label>
-          <textarea name="notes" class="form-control" rows="3" placeholder="Anything to remember…"></textarea>
+          <i class="bi bi-journal-text" style="top:38px"></i>
+          <textarea name="notes" class="form-control" rows="3" placeholder="Budget, travel partners, special requirements..."></textarea>
         </div>
-        <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-circle me-1"></i> Create Trip
+
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn-create">
+            <i class="bi bi-check-circle me-2"></i>Create Trip
           </button>
-          <a href="{{ url_for('trips.listing') }}" class="btn btn-outline-secondary">Cancel</a>
+          <a href="{{ url_for('trips.listing') }}" class="btn-cancel">Cancel</a>
         </div>
       </form>
     </div>
   </div>
+
+  <div style="text-align:center;margin-top:16px">
+    <a href="{{ url_for('public.trip_planner') }}" style="font-size:.82rem;color:#3b82f6;text-decoration:none;font-weight:600">
+      <i class="bi bi-map me-1"></i>Or use the Trip Planner wizard instead
+    </a>
+  </div>
 </div>
 {% endblock %}
+
 {% block extra_scripts %}
 <script>
 const today = new Date().toISOString().split('T')[0];

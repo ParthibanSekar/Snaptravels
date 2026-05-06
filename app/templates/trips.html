@@ -6,7 +6,7 @@
 body { background: #f4f6fb; }
 
 .page-hero {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  background: linear-gradient(135deg, rgba(15,23,42,.85), rgba(30,58,138,.75)), url('/static/images/hero/travel-hero.jpg') center/cover no-repeat;
   padding: 36px 0 70px;
   position: relative; overflow: hidden;
 }
@@ -171,13 +171,10 @@ body { background: #f4f6fb; }
               <a href="{{ url_for('trips.detail', trip_id=trip.id) }}" class="btn-open-trip">
                 <i class="bi bi-pencil"></i> Open
               </a>
-              <form method="POST" action="{{ url_for('trips.delete_trip', trip_id=trip.id) }}"
-                    onsubmit="return confirm('Delete \'{{ trip.name }}\'? This cannot be undone.')">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <button type="submit" class="btn-delete-trip" title="Delete trip">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </form>
+              <button type="button" class="btn-delete-trip" title="Delete trip"
+                      onclick="showDeleteModal('{{ trip.name }}','{{ url_for('trips.delete_trip', trip_id=trip.id) }}')">
+                <i class="bi bi-trash"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -198,4 +195,42 @@ body { background: #f4f6fb; }
     </div>
   </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center">
+    <div style="width:56px;height:56px;border-radius:50%;background:#fef2f2;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px">
+      <i class="bi bi-trash3" style="font-size:1.4rem;color:#dc2626"></i>
+    </div>
+    <h5 style="font-weight:800;color:#0f172a;margin:0 0 8px">Delete Trip?</h5>
+    <p style="font-size:.85rem;color:#6b7280;margin:0 0 20px">
+      Are you sure you want to delete <strong id="deleteModalName" style="color:#0f172a"></strong>? This action cannot be undone.
+    </p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button onclick="hideDeleteModal()" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:10px;padding:10px 24px;font-weight:600;font-size:.88rem;cursor:pointer">
+        Cancel
+      </button>
+      <form method="POST" id="deleteModalForm" style="margin:0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button type="submit" style="background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-weight:700;font-size:.88rem;cursor:pointer;box-shadow:0 4px 14px rgba(220,38,38,.3)">
+          <i class="bi bi-trash3 me-1"></i>Delete
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function showDeleteModal(name, action) {
+  document.getElementById('deleteModalName').textContent = name;
+  document.getElementById('deleteModalForm').action = action;
+  document.getElementById('deleteModal').style.display = 'flex';
+}
+function hideDeleteModal() {
+  document.getElementById('deleteModal').style.display = 'none';
+}
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+  if (e.target === this) hideDeleteModal();
+});
+</script>
 {% endblock %}

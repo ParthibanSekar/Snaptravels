@@ -1,97 +1,180 @@
 {% extends "layouts/base.html" %}
 {% block title %}{{ trip.name }} — SnapTravels{% endblock %}
-{% block content %}
-<div class="container py-5">
-  <div class="d-flex justify-content-between align-items-start mb-4">
-    <div>
-      <h2 class="fw-bold mb-1"><i class="bi bi-map-fill text-primary me-2"></i>{{ trip.name }}</h2>
-      {% if trip.destination %}<div class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ trip.destination }}</div>{% endif %}
-      {% if trip.start_date and trip.end_date %}
-      <div class="text-muted small">
-        <i class="bi bi-calendar me-1"></i>
-        {{ trip.start_date.strftime('%d %b') }} – {{ trip.end_date.strftime('%d %b %Y') }}
-      </div>
-      {% endif %}
-    </div>
-    <a href="{{ url_for('trips.listing') }}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left"></i> My Trips
-    </a>
-  </div>
 
-  <div class="row g-4">
-    <!-- Add Item form -->
-    <div class="col-lg-4">
-      <div class="card border-0 shadow-sm sticky-top" style="top:80px">
-        <div class="card-header bg-primary text-white fw-semibold">
-          <i class="bi bi-plus-circle me-1"></i> Add Item
+{% block extra_head %}
+<style>
+body { background:#f0f4ff; }
+.trip-hero {
+  background:linear-gradient(135deg, rgba(15,23,42,.85), rgba(30,58,138,.75)), url('/static/images/hero/travel-hero.jpg') center/cover no-repeat;
+  padding:28px 0 24px;
+}
+.itin-card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; margin-bottom:10px; transition:box-shadow .2s; }
+.itin-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.06); }
+.day-header { font-size:.72rem; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:.06em; padding:8px 0; margin:20px 0 8px; border-bottom:2px solid #dbeafe; display:flex; align-items:center; gap:8px; }
+.day-header .day-badge { background:#1d4ed8; color:#fff; border-radius:6px; padding:3px 10px; font-size:.7rem; }
+.item-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.95rem; flex-shrink:0; }
+.add-card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; position:sticky; top:80px; }
+.add-header { background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; padding:14px 18px; font-weight:700; font-size:.88rem; }
+.add-body { padding:18px; }
+.add-body .form-label { font-weight:600; font-size:.8rem; color:#374151; margin-bottom:4px; }
+.add-body .form-control, .add-body .form-select {
+  border-radius:8px; border:1.5px solid #e0e7ff; padding:9px 12px; font-size:.88rem;
+}
+.add-body .form-control:focus, .add-body .form-select:focus {
+  border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1);
+}
+.btn-add {
+  background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; border:none;
+  border-radius:10px; padding:10px; font-weight:700; font-size:.88rem; width:100%;
+  cursor:pointer; transition:all .2s;
+}
+.btn-add:hover { filter:brightness(1.1); transform:translateY(-1px); }
+.delete-trip-btn {
+  background:transparent; border:1px solid #fecaca; color:#dc2626;
+  border-radius:8px; padding:8px 16px; font-size:.78rem; font-weight:600;
+  cursor:pointer; transition:all .2s;
+}
+.delete-trip-btn:hover { background:#fef2f2; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="trip-hero">
+  <div class="container">
+    <div style="color:rgba(255,255,255,.5);font-size:.72rem;margin-bottom:6px">
+      <a href="/" style="color:rgba(255,255,255,.5);text-decoration:none">Home</a> /
+      <a href="{{ url_for('trips.listing') }}" style="color:rgba(255,255,255,.5);text-decoration:none">My Trips</a> /
+      {{ trip.name }}
+    </div>
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h1 style="color:#fff;font-weight:800;font-size:1.3rem;margin:0">
+          <i class="bi bi-map-fill me-2" style="color:#60a5fa"></i>{{ trip.name }}
+        </h1>
+        {% if trip.destination %}
+        <div style="color:rgba(255,255,255,.6);font-size:.85rem;margin-top:4px">
+          <i class="bi bi-geo-alt me-1"></i>{{ trip.destination }}
+          {% if trip.start_date %} · {{ trip.start_date.strftime('%d %b') }} – {{ trip.end_date.strftime('%d %b %Y') if trip.end_date else '' }}{% endif %}
         </div>
-        <div class="card-body">
+        {% endif %}
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('trips.listing') }}" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:8px;font-size:.8rem;font-weight:600;text-decoration:none">
+          <i class="bi bi-arrow-left me-1"></i>My Trips
+        </a>
+        <form method="POST" action="{{ url_for('trips.delete_trip', trip_id=trip.id) }}" onsubmit="return confirm('Delete this trip?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button type="submit" class="delete-trip-btn" style="border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.7)">
+            <i class="bi bi-trash3 me-1"></i>Delete Trip
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-4">
+  <div class="row g-4">
+
+    <!-- Left: Add Item -->
+    <div class="col-lg-4">
+      <div class="add-card">
+        <div class="add-header">
+          <i class="bi bi-plus-circle me-2"></i>Add Item to Trip
+        </div>
+        <div class="add-body">
           <form method="POST" action="{{ url_for('trips.add_item', trip_id=trip.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="mb-3">
-              <label class="form-label small">Type</label>
+              <label class="form-label">Type</label>
               <select name="item_type" class="form-select">
+                {% set type_icons = {'FLIGHT':'bi-airplane','HOTEL':'bi-building','ACTIVITY':'bi-lightning','CAB':'bi-car-front','TRAIN':'bi-train-front','BUS':'bi-bus-front','NOTE':'bi-journal-text'} %}
                 {% for t in ['FLIGHT','HOTEL','ACTIVITY','CAB','TRAIN','BUS','NOTE'] %}
                 <option value="{{ t }}">{{ t.title() }}</option>
                 {% endfor %}
               </select>
             </div>
             <div class="mb-3">
-              <label class="form-label small">Day #</label>
+              <label class="form-label">Day #</label>
               <input type="number" name="day_number" class="form-control" value="1" min="1">
             </div>
             <div class="mb-3">
-              <label class="form-label small">Title *</label>
+              <label class="form-label">Title *</label>
               <input type="text" name="title" class="form-control" placeholder="e.g. IndiGo flight to Goa" required>
             </div>
             <div class="mb-3">
-              <label class="form-label small">Notes</label>
-              <textarea name="notes" class="form-control" rows="2"></textarea>
+              <label class="form-label">Notes</label>
+              <textarea name="notes" class="form-control" rows="2" placeholder="Optional details..."></textarea>
             </div>
-            <button type="submit" class="btn btn-primary w-100">Add to Trip</button>
+            <button type="submit" class="btn-add"><i class="bi bi-plus-circle me-2"></i>Add to Trip</button>
           </form>
         </div>
       </div>
     </div>
 
-    <!-- Itinerary -->
+    <!-- Right: Itinerary -->
     <div class="col-lg-8">
       {% if days %}
+        {% set type_styles = {
+          'FLIGHT': ('#eff6ff','#2563eb','bi-airplane'),
+          'HOTEL':  ('#f0fdf4','#16a34a','bi-building'),
+          'ACTIVITY':('#fef3c7','#d97706','bi-lightning'),
+          'CAB':    ('#f0fdfa','#0d9488','bi-car-front'),
+          'TRAIN':  ('#f5f3ff','#7c3aed','bi-train-front'),
+          'BUS':    ('#fefce8','#ca8a04','bi-bus-front'),
+          'NOTE':   ('#f1f5f9','#64748b','bi-journal-text'),
+        } %}
         {% for day_num in days.keys()|sort %}
-        <div class="mb-4">
-          <h5 class="fw-bold text-primary border-bottom pb-2">Day {{ day_num }}</h5>
-          {% for item in days[day_num] %}
-          <div class="card border-0 shadow-sm mb-2">
-            <div class="card-body py-2 px-3">
-              <div class="d-flex justify-content-between align-items-start">
-                <div class="d-flex gap-2">
-                  <div class="mt-1">
-                    <i class="bi bi-{{ icons.get(item.item_type, 'journal-text') }} text-primary"></i>
-                  </div>
-                  <div>
-                    <div class="fw-semibold">{{ item.title }}</div>
-                    {% if item.notes %}<div class="text-muted small">{{ item.notes }}</div>{% endif %}
-                  </div>
-                </div>
-                <form method="POST" action="{{ url_for('trips.delete_item', trip_id=trip.id, item_id=item.id) }}">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                  <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Remove">
-                    <i class="bi bi-x"></i>
-                  </button>
-                </form>
-              </div>
+        <div class="day-header">
+          <span class="day-badge">Day {{ day_num }}</span>
+          <span style="color:#6b7280;font-weight:400;font-size:.72rem">{{ days[day_num]|length }} item(s)</span>
+        </div>
+        {% for item in days[day_num] %}
+        {% set bg, color, icon = type_styles.get(item.item_type, ('#f1f5f9','#64748b','bi-journal-text')) %}
+        <div class="itin-card">
+          <div style="padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div class="item-icon" style="background:{{ bg }};color:{{ color }}">
+              <i class="bi {{ icon }}"></i>
             </div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:.88rem;color:#0f172a">{{ item.title }}</div>
+              {% if item.notes %}<div style="font-size:.75rem;color:#6b7280;margin-top:2px">{{ item.notes }}</div>{% endif %}
+            </div>
+            <span style="font-size:.65rem;background:{{ bg }};color:{{ color }};padding:3px 8px;border-radius:4px;font-weight:700">{{ item.item_type }}</span>
+            <form method="POST" action="{{ url_for('trips.delete_item', trip_id=trip.id, item_id=item.id) }}" style="margin:0">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button type="submit" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:1rem;padding:4px 8px;transition:color .2s" title="Remove"
+                      onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#d1d5db'">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </form>
           </div>
-          {% endfor %}
         </div>
         {% endfor %}
+        {% endfor %}
       {% else %}
-      <div class="text-center py-5 text-muted">
-        <i class="bi bi-calendar-plus" style="font-size:3rem"></i>
-        <p class="mt-2">Add your first item using the form on the left.</p>
+      <div style="text-align:center;padding:60px 20px;color:#9ca3af">
+        <i class="bi bi-calendar-plus" style="font-size:2.5rem;display:block;margin-bottom:12px;color:#d1d5db"></i>
+        <div style="font-size:.95rem;font-weight:600;color:#6b7280">No items yet</div>
+        <div style="font-size:.82rem;margin-top:4px">Add flights, hotels, and activities using the form on the left.</div>
       </div>
       {% endif %}
+
+      <!-- Trip actions -->
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid #e5e7eb;display:flex;gap:12px;flex-wrap:wrap">
+        <a href="{{ url_for('public.trip_planner') }}" style="display:inline-flex;align-items:center;gap:6px;background:#f0f4ff;color:#1d4ed8;border:1px solid #dbeafe;padding:8px 16px;border-radius:8px;font-size:.82rem;font-weight:600;text-decoration:none">
+          <i class="bi bi-plus-circle"></i>Plan Another Trip
+        </a>
+        <a href="{{ url_for('public.flights') }}" style="display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:8px 16px;border-radius:8px;font-size:.82rem;font-weight:600;text-decoration:none">
+          <i class="bi bi-airplane"></i>Book Flights
+        </a>
+        <a href="{{ url_for('public.hotels') }}" style="display:inline-flex;align-items:center;gap:6px;background:#fef3c7;color:#d97706;border:1px solid #fde68a;padding:8px 16px;border-radius:8px;font-size:.82rem;font-weight:600;text-decoration:none">
+          <i class="bi bi-building"></i>Book Hotels
+        </a>
+      </div>
     </div>
+
   </div>
 </div>
 {% endblock %}

@@ -112,85 +112,40 @@ body { background:#f0f4ff; }
       <iframe src="{{ url_for('public.trip_step1_frame') }}" class="step-iframe" style="height:420px" id="step1Frame" title="Step 1: Destination"></iframe>
     </div>
 
-    <!-- Frame: Step 2 — Compare (opens popup with frameset) -->
+    <!-- Frame: Step 2 — Compare Flights (iframe) -->
     <div class="step-frame" id="stepFrame1">
       <div class="frame-chrome">
         <span class="dot" style="background:#ef4444"></span>
         <span class="dot" style="background:#f59e0b"></span>
         <span class="dot" style="background:#22c55e"></span>
-        <i class="bi bi-window-stack me-1"></i>Step 2 — Compare Flights (opens popup with frameset)
-        <span class="url">popup → /trip-planner/compare-popup</span>
+        <i class="bi bi-window-stack me-1"></i>Step 2 — Compare Flights (iframe + popup frameset)
+        <span class="url">/trip-planner/step2-frame</span>
       </div>
-      <div class="step-card">
-        <div class="step-card-title">Compare Flights in a Popup Frameset</div>
-        <div class="step-card-desc">Opens a new window with <strong>two frames</strong> — flight list on top, action bar on bottom. Select a flight and confirm to send the choice back here.</div>
-        <button class="action-btn" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;box-shadow:0 4px 14px rgba(29,78,216,.3)" onclick="openComparePopup()">
-          <i class="bi bi-window-stack"></i>Open Flight Comparison
-          <span class="popup-indicator">FRAMESET POPUP</span>
-        </button>
-        <div class="result-badge" id="compareResult" style="background:#f0fdf4;border:1px solid #86efac;color:#166534">
-          <i class="bi bi-check-circle-fill me-1"></i><span id="compareResultText"></span>
-        </div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
-          <button class="action-btn" style="background:#f3f4f6;color:#374151;font-size:.8rem;padding:8px 16px" onclick="switchStep(2)">
-            Skip / Next Step <i class="bi bi-arrow-right ms-1"></i>
-          </button>
-        </div>
-      </div>
+      <iframe src="{{ url_for('public.trip_step2_frame') }}" class="step-iframe" style="height:280px" id="step2Frame" title="Step 2: Compare"></iframe>
     </div>
 
-    <!-- Frame: Step 3 — Seat Map (opens new window) -->
+    <!-- Frame: Step 3 — Seat Map (iframe) -->
     <div class="step-frame" id="stepFrame2">
       <div class="frame-chrome">
         <span class="dot" style="background:#ef4444"></span>
         <span class="dot" style="background:#f59e0b"></span>
         <span class="dot" style="background:#22c55e"></span>
-        <i class="bi bi-grid-3x3 me-1"></i>Step 3 — SVG Seat Map (opens new window)
-        <span class="url">window → /trip-planner/seat-preview-popup</span>
+        <i class="bi bi-grid-3x3 me-1"></i>Step 3 — SVG Seat Map (iframe + new window)
+        <span class="url">/trip-planner/step3-frame</span>
       </div>
-      <div class="step-card">
-        <div class="step-card-title">Interactive SVG Seat Map</div>
-        <div class="step-card-desc">Opens a new window with an <strong>SVG-based seat grid</strong>. Click a seat, confirm, and the selection is sent back to this page via cross-window messaging.</div>
-        <button class="action-btn" style="background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;box-shadow:0 4px 14px rgba(217,119,6,.3)" onclick="openSeatPopup()">
-          <i class="bi bi-grid-3x3"></i>Open Seat Map
-          <span class="popup-indicator">NEW WINDOW</span>
-        </button>
-        <div class="result-badge" id="seatResult" style="background:#fef3c7;border:1px solid #fde68a;color:#92400e">
-          <i class="bi bi-check-circle-fill me-1"></i>Seat <span id="seatResultText"></span> selected
-        </div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
-          <button class="action-btn" style="background:#f3f4f6;color:#374151;font-size:.8rem;padding:8px 16px" onclick="switchStep(3)">
-            Skip / Next Step <i class="bi bi-arrow-right ms-1"></i>
-          </button>
-        </div>
-      </div>
+      <iframe src="{{ url_for('public.trip_step3_frame') }}" class="step-iframe" style="height:280px" id="step3Frame" title="Step 3: Seats"></iframe>
     </div>
 
-    <!-- Frame: Step 4 — Price Alert (popup form) -->
+    <!-- Frame: Step 4 — Price Alert (iframe) -->
     <div class="step-frame" id="stepFrame3">
       <div class="frame-chrome">
         <span class="dot" style="background:#ef4444"></span>
         <span class="dot" style="background:#f59e0b"></span>
         <span class="dot" style="background:#22c55e"></span>
-        <i class="bi bi-bell me-1"></i>Step 4 — Price Alert (popup form)
-        <span class="url">popup → /trip-planner/price-alert-popup</span>
+        <i class="bi bi-bell me-1"></i>Step 4 — Price Alert (iframe + popup form)
+        <span class="url">/trip-planner/step4-frame</span>
       </div>
-      <div class="step-card">
-        <div class="step-card-title">Set Price Alert via Popup</div>
-        <div class="step-card-desc">Opens a <strong>popup form</strong> where you fill in alert details. On submit, the data is sent back to this page via <code>postMessage</code>.</div>
-        <button class="action-btn" style="background:linear-gradient(135deg,#db2777,#ec4899);color:#fff;box-shadow:0 4px 14px rgba(219,39,119,.3)" onclick="openPriceAlert()">
-          <i class="bi bi-bell"></i>Set Price Alert
-          <span class="popup-indicator">POPUP FORM</span>
-        </button>
-        <div class="result-badge" id="alertResult" style="background:#fdf2f8;border:1px solid #fbcfe8;color:#9d174d">
-          <i class="bi bi-bell-fill me-1"></i><span id="alertResultText"></span>
-        </div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
-          <button class="action-btn" style="background:#f3f4f6;color:#374151;font-size:.8rem;padding:8px 16px" onclick="switchStep(4)">
-            Skip / Next Step <i class="bi bi-arrow-right ms-1"></i>
-          </button>
-        </div>
-      </div>
+      <iframe src="{{ url_for('public.trip_step4_frame') }}" class="step-iframe" style="height:280px" id="step4Frame" title="Step 4: Alert"></iframe>
     </div>
 
     <!-- Frame: Step 5 — Review & Save (iframe) -->
@@ -232,6 +187,12 @@ var tripData = { origin:'', destination:'', flight:'', seat:'', alert:'' };
 window.addEventListener('message', function(e) {
   if (!e.data) return;
 
+  // Iframe requests to open popups
+  if (e.data.type === 'open_compare_popup') { openComparePopup(); return; }
+  if (e.data.type === 'open_seat_popup') { openSeatPopup(); return; }
+  if (e.data.type === 'open_price_alert') { openPriceAlert(); return; }
+  if (e.data.type === 'skip_to_step') { switchStep(e.data.step); return; }
+
   if (e.data.type === 'destination_selected') {
     tripData.origin = e.data.origin || '';
     tripData.destination = e.data.destination || '';
@@ -242,28 +203,28 @@ window.addEventListener('message', function(e) {
   }
   if (e.data.type === 'flight_selected') {
     tripData.flight = e.data.flight;
-    document.getElementById('compareResult').style.display = '';
-    document.getElementById('compareResultText').textContent = e.data.flight + ' selected';
     updateStep5();
-    // Auto-advance to Step 3
+    // Forward result to step2 iframe
+    var f2 = document.getElementById('step2Frame');
+    if (f2 && f2.contentWindow) f2.contentWindow.postMessage(e.data, '*');
     markStepDone(1);
     setTimeout(function(){ switchStep(2); }, 500);
   }
   if (e.data.type === 'seat_selected') {
     tripData.seat = e.data.seat;
-    document.getElementById('seatResult').style.display = '';
-    document.getElementById('seatResultText').textContent = e.data.seat;
     updateStep5();
-    // Auto-advance to Step 4
+    // Forward result to step3 iframe
+    var f3 = document.getElementById('step3Frame');
+    if (f3 && f3.contentWindow) f3.contentWindow.postMessage(e.data, '*');
     markStepDone(2);
     setTimeout(function(){ switchStep(3); }, 500);
   }
   if (e.data.type === 'price_alert_set') {
     tripData.alert = e.data.destination + ' under ' + e.data.price;
-    document.getElementById('alertResult').style.display = '';
-    document.getElementById('alertResultText').textContent = tripData.alert;
     updateStep5();
-    // Auto-advance to Step 5
+    // Forward result to step4 iframe
+    var f4 = document.getElementById('step4Frame');
+    if (f4 && f4.contentWindow) f4.contentWindow.postMessage(e.data, '*');
     markStepDone(3);
     setTimeout(function(){ switchStep(4); }, 500);
   }
@@ -277,7 +238,7 @@ function updateStep5() {
   }
 }
 
-/* ── Popup openers ─────────────────────────────────────────── */
+/* ── Popup openers (called from iframes via postMessage) ───── */
 function openComparePopup() {
   var from = tripData.origin || 'Delhi';
   var to = tripData.destination || 'Mumbai';

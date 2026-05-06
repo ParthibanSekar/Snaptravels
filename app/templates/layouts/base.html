@@ -715,23 +715,29 @@
           <i class="bi bi-shield-fill-check"></i>Travel Ins.
         </a>
       </li>
+      <li class="st-nav-item">
+        <a class="st-nav-link {% if request.endpoint and 'trip_planner' in request.endpoint %}active{% endif %}"
+           href="{{ url_for('public.trip_planner') }}">
+          <i class="bi bi-map-fill"></i>Trip Planner
+        </a>
+      </li>
+      <li class="st-nav-item">
+        <a class="st-nav-link {% if request.endpoint and 'offers' in request.endpoint %}active{% endif %}"
+           href="{{ url_for('public.offers') }}">
+          <i class="bi bi-tag-fill"></i>Offers
+        </a>
+      </li>
       <!-- More dropdown -->
       <li class="st-nav-item">
         <span class="st-nav-link">
           <i class="bi bi-grid-3x3-gap-fill"></i>More
         </span>
         <div class="st-dropdown">
-          <a href="{{ url_for('blog.listing') }}">
-            <i class="bi bi-journal-richtext"></i>Travel Guides
-          </a>
-          <a href="{{ url_for('public.offers') }}">
-            <i class="bi bi-tag-fill"></i>Offers
-          </a>
           <a href="{{ url_for('public.travel_dashboard') }}">
             <i class="bi bi-grid-1x2-fill"></i>Travel Dashboard
           </a>
-          <a href="{{ url_for('public.trip_planner') }}">
-            <i class="bi bi-map-fill"></i>Trip Planner
+          <a href="{{ url_for('blog.listing') }}">
+            <i class="bi bi-journal-richtext"></i>Travel Guides
           </a>
           {% if user and user.is_admin() %}
           <hr>
