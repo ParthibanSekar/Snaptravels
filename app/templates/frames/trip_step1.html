@@ -2,101 +2,252 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <style>
-body { margin:0; padding:16px; font-family:-apple-system,'Inter',sans-serif; background:#fff; }
-h3 { font-size:.95rem; font-weight:800; color:#0f172a; margin:0 0 4px; }
-.desc { font-size:.75rem; color:#6b7280; margin-bottom:14px; }
-.map-wrap { background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px; padding:14px; margin-bottom:14px; }
-.dest-chip {
-  display:inline-flex; align-items:center; gap:5px;
-  background:#fff; border:2px solid #e5e7eb; border-radius:8px;
-  padding:7px 12px; cursor:pointer; transition:all .2s; font-size:.8rem; font-weight:600; color:#374151;
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:-apple-system,'Inter',sans-serif; background:#fff; padding:16px; }
+
+.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+h3 { font-size:.92rem; font-weight:800; color:#0f172a; }
+.desc { font-size:.72rem; color:#6b7280; }
+
+/* Route bar */
+.route-bar {
+  background:linear-gradient(135deg,#0f172a,#1e3a5a);
+  border-radius:10px; padding:12px 18px; margin-bottom:14px;
+  display:flex; align-items:center; gap:12px; color:#fff;
 }
-.dest-chip:hover { border-color:#3b82f6; background:#eff6ff; }
-.dest-chip.selected { border-color:#1d4ed8; background:#1d4ed8; color:#fff; }
-.city-dot { cursor:pointer; transition:r .2s; }
-.route-anim { stroke-dasharray:500; stroke-dashoffset:500; transition:stroke-dashoffset 2s ease; }
+.rb-city { text-align:center; min-width:70px; }
+.rb-label { font-size:.55rem; text-transform:uppercase; letter-spacing:.06em; color:#64748b; font-weight:600; }
+.rb-name { font-size:.85rem; font-weight:800; color:#fff; }
+.rb-line { flex:1; }
+.rb-line svg { width:100%; height:20px; }
+.rb-status { font-size:.68rem; font-weight:600; color:#60a5fa; }
+.swap-btn { width:26px; height:26px; border-radius:50%; border:1px solid #334155; background:transparent; color:#60a5fa; cursor:pointer; font-size:.7rem; display:flex; align-items:center; justify-content:center; }
+.swap-btn:hover { background:#1e3a5a; }
+
+/* Layout */
+.content { display:flex; gap:14px; }
+.map-panel { flex:1; min-width:0; }
+.cities-panel { width:200px; flex-shrink:0; }
+
+/* SVG Map */
+.map-container {
+  background:linear-gradient(135deg,#f0f4ff,#e8eeff);
+  border:1px solid #dbeafe; border-radius:10px;
+  padding:8px; position:relative;
+}
+.map-container svg { width:100%; height:auto; display:block; }
+.city-dot { cursor:pointer; transition:all .15s; }
+.city-dot:hover { r:7; filter:drop-shadow(0 0 4px rgba(29,78,216,.5)); }
+.city-label { font-size:7.5px; font-weight:700; fill:#1e3a8a; pointer-events:none; }
+.city-dot-from { fill:#16a34a !important; r:6; filter:drop-shadow(0 0 6px rgba(22,163,74,.6)); }
+.city-dot-to { fill:#dc2626 !important; r:6; filter:drop-shadow(0 0 6px rgba(220,38,38,.6)); }
+.route-path { stroke:#1d4ed8; stroke-width:2; fill:none; stroke-dasharray:300; stroke-dashoffset:300; transition:stroke-dashoffset 1.5s ease; }
+.route-path.active { stroke-dashoffset:0; }
+
+/* City list */
+.city-list { max-height:340px; overflow-y:auto; }
+.city-item {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 10px; border-radius:8px; cursor:pointer;
+  transition:all .15s; border:1.5px solid transparent; margin-bottom:3px;
+}
+.city-item:hover { background:#f0f4ff; border-color:#dbeafe; }
+.city-item.from { background:#f0fdf4; border-color:#86efac; }
+.city-item.to { background:#fef2f2; border-color:#fca5a5; }
+.city-item .emoji { font-size:1rem; width:24px; text-align:center; }
+.city-item .name { font-size:.78rem; font-weight:700; color:#0f172a; }
+.city-item .tag { font-size:.6rem; color:#9ca3af; }
+.city-item .badge { font-size:.55rem; font-weight:800; padding:1px 5px; border-radius:3px; color:#fff; margin-left:auto; }
+
+/* Legend */
+.legend { display:flex; gap:12px; margin-top:10px; justify-content:center; }
+.legend-item { display:flex; align-items:center; gap:4px; font-size:.65rem; color:#6b7280; font-weight:600; }
+.legend-dot { width:8px; height:8px; border-radius:50%; }
 </style>
 </head>
 <body>
 
-<h3><i class="bi bi-geo-alt" style="color:#1d4ed8;margin-right:4px">&#x1F4CD;</i> Choose Your Destination</h3>
-<div class="desc">Click two cities on the map — first is origin, second is destination</div>
-
-<div class="map-wrap">
-  <svg viewBox="0 0 500 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto" id="tripMap">
-    <path d="M180 25 L250 20 L290 45 L310 35 L330 55 L340 90 L350 120 L360 150 L370 185 L350 220 L330 250 L310 275 L280 300 L250 310 L220 305 L195 290 L175 265 L165 235 L155 205 L145 175 L140 145 L148 115 L155 85 L165 60 L175 40 Z"
-          fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
-
-    {% set cities = [('Delhi',200,65),('Mumbai',155,180),('Goa',175,240),('Bangalore',250,245),('Chennai',290,220),('Kolkata',330,145),('Jaipur',195,100),('Kerala',215,285)] %}
-    {% for name, cx, cy in cities %}
-    <g data-city="{{ name }}" onclick="selectCity('{{ name }}')" style="cursor:pointer">
-      <circle cx="{{ cx }}" cy="{{ cy }}" r="7" fill="#1d4ed8" opacity=".12"/>
-      <circle cx="{{ cx }}" cy="{{ cy }}" r="4.5" fill="#1d4ed8" class="city-dot" id="dot-{{ name }}"/>
-      <text x="{{ cx }}" y="{{ cy - 10 }}" text-anchor="middle" font-size="9" font-weight="700" fill="#1e40af">{{ name }}</text>
-    </g>
-    {% endfor %}
-
-    <path id="routePath" d="" stroke="#1d4ed8" stroke-width="2.5" fill="none" class="route-anim"/>
-
-    <rect x="360" y="15" width="130" height="85" rx="8" fill="#fff" stroke="#e5e7eb"/>
-    <text x="372" y="35" font-size="9" font-weight="800" fill="#0f172a">Selected Route</text>
-    <text x="372" y="52" font-size="8" fill="#6b7280" id="routeFrom">From: --</text>
-    <text x="372" y="66" font-size="8" fill="#6b7280" id="routeTo">To: --</text>
-    <text x="372" y="86" font-size="9" font-weight="800" fill="#1d4ed8" id="routeStatus">Click a city</text>
-  </svg>
+<div class="header">
+  <div>
+    <h3><i class="bi bi-geo-alt-fill" style="color:#1d4ed8"></i> Choose Your Route</h3>
+    <div class="desc">Click a city on the map or from the list — first is origin, second is destination</div>
+  </div>
 </div>
 
-<div style="display:flex;flex-wrap:wrap;gap:6px">
-  {% for dest in destinations %}
-  <div class="dest-chip" onclick="selectCity('{{ dest }}')" id="chip-{{ dest }}">{{ dest }}</div>
-  {% endfor %}
+<!-- Route bar -->
+<div class="route-bar">
+  <div class="rb-city">
+    <div class="rb-label">Origin</div>
+    <div class="rb-name" id="fromCity">—</div>
+  </div>
+  <button class="swap-btn" onclick="swapCities()" title="Swap"><i class="bi bi-arrow-left-right"></i></button>
+  <div class="rb-line">
+    <svg viewBox="0 0 200 20">
+      <circle cx="4" cy="10" r="3" fill="#16a34a"/>
+      <line x1="10" y1="10" x2="190" y2="10" stroke="#334155" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="100" y="8" text-anchor="middle" font-size="7" fill="#60a5fa" id="planeIcon" style="opacity:0">&#9992;</text>
+      <circle cx="196" cy="10" r="3" fill="#dc2626" id="destDot" style="opacity:0"/>
+    </svg>
+  </div>
+  <div class="rb-city">
+    <div class="rb-label">Destination</div>
+    <div class="rb-name" id="toCity">—</div>
+  </div>
+  <div class="rb-status" id="routeStatus">Pick a city</div>
+</div>
+
+<div class="content">
+  <!-- SVG Map -->
+  <div class="map-panel">
+    <div class="map-container">
+      <svg viewBox="0 0 400 440" xmlns="http://www.w3.org/2000/svg" id="indiaMap">
+        <!-- India outline (improved) -->
+        <path d="M155 32 L190 28 L215 35 L240 25 L265 32 L285 45 L295 65 L305 55 L315 65 L320 85 L325 110 L330 140 L335 165 L340 190 L342 215 L338 240 L330 265 L318 290 L305 310 L290 330 L270 350 L250 365 L235 378 L218 385 L200 380 L185 368 L172 350 L162 330 L155 308 L148 280 L142 255 L138 230 L135 205 L132 180 L130 155 L132 130 L136 105 L142 80 L148 58 L152 42 Z"
+              fill="#e8eeff" stroke="#93c5fd" stroke-width="1.2" opacity=".8"/>
+        <!-- Kashmir region -->
+        <path d="M155 32 L170 18 L190 15 L210 18 L215 35" fill="#e8eeff" stroke="#93c5fd" stroke-width="1"/>
+
+        <!-- Cities with proper India positions -->
+        {% set map_cities = [
+          ('Delhi',     205, 95,  '🏛️'),
+          ('Jaipur',    178,120,  '🏰'),
+          ('Mumbai',    148,225,  '🌊'),
+          ('Goa',       158,280,  '🏝️'),
+          ('Bangalore', 215,315,  '💻'),
+          ('Chennai',   258,300,  '🏖️'),
+          ('Hyderabad', 225,260,  '🕌'),
+          ('Kolkata',   310,195,  '🎭'),
+          ('Lucknow',   238,130,  '🍢'),
+          ('Pune',      165,248,  '⛰️'),
+          ('Ahmedabad', 138,170,  '🏗️'),
+          ('Kerala',    198,370,  '🌴'),
+        ] %}
+
+        <!-- Animated route path -->
+        <path id="routePath" d="" class="route-path"/>
+
+        <!-- City markers -->
+        {% for name, cx, cy, emoji in map_cities %}
+        <g onclick="selectCity('{{ name }}')" style="cursor:pointer" class="city-group">
+          <!-- Hover ring -->
+          <circle cx="{{ cx }}" cy="{{ cy }}" r="12" fill="transparent" class="city-hover"/>
+          <!-- Glow -->
+          <circle cx="{{ cx }}" cy="{{ cy }}" r="8" fill="#1d4ed8" opacity=".08"/>
+          <!-- Dot -->
+          <circle cx="{{ cx }}" cy="{{ cy }}" r="4.5" fill="#1d4ed8" class="city-dot" id="dot-{{ name }}"/>
+          <!-- Label -->
+          <text x="{{ cx }}" y="{{ cy - 10 }}" text-anchor="middle" class="city-label">{{ name }}</text>
+        </g>
+        {% endfor %}
+
+        <!-- Legend on map -->
+        <rect x="10" y="400" width="120" height="30" rx="6" fill="#fff" stroke="#dbeafe" opacity=".9"/>
+        <circle cx="22" cy="410" r="4" fill="#16a34a"/>
+        <text x="30" y="413" font-size="7" fill="#374151" font-weight="600">Origin</text>
+        <circle cx="70" cy="410" r="4" fill="#dc2626"/>
+        <text x="78" y="413" font-size="7" fill="#374151" font-weight="600">Destination</text>
+        <circle cx="22" cy="424" r="3" fill="#1d4ed8"/>
+        <text x="30" y="427" font-size="7" fill="#374151" font-weight="600">City</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- City list sidebar -->
+  <div class="cities-panel">
+    <div style="font-size:.65rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Select City</div>
+    <div class="city-list">
+      {% for name, cx, cy, emoji in map_cities %}
+      <div class="city-item" onclick="selectCity('{{ name }}')" id="item-{{ name }}">
+        <span class="emoji">{{ emoji }}</span>
+        <div>
+          <div class="name">{{ name }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 </div>
 
 <script>
 var selectedFrom = null, selectedTo = null;
-var cityCoords = { {% for name, cx, cy in [('Delhi',200,65),('Mumbai',155,180),('Goa',175,240),('Bangalore',250,245),('Chennai',290,220),('Kolkata',330,145),('Jaipur',195,100),('Kerala',215,285)] %}'{{ name }}':[{{ cx }},{{ cy }}],{% endfor %} };
+var cityCoords = {
+  {% for name, cx, cy, emoji in [('Delhi',205,95,''),('Jaipur',178,120,''),('Mumbai',148,225,''),('Goa',158,280,''),('Bangalore',215,315,''),('Chennai',258,300,''),('Hyderabad',225,260,''),('Kolkata',310,195,''),('Lucknow',238,130,''),('Pune',165,248,''),('Ahmedabad',138,170,''),('Kerala',198,370,'')] %}
+  '{{ name }}':[{{ cx }},{{ cy }}],
+  {% endfor %}
+};
 
 function selectCity(name) {
   if (!selectedFrom) {
     selectedFrom = name;
-    document.getElementById('routeFrom').textContent = 'From: ' + name;
-    document.getElementById('routeStatus').textContent = 'Pick destination';
-    setDot(name, '#16a34a');
+    update('fromCity', name);
+    update('routeStatus', 'Now pick destination');
+    setDotClass(name, 'city-dot-from');
+    setItemClass(name, 'from');
   } else if (!selectedTo && name !== selectedFrom) {
     selectedTo = name;
-    document.getElementById('routeTo').textContent = 'To: ' + name;
-    document.getElementById('routeStatus').textContent = 'Route ready!';
-    setDot(name, '#dc2626');
+    update('toCity', name);
+    update('routeStatus', '✓ Ready!');
+    document.getElementById('routeStatus').style.color = '#4ade80';
+    document.getElementById('planeIcon').style.opacity = '1';
+    document.getElementById('destDot').style.opacity = '1';
+    setDotClass(name, 'city-dot-to');
+    setItemClass(name, 'to');
     drawRoute();
-    // Notify parent
     window.parent.postMessage({type:'destination_selected', origin:selectedFrom, destination:selectedTo}, '*');
   } else {
-    document.querySelectorAll('.city-dot').forEach(d => d.setAttribute('fill','#1d4ed8'));
-    document.getElementById('routePath').setAttribute('d','');
-    selectedFrom = name; selectedTo = null;
-    document.getElementById('routeFrom').textContent = 'From: ' + name;
-    document.getElementById('routeTo').textContent = 'To: --';
-    document.getElementById('routeStatus').textContent = 'Pick destination';
-    setDot(name, '#16a34a');
+    clearAll();
+    selectedFrom = name;
+    update('fromCity', name);
+    update('routeStatus', 'Now pick destination');
+    document.getElementById('routeStatus').style.color = '#60a5fa';
+    setDotClass(name, 'city-dot-from');
+    setItemClass(name, 'from');
   }
-  document.querySelectorAll('.dest-chip').forEach(c => c.classList.remove('selected'));
-  if (selectedFrom) { var c=document.getElementById('chip-'+selectedFrom); if(c) c.classList.add('selected'); }
 }
 
-function setDot(name, color) {
-  var d = document.getElementById('dot-'+name);
-  if (d) d.setAttribute('fill', color);
+function swapCities() {
+  if (!selectedFrom || !selectedTo) return;
+  var t = selectedFrom; selectedFrom = selectedTo; selectedTo = t;
+  update('fromCity', selectedFrom);
+  update('toCity', selectedTo);
+  clearHighlights();
+  setDotClass(selectedFrom, 'city-dot-from');
+  setDotClass(selectedTo, 'city-dot-to');
+  setItemClass(selectedFrom, 'from');
+  setItemClass(selectedTo, 'to');
+  drawRoute();
+  window.parent.postMessage({type:'destination_selected', origin:selectedFrom, destination:selectedTo}, '*');
 }
 
 function drawRoute() {
-  var a=cityCoords[selectedFrom], b=cityCoords[selectedTo];
-  if (!a||!b) return;
-  var mx=(a[0]+b[0])/2, my=Math.min(a[1],b[1])-25;
-  var el=document.getElementById('routePath');
-  el.setAttribute('d','M'+a[0]+' '+a[1]+' Q'+mx+' '+my+', '+b[0]+' '+b[1]);
-  el.style.strokeDashoffset='500';
-  setTimeout(function(){ el.style.strokeDashoffset='0'; }, 50);
+  var a = cityCoords[selectedFrom], b = cityCoords[selectedTo];
+  if (!a || !b) return;
+  var mx = (a[0]+b[0])/2, my = Math.min(a[1],b[1]) - 30;
+  var el = document.getElementById('routePath');
+  el.setAttribute('d', 'M'+a[0]+' '+a[1]+' Q'+mx+' '+my+', '+b[0]+' '+b[1]);
+  el.classList.remove('active');
+  void el.offsetWidth; // force reflow
+  el.classList.add('active');
+}
+
+function update(id, val) { document.getElementById(id).textContent = val; }
+function setDotClass(name, cls) { var d = document.getElementById('dot-'+name); if(d) d.classList.add(cls); }
+function setItemClass(name, cls) { var i = document.getElementById('item-'+name); if(i) i.classList.add(cls); }
+
+function clearHighlights() {
+  document.querySelectorAll('.city-dot').forEach(d => d.classList.remove('city-dot-from','city-dot-to'));
+  document.querySelectorAll('.city-item').forEach(i => i.classList.remove('from','to'));
+  var p = document.getElementById('routePath'); p.setAttribute('d',''); p.classList.remove('active');
+}
+
+function clearAll() {
+  clearHighlights();
+  selectedFrom = null; selectedTo = null;
+  update('fromCity','—'); update('toCity','—');
+  document.getElementById('planeIcon').style.opacity = '0';
+  document.getElementById('destDot').style.opacity = '0';
 }
 </script>
 </body>
