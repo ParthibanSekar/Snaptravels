@@ -1,0 +1,524 @@
+{% extends "layouts/base.html" %}
+{% block title %}Quick Book — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+body { background:#f0f4ff; }
+.qb-hero {
+  background:linear-gradient(135deg, rgba(15,23,42,.85), rgba(99,102,241,.7)), url('/static/images/hero/flights-search.jpg') center/cover no-repeat;
+  padding:28px 0 24px;
+}
+.step-pills { display:flex; gap:6px; margin-bottom:20px; }
+.step-pill {
+  padding:8px 18px; border-radius:20px; font-size:.8rem; font-weight:700;
+  border:2px solid #e5e7eb; color:#6b7280; cursor:pointer; transition:all .2s;
+  background:#fff;
+}
+.step-pill.active { background:#4f46e5; color:#fff; border-color:#4f46e5; }
+.step-pill.done { background:#16a34a; color:#fff; border-color:#16a34a; }
+.step-content { display:none; }
+.step-content.active { display:block; }
+.wc-note {
+  background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px;
+  padding:8px 14px; font-size:.72rem; color:#6d28d9; margin-bottom:16px;
+  display:flex; align-items:center; gap:6px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="qb-hero">
+  <div class="container">
+    <div style="color:rgba(255,255,255,.5);font-size:.72rem;margin-bottom:6px">
+      <a href="/" style="color:rgba(255,255,255,.5);text-decoration:none">Home</a> / Quick Book
+    </div>
+    <h1 style="color:#fff;font-weight:800;font-size:1.3rem;margin:0">
+      <i class="bi bi-lightning-fill me-2" style="color:#a78bfa"></i>Quick Book
+    </h1>
+    <div style="color:rgba(255,255,255,.5);font-size:.82rem;margin-top:4px">
+      Full booking flow powered by Shadow DOM Web Components
+    </div>
+  </div>
+</div>
+
+<div class="container py-4">
+
+  <div class="wc-note">
+    <i class="bi bi-braces"></i>
+    Every card and widget on this page is a <strong>Web Component with Shadow DOM</strong> — inspect any element to see <code>#shadow-root</code>
+  </div>
+
+  <!-- Step pills -->
+  <div class="step-pills" id="stepPills">
+    <div class="step-pill active" onclick="goStep(0)">1. Browse</div>
+    <div class="step-pill" onclick="goStep(1)">2. Select</div>
+    <div class="step-pill" onclick="goStep(2)">3. Passenger</div>
+    <div class="step-pill" onclick="goStep(3)">4. Payment</div>
+    <div class="step-pill" onclick="goStep(4)">5. Confirm</div>
+  </div>
+
+  <!-- Step 1: Browse flights (shadow DOM cards) -->
+  <div class="step-content active" id="step0">
+    <h5 style="font-weight:800;color:#0f172a;margin-bottom:14px">Choose a Flight</h5>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px" id="flightGrid">
+      {% for f in flights %}
+      <snap-flight-card
+        airline="{{ f.airline }}"
+        flight-no="{{ f.flight_no }}"
+        origin="{{ f.origin }}"
+        destination="{{ f.destination }}"
+        depart="{{ f.depart_time }}"
+        arrive="{{ f.arrive_time }}"
+        duration="{{ f.duration_mins }}"
+        price="{{ f.price }}"
+        cabin="{{ f.cabin_class }}"
+        seats="{{ f.seats_left }}"
+        flight-id="{{ f.id }}"
+      ></snap-flight-card>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Step 2: Selection summary (shadow DOM widget) -->
+  <div class="step-content" id="step1">
+    <snap-selection-summary id="selectionSummary"></snap-selection-summary>
+  </div>
+
+  <!-- Step 3: Passenger details (shadow DOM form) -->
+  <div class="step-content" id="step2">
+    <snap-passenger-form id="passengerForm"></snap-passenger-form>
+  </div>
+
+  <!-- Step 4: Payment (shadow DOM widget with nested components) -->
+  <div class="step-content" id="step3">
+    <snap-payment-widget id="paymentWidget"></snap-payment-widget>
+  </div>
+
+  <!-- Step 5: Confirmation -->
+  <div class="step-content" id="step4">
+    <snap-booking-confirmation id="bookingConfirm"></snap-booking-confirmation>
+  </div>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   WEB COMPONENTS — All use Shadow DOM
+   ══════════════════════════════════════════════════════════════ */
+
+var bookingState = { flight:null, passenger:null, payment:null };
+
+/* ── Step Navigation ──────────────────────────────────────── */
+var currentStep = 0;
+function goStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.step-content').forEach((s,i) => s.classList.toggle('active', i===n));
+  document.querySelectorAll('.step-pill').forEach((p,i) => {
+    p.classList.remove('active');
+    if (i === n) p.classList.add('active');
+  });
+}
+function markDone(n) {
+  document.querySelectorAll('.step-pill')[n].classList.add('done');
+}
+
+/* ════════════════════════════════════════════════════════════
+   1. <snap-flight-card> — Flight result card with shadow DOM
+   ════════════════════════════════════════════════════════════ */
+class SnapFlightCard extends HTMLElement {
+  constructor() { super(); this.attachShadow({mode:'open'}); }
+  connectedCallback() {
+    const a = (n) => this.getAttribute(n) || '';
+    const dur = parseInt(a('duration')) || 0;
+    const h = Math.floor(dur/60), m = dur%60;
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; }
+        .card {
+          background:#fff; border:2px solid #e5e7eb; border-radius:14px;
+          padding:16px 18px; cursor:pointer; transition:all .2s;
+          font-family:-apple-system,'Inter',sans-serif;
+        }
+        .card:hover { border-color:#6366f1; box-shadow:0 4px 16px rgba(99,102,241,.15); transform:translateY(-2px); }
+        .card.selected { border-color:#4f46e5; background:#f5f3ff; }
+        .top { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+        .logo { width:36px; height:36px; border-radius:8px; background:#eff6ff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:.7rem; color:#4f46e5; }
+        .airline { font-weight:800; font-size:.85rem; color:#0f172a; }
+        .meta { font-size:.68rem; color:#6b7280; }
+        .route { display:flex; align-items:center; gap:8px; margin:10px 0; }
+        .time { font-weight:800; font-size:1.1rem; color:#0f172a; text-align:center; }
+        .city { font-size:.65rem; color:#9ca3af; text-align:center; }
+        .route-svg { flex:1; }
+        .bottom { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px solid #f3f4f6; }
+        .price { font-weight:900; font-size:1.15rem; color:#4f46e5; }
+        .price-sub { font-size:.65rem; color:#6b7280; }
+        .seats { font-size:.7rem; color:#16a34a; font-weight:600; }
+        .btn { background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-weight:700; font-size:.8rem; cursor:pointer; }
+        .btn:hover { filter:brightness(1.1); }
+      </style>
+      <div class="card" id="card">
+        <div class="top">
+          <div class="logo">${a('airline').substring(0,2).toUpperCase()}</div>
+          <div>
+            <div class="airline">${a('airline')}</div>
+            <div class="meta">${a('flight-no')} · ${a('cabin')}</div>
+          </div>
+        </div>
+        <div class="route">
+          <div><div class="time">${a('depart')}</div><div class="city">${a('origin')}</div></div>
+          <div class="route-svg">
+            <svg viewBox="0 0 120 24" style="width:100%;height:24px">
+              <circle cx="6" cy="12" r="3" fill="#4f46e5"/>
+              <path d="M12 12 Q60 2, 108 12" stroke="#c7d2fe" stroke-width="1.5" fill="none"/>
+              <text x="60" y="9" text-anchor="middle" font-size="7" fill="#4f46e5">&#9992;</text>
+              <circle cx="114" cy="12" r="3" fill="#4f46e5"/>
+            </svg>
+            <div style="text-align:center;font-size:.6rem;color:#9ca3af">${h}h ${m}m · Non-stop</div>
+          </div>
+          <div><div class="time">${a('arrive')}</div><div class="city">${a('destination')}</div></div>
+        </div>
+        <div class="bottom">
+          <div><div class="price">₹${parseInt(a('price')).toLocaleString('en-IN')}</div><div class="price-sub">per person</div></div>
+          <div class="seats">${a('seats')} seats left</div>
+          <button class="btn" id="selectBtn">Select</button>
+        </div>
+      </div>
+    `;
+    this.shadowRoot.getElementById('selectBtn').addEventListener('click', () => {
+      // Deselect others
+      document.querySelectorAll('snap-flight-card').forEach(c => {
+        c.shadowRoot.getElementById('card').classList.remove('selected');
+      });
+      this.shadowRoot.getElementById('card').classList.add('selected');
+      bookingState.flight = {
+        id: a('flight-id'), airline: a('airline'), flightNo: a('flight-no'),
+        origin: a('origin'), destination: a('destination'),
+        depart: a('depart'), arrive: a('arrive'), price: a('price'),
+        cabin: a('cabin'), duration: a('duration')
+      };
+      // Update selection summary and advance
+      document.getElementById('selectionSummary').update(bookingState.flight);
+      markDone(0);
+      setTimeout(() => goStep(1), 400);
+    });
+  }
+}
+customElements.define('snap-flight-card', SnapFlightCard);
+
+
+/* ════════════════════════════════════════════════════════════
+   2. <snap-selection-summary> — Selected flight summary
+   ════════════════════════════════════════════════════════════ */
+class SnapSelectionSummary extends HTMLElement {
+  constructor() { super(); this.attachShadow({mode:'open'}); this.render(); }
+  render() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; font-family:-apple-system,'Inter',sans-serif; }
+        .wrap { background:#fff; border:2px solid #e5e7eb; border-radius:14px; padding:22px; }
+        h4 { font-size:.95rem; font-weight:800; color:#0f172a; margin:0 0 16px; }
+        .flight-info { background:#f5f3ff; border:1px solid #ddd6fe; border-radius:10px; padding:16px; margin-bottom:16px; }
+        .row { display:flex; justify-content:space-between; margin-bottom:6px; font-size:.82rem; }
+        .label { color:#6b7280; }
+        .value { font-weight:700; color:#0f172a; }
+        .price-row { font-size:1.1rem; font-weight:900; color:#4f46e5; border-top:1px solid #e5e7eb; padding-top:10px; margin-top:10px; }
+        .btn { background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff; border:none; border-radius:10px; padding:12px 24px; font-weight:700; font-size:.88rem; cursor:pointer; margin-top:12px; }
+        .btn:hover { filter:brightness(1.1); }
+        .empty { text-align:center; padding:30px; color:#9ca3af; font-size:.88rem; }
+      </style>
+      <div class="wrap">
+        <h4><slot name="icon">&#9992;</slot> Flight Selected</h4>
+        <div id="content"><div class="empty">Select a flight from the previous step</div></div>
+      </div>
+    `;
+  }
+  update(f) {
+    if (!f) return;
+    const dur = parseInt(f.duration)||0, h=Math.floor(dur/60), m=dur%60;
+    this.shadowRoot.getElementById('content').innerHTML = `
+      <div class="flight-info">
+        <div class="row"><span class="label">Airline</span><span class="value">${f.airline} ${f.flightNo}</span></div>
+        <div class="row"><span class="label">Route</span><span class="value">${f.origin} → ${f.destination}</span></div>
+        <div class="row"><span class="label">Time</span><span class="value">${f.depart} – ${f.arrive} (${h}h ${m}m)</span></div>
+        <div class="row"><span class="label">Class</span><span class="value">${f.cabin}</span></div>
+        <div class="row price-row"><span>Total</span><span>₹${parseInt(f.price).toLocaleString('en-IN')}</span></div>
+      </div>
+      <button class="btn" id="continueBtn">Continue to Passenger Details →</button>
+    `;
+    this.shadowRoot.getElementById('continueBtn').addEventListener('click', () => {
+      markDone(1);
+      goStep(2);
+    });
+  }
+}
+customElements.define('snap-selection-summary', SnapSelectionSummary);
+
+
+/* ════════════════════════════════════════════════════════════
+   3. <snap-passenger-form> — Passenger details form
+   ════════════════════════════════════════════════════════════ */
+class SnapPassengerForm extends HTMLElement {
+  constructor() { super(); this.attachShadow({mode:'open'}); }
+  connectedCallback() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; font-family:-apple-system,'Inter',sans-serif; }
+        .wrap { background:#fff; border:2px solid #e5e7eb; border-radius:14px; padding:22px; max-width:500px; }
+        h4 { font-size:.95rem; font-weight:800; color:#0f172a; margin:0 0 16px; }
+        label { display:block; font-weight:600; font-size:.82rem; color:#374151; margin-bottom:4px; }
+        input, select { width:100%; border:1.5px solid #e0e7ff; border-radius:8px; padding:10px 12px; font-size:.88rem; margin-bottom:12px; box-sizing:border-box; font-family:inherit; }
+        input:focus, select:focus { border-color:#4f46e5; outline:none; box-shadow:0 0 0 3px rgba(79,70,229,.1); }
+        .row { display:flex; gap:12px; }
+        .row > div { flex:1; }
+        .btn { background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff; border:none; border-radius:10px; padding:12px 24px; font-weight:700; font-size:.88rem; cursor:pointer; width:100%; margin-top:4px; }
+        .btn:hover { filter:brightness(1.1); }
+      </style>
+      <div class="wrap">
+        <h4>&#128100; Passenger Details</h4>
+        <label>Full Name *</label>
+        <input type="text" id="name" placeholder="John Doe" value="${window.currentUserName || ''}">
+        <div class="row">
+          <div><label>Email *</label><input type="email" id="email" placeholder="john@email.com" value="${window.currentUserEmail || ''}"></div>
+          <div><label>Phone</label><input type="tel" id="phone" placeholder="+91 XXXXX XXXXX"></div>
+        </div>
+        <div class="row">
+          <div><label>Age</label><input type="number" id="age" min="1" max="120" value="30"></div>
+          <div><label>Gender</label><select id="gender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+        </div>
+        <button class="btn" id="nextBtn">Continue to Payment →</button>
+      </div>
+    `;
+    this.shadowRoot.getElementById('nextBtn').addEventListener('click', () => {
+      const sr = this.shadowRoot;
+      const name = sr.getElementById('name').value.trim();
+      const email = sr.getElementById('email').value.trim();
+      if (!name || !email) { alert('Please fill name and email'); return; }
+      bookingState.passenger = {
+        name, email,
+        phone: sr.getElementById('phone').value,
+        age: sr.getElementById('age').value,
+        gender: sr.getElementById('gender').value
+      };
+      document.getElementById('paymentWidget').setAmount(bookingState.flight?.price || '0');
+      markDone(2);
+      goStep(3);
+    });
+  }
+}
+customElements.define('snap-passenger-form', SnapPassengerForm);
+
+
+/* ════════════════════════════════════════════════════════════
+   4. <snap-payment-widget> — Payment with NESTED shadow DOM
+      Contains <snap-card-input> and <snap-upi-input> inside
+   ════════════════════════════════════════════════════════════ */
+class SnapCardInput extends HTMLElement {
+  constructor() { super(); this.attachShadow({mode:'open'}); }
+  connectedCallback() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; font-family:-apple-system,'Inter',sans-serif; }
+        label { display:block; font-weight:600; font-size:.8rem; color:#374151; margin-bottom:4px; }
+        input { width:100%; border:1.5px solid #e0e7ff; border-radius:8px; padding:10px 12px; font-size:.88rem; margin-bottom:10px; box-sizing:border-box; font-family:inherit; }
+        input:focus { border-color:#4f46e5; outline:none; }
+        .row { display:flex; gap:10px; }
+        .row > div { flex:1; }
+        .note { font-size:.7rem; color:#9ca3af; margin-top:4px; }
+      </style>
+      <label>Card Number</label>
+      <input type="text" placeholder="4242 4242 4242 4242" maxlength="19" id="cardNum">
+      <div class="row">
+        <div><label>Expiry</label><input type="text" placeholder="MM/YY" maxlength="5"></div>
+        <div><label>CVV</label><input type="password" placeholder="•••" maxlength="4"></div>
+      </div>
+      <label>Name on Card</label>
+      <input type="text" placeholder="JOHN DOE">
+      <div class="note">&#128274; Demo mode — use any values</div>
+    `;
+  }
+}
+customElements.define('snap-card-input', SnapCardInput);
+
+class SnapUpiInput extends HTMLElement {
+  constructor() { super(); this.attachShadow({mode:'open'}); }
+  connectedCallback() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; font-family:-apple-system,'Inter',sans-serif; }
+        label { display:block; font-weight:600; font-size:.8rem; color:#374151; margin-bottom:4px; }
+        input { width:100%; border:1.5px solid #e0e7ff; border-radius:8px; padding:10px 12px; font-size:.88rem; box-sizing:border-box; font-family:inherit; }
+        input:focus { border-color:#4f46e5; outline:none; }
+        .apps { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+        .app { padding:6px 14px; border:1.5px solid #e5e7eb; border-radius:8px; font-size:.78rem; font-weight:600; cursor:pointer; transition:all .15s; }
+        .app:hover { border-color:#4f46e5; background:#f5f3ff; }
+      </style>
+      <label>UPI ID</label>
+      <input type="text" placeholder="yourname@upi">
+      <div class="apps">
+        <div class="app">&#x1F7E2; GPay</div>
+        <div class="app">&#x1F7E3; PhonePe</div>
+        <div class="app">&#x1F535; Paytm</div>
+        <div class="app">&#x1F7E0; BHIM</div>
+      </div>
+    `;
+  }
+}
+customElements.define('snap-upi-input', SnapUpiInput);
+
+class SnapPaymentWidget extends HTMLElement {
+  constructor() { super(); this.attachShadow({mode:'open'}); this._amount = '0'; }
+  connectedCallback() { this.render(); }
+  setAmount(a) { this._amount = a; this.render(); }
+  render() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; font-family:-apple-system,'Inter',sans-serif; }
+        .wrap { background:#fff; border:2px solid #e5e7eb; border-radius:14px; padding:22px; max-width:500px; }
+        h4 { font-size:.95rem; font-weight:800; color:#0f172a; margin:0 0 16px; }
+        .tabs { display:flex; gap:6px; margin-bottom:16px; }
+        .tab { padding:8px 16px; border:2px solid #e5e7eb; border-radius:8px; font-size:.8rem; font-weight:700; cursor:pointer; transition:all .15s; color:#6b7280; }
+        .tab:hover { border-color:#a5b4fc; }
+        .tab.active { border-color:#4f46e5; background:#f5f3ff; color:#4f46e5; }
+        .panel { display:none; }
+        .panel.active { display:block; }
+        .amount { font-size:1.2rem; font-weight:900; color:#4f46e5; margin-bottom:16px; }
+        .btn { background:linear-gradient(135deg,#16a34a,#22c55e); color:#fff; border:none; border-radius:10px; padding:14px 24px; font-weight:800; font-size:.92rem; cursor:pointer; width:100%; margin-top:16px; }
+        .btn:hover { filter:brightness(1.1); }
+        .note { text-align:center; font-size:.72rem; color:#9ca3af; margin-top:10px; }
+      </style>
+      <div class="wrap">
+        <h4>&#128179; Payment</h4>
+        <div class="amount">Total: ₹${parseInt(this._amount).toLocaleString('en-IN')}</div>
+        <div class="tabs">
+          <div class="tab active" id="tabCard" onclick="this.getRootNode().host.switchTab('card')">&#128179; Card</div>
+          <div class="tab" id="tabUpi" onclick="this.getRootNode().host.switchTab('upi')">&#128241; UPI</div>
+        </div>
+        <!-- Nested shadow DOM components -->
+        <div class="panel active" id="panelCard"><snap-card-input></snap-card-input></div>
+        <div class="panel" id="panelUpi"><snap-upi-input></snap-upi-input></div>
+        <button class="btn" id="payBtn">Pay ₹${parseInt(this._amount).toLocaleString('en-IN')} Securely</button>
+        <div class="note">&#128274; Secured by 256-bit SSL · Demo mode</div>
+      </div>
+    `;
+    this.shadowRoot.getElementById('payBtn')?.addEventListener('click', () => {
+      bookingState.payment = { method: this._activeTab || 'card' };
+      var btn = this.shadowRoot.getElementById('payBtn');
+      btn.textContent = 'Processing...';
+      btn.disabled = true;
+
+      // POST to backend to create real booking
+      fetch('/quick-book/confirm', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          flight_id: bookingState.flight?.id,
+          name: bookingState.passenger?.name,
+          email: bookingState.passenger?.email,
+          phone: bookingState.passenger?.phone || '',
+          payment_method: bookingState.payment.method,
+        })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          bookingState.bookingCode = data.booking_code;
+          bookingState.bookingId = data.booking_id;
+          document.getElementById('bookingConfirm').show(bookingState);
+          markDone(3);
+          goStep(4);
+        } else {
+          btn.textContent = 'Pay ₹' + parseInt(bookingState.flight?.price||0).toLocaleString('en-IN') + ' Securely';
+          btn.disabled = false;
+          alert(data.error || 'Booking failed. Please try again.');
+        }
+      })
+      .catch(() => {
+        btn.textContent = 'Pay ₹' + parseInt(bookingState.flight?.price||0).toLocaleString('en-IN') + ' Securely';
+        btn.disabled = false;
+        alert('Network error. Please try again.');
+      });
+    });
+  }
+  switchTab(t) {
+    this._activeTab = t;
+    const sr = this.shadowRoot;
+    sr.querySelectorAll('.tab').forEach(tb => tb.classList.remove('active'));
+    sr.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    sr.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active');
+    sr.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active');
+  }
+}
+customElements.define('snap-payment-widget', SnapPaymentWidget);
+
+
+/* ════════════════════════════════════════════════════════════
+   5. <snap-booking-confirmation> — Final confirmation
+   ════════════════════════════════════════════════════════════ */
+class SnapBookingConfirmation extends HTMLElement {
+  constructor() { super(); this.attachShadow({mode:'open'}); this.render(); }
+  render() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; font-family:-apple-system,'Inter',sans-serif; }
+        .wrap { background:#fff; border:2px solid #e5e7eb; border-radius:14px; padding:28px; text-align:center; max-width:500px; }
+        .icon { font-size:3rem; margin-bottom:12px; }
+        h3 { font-size:1.1rem; font-weight:800; color:#0f172a; margin:0 0 6px; }
+        .sub { font-size:.82rem; color:#6b7280; margin-bottom:20px; }
+        .details { background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:16px; text-align:left; margin-bottom:16px; }
+        .row { display:flex; justify-content:space-between; margin-bottom:6px; font-size:.82rem; }
+        .label { color:#6b7280; }
+        .value { font-weight:700; color:#0f172a; }
+        .code { background:#0f172a; color:#4ade80; padding:10px 20px; border-radius:8px; font-family:'SF Mono',monospace; font-size:1rem; font-weight:800; letter-spacing:1px; display:inline-block; margin:10px 0; }
+        .btn { display:inline-block; background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff; border:none; border-radius:10px; padding:10px 24px; font-weight:700; font-size:.85rem; cursor:pointer; text-decoration:none; margin-top:12px; }
+        .empty { color:#9ca3af; padding:20px; }
+      </style>
+      <div class="wrap"><div class="empty">Complete the previous steps first</div></div>
+    `;
+  }
+  show(state) {
+    const f = state.flight || {};
+    const p = state.passenger || {};
+    const code = state.bookingCode || 'ST-QB-' + Date.now().toString(36).toUpperCase();
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; font-family:-apple-system,'Inter',sans-serif; }
+        .wrap { background:#fff; border:2px solid #86efac; border-radius:14px; padding:28px; text-align:center; max-width:500px; }
+        .icon { font-size:3rem; margin-bottom:8px; }
+        h3 { font-size:1.1rem; font-weight:800; color:#16a34a; margin:0 0 4px; }
+        .sub { font-size:.82rem; color:#6b7280; margin-bottom:16px; }
+        .code { background:#0f172a; color:#4ade80; padding:10px 20px; border-radius:8px; font-family:'SF Mono',monospace; font-size:.95rem; font-weight:800; letter-spacing:1px; display:inline-block; margin:8px 0 16px; }
+        .details { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; text-align:left; }
+        .row { display:flex; justify-content:space-between; margin-bottom:5px; font-size:.8rem; }
+        .label { color:#6b7280; }
+        .value { font-weight:700; color:#0f172a; }
+        .total { font-size:1rem; font-weight:900; color:#16a34a; border-top:1px solid #bbf7d0; padding-top:8px; margin-top:8px; }
+        .actions { margin-top:16px; display:flex; gap:10px; justify-content:center; }
+        .btn { padding:10px 20px; border-radius:10px; font-weight:700; font-size:.82rem; cursor:pointer; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+        .btn-home { background:#f3f4f6; color:#374151; }
+        .btn-book { background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff; }
+      </style>
+      <div class="wrap">
+        <div class="icon">&#10003;</div>
+        <h3>Booking Confirmed!</h3>
+        <div class="sub">Your flight has been booked successfully</div>
+        <div class="code">${code}</div>
+        <div class="details">
+          <div class="row"><span class="label">Passenger</span><span class="value">${p.name || 'Guest'}</span></div>
+          <div class="row"><span class="label">Flight</span><span class="value">${f.airline || ''} ${f.flightNo || ''}</span></div>
+          <div class="row"><span class="label">Route</span><span class="value">${f.origin || ''} → ${f.destination || ''}</span></div>
+          <div class="row"><span class="label">Time</span><span class="value">${f.depart || ''} – ${f.arrive || ''}</span></div>
+          <div class="row"><span class="label">Payment</span><span class="value">${(state.payment?.method || 'card').toUpperCase()}</span></div>
+          <div class="row total"><span>Total Paid</span><span>₹${parseInt(f.price||0).toLocaleString('en-IN')}</span></div>
+        </div>
+        <div class="actions">
+          <a href="/booking-confirmation/${state.bookingId || ''}" class="btn btn-book">&#128196; View Booking</a>
+          <a href="/quick-book" class="btn btn-home">&#9992; Book Another</a>
+        </div>
+      </div>
+    `;
+    markDone(4);
+  }
+}
+customElements.define('snap-booking-confirmation', SnapBookingConfirmation);
+</script>
+{% endblock %}

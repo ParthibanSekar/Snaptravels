@@ -227,6 +227,10 @@ PAGE_SLUG_MAP = {
     'activities':['/activities'],
     'booking': ['/book', '/booking'],
     'dashboard':['/dashboard', '/my-bookings', '/profile', '/security'],
+    'trip-planner': ['/trip-planner'],
+    'quick-book': ['/quick-book'],
+    'travel-dashboard': ['/travel-dashboard'],
+    'insurance': ['/insurance'],
     'home':    ['/'],
 }
 

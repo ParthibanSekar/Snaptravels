@@ -476,6 +476,70 @@ def price_alert_popup():
     destination = request.args.get('destination', 'Goa')
     return render_template('popups/price_alert_popup.html', destination=destination)
 
+@public_bp.route('/quick-book')
+def quick_book():
+    """Shadow DOM Web Components booking flow."""
+    flights = Flight.query.limit(6).all()
+    hotels = Hotel.query.limit(6).all()
+    user = get_current_user()
+    return render_template('quick_book.html', flights=flights, hotels=hotels, user=user)
+
+@public_bp.route('/quick-book/confirm', methods=['POST'])
+@login_required
+def quick_book_confirm():
+    """API endpoint to create a real booking from the Quick Book shadow DOM flow."""
+    import json as _json
+    from app.models import Notification
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data'}), 400
+
+    flight_id = data.get('flight_id')
+    flight = Flight.query.get(flight_id) if flight_id else None
+    if not flight:
+        return jsonify({'error': 'Flight not found'}), 404
+
+    customer_name = data.get('name', '').strip()
+    customer_email = data.get('email', '').strip()
+    if not customer_name or not customer_email:
+        return jsonify({'error': 'Name and email required'}), 400
+
+    payment_method = data.get('payment_method', 'card')
+
+    booking = BookingService.create_booking(
+        user_id=session['user_id'],
+        booking_type='FLIGHT',
+        item_id=flight.id,
+        customer_data={
+            'name': customer_name,
+            'email': customer_email,
+            'phone': data.get('phone', ''),
+        },
+        amount=flight.price,
+        payment_method=payment_method,
+    )
+
+    if not booking:
+        return jsonify({'error': 'Booking failed'}), 500
+
+    # Notification
+    notif = Notification(
+        user_id=session['user_id'], type='BOOKING',
+        title='Quick Book Confirmed!',
+        message=f"{flight.airline} {flight.flight_no} — {flight.origin} to {flight.destination}. Code: {booking.booking_code}",
+        link=url_for('public.booking_confirmation', booking_id=booking.id),
+    )
+    db.session.add(notif)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'booking_code': booking.booking_code,
+        'booking_id': booking.id,
+        'amount': flight.price,
+    })
+
+
 @public_bp.route('/trip-planner/save-redirect')
 @login_required
 def save_trip_redirect():

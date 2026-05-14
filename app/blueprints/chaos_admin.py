@@ -61,7 +61,8 @@ BOOL_FIELDS = {
 }
 
 PAGE_TARGETS = ['all', 'flights', 'hotels', 'buses', 'trains',
-                'cabs', 'packages', 'activities', 'booking', 'dashboard', 'home']
+                'cabs', 'packages', 'activities', 'insurance', 'booking',
+                'trip-planner', 'quick-book', 'travel-dashboard', 'dashboard', 'home']
 
 
 @chaos_admin_bp.route('/', methods=['GET'])
