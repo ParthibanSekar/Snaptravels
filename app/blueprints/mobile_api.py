@@ -218,6 +218,22 @@ def mobile_create_booking(current_user):
     if not item_id:
         return jsonify({'error': f'{booking_type.lower()}_id is required'}), 400
 
+    # Validate item exists and get price from DB (never trust client-supplied amount)
+    from app.models import Flight, Hotel
+    if booking_type == 'FLIGHT':
+        item = Flight.query.get(item_id)
+        if not item:
+            return jsonify({'error': 'Flight not found'}), 404
+        amount = item.price
+    elif booking_type == 'HOTEL':
+        item = Hotel.query.get(item_id)
+        if not item:
+            return jsonify({'error': 'Hotel not found'}), 404
+        nights = int(data.get('nights', 1)) or 1
+        amount = item.price_per_night * nights
+    else:
+        amount = 0
+
     customer_data = {
         'name': data.get('customer_name', current_user.email),
         'email': data.get('customer_email', current_user.email),
@@ -233,7 +249,7 @@ def mobile_create_booking(current_user):
             booking_type=booking_type,
             item_id=item_id,
             customer_data=customer_data,
-            amount=data.get('amount', 0)
+            amount=amount
         )
 
         if not booking:
@@ -1164,10 +1180,25 @@ def mobile_mark_all_notifications_read(current_user):
 def mobile_validate_promo(current_user):
     data = request.get_json() or {}
     code = (data.get('code') or '').strip().upper()
-    amount = data.get('amount', 0)
 
     if not code:
         return jsonify({'error': 'Promo code is required'}), 400
+
+    # Validate amount from DB item, not from user input
+    from app.models import Flight, Hotel
+    amount = 0
+    item_type = (data.get('type') or '').upper()
+    item_id = data.get('flight_id') or data.get('hotel_id')
+    if item_type == 'FLIGHT' and item_id:
+        flight = Flight.query.get(item_id)
+        amount = flight.price if flight else 0
+    elif item_type == 'HOTEL' and item_id:
+        hotel = Hotel.query.get(item_id)
+        nights = int(data.get('nights', 1)) or 1
+        amount = (hotel.price_per_night * nights) if hotel else 0
+    else:
+        # Fallback: accept client amount but cap it
+        amount = min(float(data.get('amount', 0)), 500000)
 
     promo = PromoCode.query.filter_by(code=code).first()
     if not promo:

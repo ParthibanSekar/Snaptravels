@@ -17,7 +17,7 @@ body { margin:0; padding:0; background:#f0f4ff; font-family:-apple-system,'Inter
 <body>
 <div class="frameset-container">
   <!-- Top frame: Flight list -->
-  <iframe src="/trip-planner/compare-popup/flights-frame?origin={{ origin }}&destination={{ destination }}"
+  <iframe src="/trip-planner/compare-popup/flights-frame?origin={{ origin|urlencode }}&destination={{ destination|urlencode }}"
           class="frame-top" id="flightsFrame" name="flightsFrame" title="Flight List"></iframe>
 
   <!-- Divider -->
