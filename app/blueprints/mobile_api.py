@@ -207,13 +207,19 @@ def mobile_create_booking(current_user):
 
     booking_type = data['type'].upper()
 
-    # Determine item_id based on booking type
+    # Determine item_id based on booking type (accept string or int)
     if booking_type == 'FLIGHT':
         item_id = data.get('flight_id')
     elif booking_type == 'HOTEL':
         item_id = data.get('hotel_id')
     else:
         return jsonify({'error': 'Invalid booking type. Must be FLIGHT or HOTEL'}), 400
+
+    # Convert to int (Site24x7 may send as string)
+    try:
+        item_id = int(item_id) if item_id else None
+    except (ValueError, TypeError):
+        item_id = None
 
     if not item_id:
         return jsonify({'error': f'{booking_type.lower()}_id is required'}), 400

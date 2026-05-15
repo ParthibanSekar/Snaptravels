@@ -1,0 +1,258 @@
+{
+  "info": {
+    "name": "SnapTravels Full API Transaction (7 Steps)",
+    "description": "Login → Search → Details → Book → Verify → Cancel → Promo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Step 1 — Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "pm.test('Login successful', function() {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(jsonData.token).to.not.be.undefined;",
+              "});",
+              "pm.environment.set('token', jsonData.token);",
+              "if (jsonData.user) pm.environment.set('user_id', jsonData.user.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"admin@snaptravels.online\",\"password\":\"Admin@123\"}"
+        },
+        "url": {
+          "raw": "https://snaptravels.online/mobile-api/v1/auth/login",
+          "protocol": "https",
+          "host": ["snaptravels", "online"],
+          "path": ["mobile-api", "v1", "auth", "login"]
+        }
+      }
+    },
+    {
+      "name": "Step 2 — Search Flights",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "pm.test('Flights returned', function() {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(jsonData.flights).to.be.an('array');",
+              "  pm.expect(jsonData.flights.length).to.be.greaterThan(0);",
+              "});",
+              "if (jsonData.flights && jsonData.flights.length > 0) {",
+              "  pm.environment.set('flight_id', jsonData.flights[0].id);",
+              "  pm.environment.set('flight_price', jsonData.flights[0].price);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "https://snaptravels.online/mobile-api/v1/flights/search?origin=Chennai&destination=Delhi",
+          "protocol": "https",
+          "host": ["snaptravels", "online"],
+          "path": ["mobile-api", "v1", "flights", "search"],
+          "query": [
+            { "key": "origin", "value": "Chennai" },
+            { "key": "destination", "value": "Delhi" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Step 3 — Get Flight Details",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Flight details returned', function() {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "https://snaptravels.online/mobile-api/v1/flights/{{flight_id}}",
+          "protocol": "https",
+          "host": ["snaptravels", "online"],
+          "path": ["mobile-api", "v1", "flights", "{{flight_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Step 4 — Create Booking",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "pm.test('Booking created', function() {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(jsonData.booking).to.not.be.undefined;",
+              "  pm.expect(jsonData.booking.booking_code).to.not.be.undefined;",
+              "});",
+              "if (jsonData.booking) {",
+              "  pm.environment.set('booking_id', jsonData.booking.id);",
+              "  pm.environment.set('booking_code', jsonData.booking.booking_code);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"type\":\"FLIGHT\",\"flight_id\":{{flight_id}},\"customer_name\":\"API Monitor Test\",\"customer_email\":\"api-monitor@snaptravels.online\",\"customer_phone\":\"+919876543210\"}"
+        },
+        "url": {
+          "raw": "https://snaptravels.online/mobile-api/v1/bookings",
+          "protocol": "https",
+          "host": ["snaptravels", "online"],
+          "path": ["mobile-api", "v1", "bookings"]
+        }
+      }
+    },
+    {
+      "name": "Step 5 — Verify Booking",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "pm.test('Booking verified', function() {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(jsonData.booking.status).to.equal('CONFIRMED');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "https://snaptravels.online/mobile-api/v1/bookings/{{booking_id}}",
+          "protocol": "https",
+          "host": ["snaptravels", "online"],
+          "path": ["mobile-api", "v1", "bookings", "{{booking_id}}"]
+        }
+      }
+    },
+    {
+      "name": "Step 6 — Cancel Booking",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Booking cancelled', function() {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"reason\":\"API monitor test - auto cancel\"}"
+        },
+        "url": {
+          "raw": "https://snaptravels.online/mobile-api/v1/bookings/{{booking_id}}/cancel",
+          "protocol": "https",
+          "host": ["snaptravels", "online"],
+          "path": ["mobile-api", "v1", "bookings", "{{booking_id}}", "cancel"]
+        }
+      }
+    },
+    {
+      "name": "Step 7 — Validate Promo Code",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "pm.test('Promo validated', function() {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(jsonData.success).to.be.true;",
+              "  pm.expect(jsonData.promo.discount_amount).to.be.greaterThan(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"code\":\"SNAP20\",\"type\":\"FLIGHT\",\"flight_id\":{{flight_id}}}"
+        },
+        "url": {
+          "raw": "https://snaptravels.online/mobile-api/v1/promo/validate",
+          "protocol": "https",
+          "host": ["snaptravels", "online"],
+          "path": ["mobile-api", "v1", "promo", "validate"]
+        }
+      }
+    }
+  ]
+}
