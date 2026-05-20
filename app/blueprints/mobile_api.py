@@ -282,25 +282,52 @@ def mobile_get_bookings(current_user):
 
     bookings_data = []
     for booking in bookings:
+        # Derive top-level type + item ID from the first BookingItem
+        first_item = booking.items[0] if booking.items else None
+        booking_type = first_item.type if first_item else None
+        item_ref_id  = first_item.ref_id if first_item else None
+
+        # Build a type-specific ID field so the mobile app can navigate directly
+        type_id_field = {}
+        if booking_type == 'FLIGHT':
+            type_id_field = {'flight_id': item_ref_id}
+        elif booking_type == 'HOTEL':
+            type_id_field = {'hotel_id': item_ref_id}
+        elif booking_type == 'TRAIN':
+            type_id_field = {'train_id': item_ref_id}
+        elif booking_type == 'BUS':
+            type_id_field = {'bus_id': item_ref_id}
+        elif booking_type == 'CAB':
+            type_id_field = {'cab_id': item_ref_id}
+        elif booking_type == 'PACKAGE':
+            type_id_field = {'package_id': item_ref_id}
+        elif booking_type == 'ACTIVITY':
+            type_id_field = {'activity_id': item_ref_id}
+        elif booking_type == 'INSURANCE':
+            type_id_field = {'insurance_id': item_ref_id}
+
         booking_data = {
             'id': booking.id,
             'booking_code': booking.booking_code,
+            'type': booking_type,          # ← top-level type field
             'status': booking.status,
             'total_amount': float(booking.total_amount),
             'currency': booking.currency,
             'created_at': booking.created_at.isoformat(),
             'customer_name': booking.customer_name,
-            'customer_email': booking.customer_email
+            'customer_email': booking.customer_email,
+            **type_id_field,               # ← e.g. flight_id / train_id / etc.
         }
 
-        # Include booking items details
+        # Include booking items details (enriched for all types)
         items = []
         for item in booking.items:
             item_data = {
                 'type': item.type,
                 'title': item.title,
                 'amount': float(item.amount),
-                'details': item.details
+                'details': item.details,
+                'ref_id': item.ref_id,
             }
 
             if item.type == 'FLIGHT' and item.flight_id:
@@ -312,17 +339,82 @@ def mobile_get_bookings(current_user):
                         'origin': flight.origin,
                         'destination': flight.destination,
                         'departure_time': flight.depart_time,
-                        'arrival_time': flight.arrive_time
+                        'arrival_time': flight.arrive_time,
                     }
 
-            if item.type == 'HOTEL' and item.hotel_id:
+            elif item.type == 'HOTEL' and item.hotel_id:
                 hotel = Hotel.query.get(item.hotel_id)
                 if hotel:
                     item_data['hotel'] = {
                         'name': hotel.name,
                         'city': hotel.city,
                         'rating': float(hotel.rating),
-                        'image_path': hotel.image_path
+                        'image_path': hotel.image_path,
+                    }
+
+            elif item.type == 'TRAIN':
+                train = Train.query.get(item.ref_id)
+                if train:
+                    item_data['train'] = {
+                        'train_no': train.train_no,
+                        'train_name': train.train_name,
+                        'origin': train.origin,
+                        'destination': train.destination,
+                        'depart_time': train.depart_time,
+                        'arrive_time': train.arrive_time,
+                    }
+
+            elif item.type == 'BUS':
+                bus = Bus.query.get(item.ref_id)
+                if bus:
+                    item_data['bus'] = {
+                        'operator': bus.operator,
+                        'bus_type': bus.bus_type,
+                        'origin': bus.origin,
+                        'destination': bus.destination,
+                        'depart_time': bus.depart_time,
+                        'arrive_time': bus.arrive_time,
+                    }
+
+            elif item.type == 'CAB':
+                cab = Cab.query.get(item.ref_id)
+                if cab:
+                    item_data['cab'] = {
+                        'vehicle_type': cab.vehicle_type,
+                        'brand': cab.brand,
+                        'ac': cab.ac,
+                        'capacity': cab.capacity,
+                    }
+
+            elif item.type == 'PACKAGE':
+                pkg = Package.query.get(item.ref_id)
+                if pkg:
+                    item_data['package'] = {
+                        'name': pkg.name,
+                        'destination': pkg.destination,
+                        'duration_nights': pkg.duration_nights,
+                        'image_path': pkg.image_path,
+                    }
+
+            elif item.type == 'ACTIVITY':
+                activity = Activity.query.get(item.ref_id)
+                if activity:
+                    item_data['activity'] = {
+                        'name': activity.name,
+                        'city': activity.city,
+                        'category': activity.category,
+                        'duration_label': activity.duration_label,
+                        'image_path': activity.image_path,
+                    }
+
+            elif item.type == 'INSURANCE':
+                plan = InsurancePlan.query.get(item.ref_id)
+                if plan:
+                    item_data['insurance'] = {
+                        'name': plan.name,
+                        'medical_cover': plan.medical_cover,
+                        'trip_cancellation': plan.trip_cancellation,
+                        'baggage_loss': plan.baggage_loss,
                     }
 
             items.append(item_data)
