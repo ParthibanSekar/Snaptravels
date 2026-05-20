@@ -609,7 +609,7 @@ def mobile_get_booking(current_user, booking_id):
     })
 
 
-@mobile_api.route('/bookings/<int:booking_id>/cancel', methods=['PUT'])
+@mobile_api.route('/bookings/<int:booking_id>/cancel', methods=['POST', 'PUT'])
 @mobile_auth_required
 def mobile_cancel_booking(current_user, booking_id):
     booking = Booking.query.filter_by(id=booking_id, user_id=current_user.id).first()
