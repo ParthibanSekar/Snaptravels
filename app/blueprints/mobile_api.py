@@ -207,73 +207,73 @@ def mobile_create_booking(current_user):
 
     booking_type = data['type'].upper()
 
-    # Determine item_id based on booking type (accept string or int)
-    if booking_type == 'FLIGHT':
-        item_id = data.get('flight_id')
-    elif booking_type == 'HOTEL':
-        item_id = data.get('hotel_id')
-    else:
-        return jsonify({'error': 'Invalid booking type. Must be FLIGHT or HOTEL'}), 400
+    ALL_BOOKING_TYPES = {'FLIGHT', 'HOTEL', 'TRAIN', 'BUS', 'CAB', 'PACKAGE', 'ACTIVITY', 'INSURANCE'}
+    if booking_type not in ALL_BOOKING_TYPES:
+        return jsonify({'error': f'Invalid booking type. Must be one of: {", ".join(sorted(ALL_BOOKING_TYPES))}'}), 400
 
-    # Convert to int (Site24x7 may send as string)
-    try:
-        item_id = int(item_id) if item_id else None
-    except (ValueError, TypeError):
-        item_id = None
+    # ── FLIGHT & HOTEL — use existing BookingService (chaos hooks, seat decrement) ──
+    if booking_type in ('FLIGHT', 'HOTEL'):
+        if booking_type == 'FLIGHT':
+            item_id = data.get('flight_id')
+        else:
+            item_id = data.get('hotel_id')
 
-    if not item_id:
-        return jsonify({'error': f'{booking_type.lower()}_id is required'}), 400
+        try:
+            item_id = int(item_id) if item_id else None
+        except (ValueError, TypeError):
+            item_id = None
 
-    # Validate item exists and get price from DB (never trust client-supplied amount)
-    from app.models import Flight, Hotel
-    if booking_type == 'FLIGHT':
-        item = Flight.query.get(item_id)
-        if not item:
-            return jsonify({'error': 'Flight not found'}), 404
-        amount = item.price
-    elif booking_type == 'HOTEL':
-        item = Hotel.query.get(item_id)
-        if not item:
-            return jsonify({'error': 'Hotel not found'}), 404
-        nights = int(data.get('nights', 1)) or 1
-        amount = item.price_per_night * nights
-    else:
-        amount = 0
+        if not item_id:
+            return jsonify({'error': f'{booking_type.lower()}_id is required'}), 400
 
-    customer_data = {
-        'name': data.get('customer_name', current_user.email),
-        'email': data.get('customer_email', current_user.email),
-        'phone': data.get('customer_phone', ''),
-        'nights': data.get('nights', 1),
-        'checkin': data.get('checkin'),
-        'checkout': data.get('checkout')
-    }
+        if booking_type == 'FLIGHT':
+            item = Flight.query.get(item_id)
+            if not item:
+                return jsonify({'error': 'Flight not found'}), 404
+            amount = item.price
+        else:
+            item = Hotel.query.get(item_id)
+            if not item:
+                return jsonify({'error': 'Hotel not found'}), 404
+            nights = int(data.get('nights', 1)) or 1
+            amount = item.price_per_night * nights
 
-    try:
-        booking = BookingService.create_booking(
-            user_id=current_user.id,
-            booking_type=booking_type,
-            item_id=item_id,
-            customer_data=customer_data,
-            amount=amount
-        )
+        customer_data = {
+            'name': data.get('customer_name', current_user.email),
+            'email': data.get('customer_email', current_user.email),
+            'phone': data.get('customer_phone', ''),
+            'nights': data.get('nights', 1),
+            'checkin': data.get('checkin'),
+            'checkout': data.get('checkout'),
+        }
 
-        if not booking:
-            return jsonify({'error': 'Failed to create booking'}), 500
+        try:
+            booking = BookingService.create_booking(
+                user_id=current_user.id,
+                booking_type=booking_type,
+                item_id=item_id,
+                customer_data=customer_data,
+                amount=amount
+            )
+            if not booking:
+                return jsonify({'error': 'Failed to create booking'}), 500
 
-        return jsonify({
-            'success': True,
-            'booking': {
-                'id': booking.id,
-                'booking_code': booking.booking_code,
-                'status': booking.status,
-                'total_amount': float(booking.total_amount),
-                'created_at': booking.created_at.isoformat(),
-                'currency': booking.currency
-            }
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+            return jsonify({
+                'success': True,
+                'booking': {
+                    'id': booking.id,
+                    'booking_code': booking.booking_code,
+                    'status': booking.status,
+                    'total_amount': float(booking.total_amount),
+                    'created_at': booking.created_at.isoformat(),
+                    'currency': booking.currency,
+                }
+            }), 201
+        except Exception as e:
+            return jsonify({'error': str(e)}), 400
+
+    # ── TRAIN, BUS, CAB, PACKAGE, ACTIVITY, INSURANCE — direct creation ──
+    return _create_non_flight_booking(current_user, booking_type, data)
 
 @mobile_api.route('/bookings', methods=['GET'])
 @mobile_auth_required
@@ -1363,3 +1363,281 @@ def mobile_autocomplete():
 
     suggestions = sorted(set(r[0] for r in rows))[:10]
     return jsonify({'success': True, 'suggestions': suggestions})
+
+
+# ===========================================================================
+#  SHARED HELPER — non-flight/hotel booking creation (chaos-aware)
+# ===========================================================================
+
+def _create_non_flight_booking(current_user, booking_type, data):
+    """
+    Internal helper used by both the generic POST /bookings endpoint
+    and the dedicated /trains/book, /buses/book … /insurance/buy endpoints.
+    Returns a Flask Response object.
+    """
+    import logging
+    from app.services.booking import generate_booking_code
+    from app.services.chaos import (
+        maybe_fail_db, maybe_fail_checkout, maybe_fail_payment,
+        CheckoutChaosError, PaymentChaosError, DatabaseChaosError,
+    )
+    logger = logging.getLogger('snaptravels.booking')
+
+    # ── resolve item + amount from DB ──────────────────────────────────────
+    try:
+        if booking_type == 'TRAIN':
+            item_id = int(data.get('train_id') or 0)
+            train = Train.query.get(item_id)
+            if not train:
+                return jsonify({'error': 'Train not found'}), 404
+            travel_class = (data.get('travel_class') or data.get('class', 'SL')).upper()
+            class_fare_map = {
+                'SL': train.sleeper_fare,
+                '3A': train.third_ac_fare,
+                '2A': train.second_ac_fare,
+                '1A': train.first_ac_fare,
+            }
+            fare = class_fare_map.get(travel_class, train.sleeper_fare)
+            passengers = int(data.get('passengers', 1) or 1)
+            amount = float(fare) * passengers
+            item = train
+            item_title = f"{train.train_name} ({train.train_no})"
+            item_details = {
+                'train_no': train.train_no,
+                'train_name': train.train_name,
+                'origin': train.origin,
+                'destination': train.destination,
+                'depart_time': train.depart_time,
+                'arrive_time': train.arrive_time,
+                'travel_class': travel_class,
+                'passengers': passengers,
+            }
+
+        elif booking_type == 'BUS':
+            item_id = int(data.get('bus_id') or 0)
+            bus = Bus.query.get(item_id)
+            if not bus:
+                return jsonify({'error': 'Bus not found'}), 404
+            passengers = int(data.get('passengers', 1) or 1)
+            amount = float(bus.price) * passengers
+            item = bus
+            item_title = f"{bus.operator} — {bus.bus_no}"
+            item_details = {
+                'bus_no': bus.bus_no,
+                'operator': bus.operator,
+                'origin': bus.origin,
+                'destination': bus.destination,
+                'depart_time': bus.depart_time,
+                'arrive_time': bus.arrive_time,
+                'bus_type': bus.bus_type,
+                'passengers': passengers,
+            }
+
+        elif booking_type == 'CAB':
+            item_id = int(data.get('cab_id') or 0)
+            cab = Cab.query.get(item_id)
+            if not cab:
+                return jsonify({'error': 'Cab not found'}), 404
+            distance_km = float(data.get('distance_km', 20) or 20)
+            amount = float(cab.estimate_fare(distance_km))
+            item = cab
+            item_title = f"{cab.brand} ({cab.vehicle_type})"
+            item_details = {
+                'vehicle_type': cab.vehicle_type,
+                'brand': cab.brand,
+                'pickup': data.get('pickup') or data.get('origin', ''),
+                'drop': data.get('drop') or data.get('destination', ''),
+                'distance_km': distance_km,
+                'estimated_fare': amount,
+                'ac': cab.ac,
+            }
+
+        elif booking_type == 'PACKAGE':
+            item_id = int(data.get('package_id') or 0)
+            pkg = Package.query.get(item_id)
+            if not pkg:
+                return jsonify({'error': 'Package not found'}), 404
+            persons = int(data.get('persons', 1) or 1)
+            amount = float(pkg.base_price) * persons
+            item = pkg
+            item_title = f"{pkg.name} — {pkg.destination}"
+            item_details = {
+                'destination': pkg.destination,
+                'duration_nights': pkg.duration_nights,
+                'persons': persons,
+                'includes_flight': pkg.includes_flight,
+                'includes_hotel': pkg.includes_hotel,
+                'includes_meals': pkg.includes_meals,
+            }
+
+        elif booking_type == 'ACTIVITY':
+            item_id = int(data.get('activity_id') or 0)
+            activity = Activity.query.get(item_id)
+            if not activity:
+                return jsonify({'error': 'Activity not found'}), 404
+            persons = int(data.get('persons', 1) or 1)
+            amount = float(activity.price_per_person) * persons
+            item = activity
+            item_title = f"{activity.name} — {activity.city}"
+            item_details = {
+                'city': activity.city,
+                'category': activity.category,
+                'duration_label': activity.duration_label,
+                'persons': persons,
+            }
+
+        elif booking_type == 'INSURANCE':
+            item_id = int(data.get('insurance_id') or 0)
+            plan = InsurancePlan.query.get(item_id)
+            if not plan:
+                return jsonify({'error': 'Insurance plan not found'}), 404
+            persons = int(data.get('persons', 1) or 1)
+            days = int(data.get('days', 1) or 1)
+            amount = float(plan.price_per_person_per_day) * persons * days
+            item = plan
+            item_title = f"{plan.name} Insurance"
+            item_details = {
+                'plan_name': plan.name,
+                'persons': persons,
+                'days': days,
+                'medical_cover': plan.medical_cover,
+                'trip_cancellation': plan.trip_cancellation,
+                'baggage_loss': plan.baggage_loss,
+            }
+        else:
+            return jsonify({'error': f'Unhandled booking type: {booking_type}'}), 400
+
+    except (ValueError, TypeError):
+        return jsonify({'error': f'{booking_type.lower()}_id must be a valid integer'}), 400
+
+    # ── chaos hooks ────────────────────────────────────────────────────────
+    try:
+        maybe_fail_db('create_booking')
+        maybe_fail_checkout(booking_type=booking_type, amount=amount)
+        maybe_fail_payment(amount=amount)
+    except (CheckoutChaosError, PaymentChaosError, DatabaseChaosError) as ce:
+        logger.exception("Chaos-induced %s booking failure: %s", booking_type, ce)
+        return jsonify({'error': 'Booking failed, please try again'}), 503
+
+    # ── persist ────────────────────────────────────────────────────────────
+    try:
+        booking = Booking(
+            user_id=current_user.id,
+            booking_code=generate_booking_code(),
+            total_amount=amount,
+            customer_name=data.get('customer_name', current_user.email),
+            customer_email=data.get('customer_email', current_user.email),
+            customer_phone=data.get('customer_phone', ''),
+            payment_method=data.get('payment_method', 'card'),
+        )
+        db.session.add(booking)
+        db.session.flush()
+
+        booking_item = BookingItem(
+            booking_id=booking.id,
+            type=booking_type,
+            ref_id=item_id,
+            title=item_title,
+            amount=amount,
+        )
+        booking_item.details = item_details
+        db.session.add(booking_item)
+        db.session.commit()
+
+        logger.info('BOOKING_CREATED code=%s user_id=%d type=%s amount=%.2f item_id=%d',
+                    booking.booking_code, current_user.id, booking_type, amount, item_id)
+
+        return jsonify({
+            'success': True,
+            'booking': {
+                'id': booking.id,
+                'booking_code': booking.booking_code,
+                'status': booking.status,
+                'total_amount': float(booking.total_amount),
+                'currency': booking.currency,
+                'created_at': booking.created_at.isoformat(),
+            }
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error("BOOKING_FAILED user_id=%d type=%s error=%s", current_user.id, booking_type, e)
+        return jsonify({'error': str(e)}), 500
+
+
+# ===========================================================================
+#  TRAINS — dedicated book endpoint
+# ===========================================================================
+
+@mobile_api.route('/trains/book', methods=['POST'])
+@mobile_auth_required
+def mobile_book_train(current_user):
+    data = request.get_json() or {}
+    data['type'] = 'TRAIN'
+    return _create_non_flight_booking(current_user, 'TRAIN', data)
+
+
+# ===========================================================================
+#  BUSES — dedicated book endpoint
+# ===========================================================================
+
+@mobile_api.route('/buses/book', methods=['POST'])
+@mobile_auth_required
+def mobile_book_bus(current_user):
+    data = request.get_json() or {}
+    data['type'] = 'BUS'
+    return _create_non_flight_booking(current_user, 'BUS', data)
+
+
+# ===========================================================================
+#  CABS — dedicated book endpoint
+# ===========================================================================
+
+@mobile_api.route('/cabs/book', methods=['POST'])
+@mobile_auth_required
+def mobile_book_cab(current_user):
+    data = request.get_json() or {}
+    data['type'] = 'CAB'
+    return _create_non_flight_booking(current_user, 'CAB', data)
+
+
+# ===========================================================================
+#  PACKAGES — dedicated book endpoint
+# ===========================================================================
+
+@mobile_api.route('/packages/book', methods=['POST'])
+@mobile_auth_required
+def mobile_book_package(current_user):
+    data = request.get_json() or {}
+    data['type'] = 'PACKAGE'
+    return _create_non_flight_booking(current_user, 'PACKAGE', data)
+
+
+# ===========================================================================
+#  ACTIVITIES — dedicated book endpoint
+# ===========================================================================
+
+@mobile_api.route('/activities/book', methods=['POST'])
+@mobile_auth_required
+def mobile_book_activity(current_user):
+    data = request.get_json() or {}
+    data['type'] = 'ACTIVITY'
+    return _create_non_flight_booking(current_user, 'ACTIVITY', data)
+
+
+# ===========================================================================
+#  INSURANCE — list alias + dedicated buy endpoint
+# ===========================================================================
+
+@mobile_api.route('/insurance', methods=['GET'])
+def mobile_list_insurance_alias():
+    """Alias for /insurance/plans — matches the spec's GET /insurance."""
+    return mobile_list_insurance()
+
+
+@mobile_api.route('/insurance/buy', methods=['POST'])
+@mobile_auth_required
+def mobile_buy_insurance(current_user):
+    data = request.get_json() or {}
+    data['type'] = 'INSURANCE'
+    return _create_non_flight_booking(current_user, 'INSURANCE', data)
