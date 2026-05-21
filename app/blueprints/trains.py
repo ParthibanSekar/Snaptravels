@@ -14,6 +14,7 @@ from app.services.chaos import (
 from app import db
 from datetime import datetime, date
 import uuid
+from app.services.sanitize import sanitize_str, sanitize_booking_customer
 
 logger = logging.getLogger('snaptravels.trains')
 
@@ -158,9 +159,18 @@ def booking():
     total = round(base_fare + reservation_charge + gst, 2)
 
     if request.method == 'POST':
-        customer_name = request.form.get('customer_name', '').strip()
-        customer_email = request.form.get('customer_email', '').strip()
-        customer_phone = request.form.get('customer_phone', '').strip()
+        _raw = {
+            'customer_name':  request.form.get('customer_name', ''),
+            'customer_email': request.form.get('customer_email', ''),
+            'customer_phone': request.form.get('customer_phone', ''),
+        }
+        _clean, _errs = sanitize_booking_customer(_raw, phone_required=False)
+        if _errs:
+            flash('Invalid input: ' + '; '.join(_errs.values()), 'danger')
+            return redirect(request.referrer or url_for('trains.trains_home'))
+        customer_name  = _clean['customer_name']
+        customer_email = _clean['customer_email']
+        customer_phone = _clean.get('customer_phone', '')
         travel_date = request.form.get('travel_date', '').strip() or train_search.get('travel_date')
 
         payment_method = request.form.get('payment_method', 'card').strip() or 'card'

@@ -8,6 +8,7 @@ from app.services.auth import login_required, get_current_user
 from app import db
 from datetime import datetime
 import uuid
+from app.services.sanitize import sanitize_str, sanitize_booking_customer
 
 activities_bp = Blueprint('activities', __name__, url_prefix='/activities')
 
@@ -84,9 +85,18 @@ def book(activity_id):
     activity = Activity.query.get_or_404(activity_id)
     persons = int(request.form.get('persons', 1))
     activity_date = request.form.get('activity_date', '')
-    customer_name = request.form.get('customer_name', '').strip()
-    customer_email = request.form.get('customer_email', '').strip()
-    customer_phone = request.form.get('customer_phone', '').strip()
+    _raw = {
+        'customer_name':  request.form.get('customer_name', ''),
+        'customer_email': request.form.get('customer_email', ''),
+        'customer_phone': request.form.get('customer_phone', ''),
+    }
+    _clean, _errs = sanitize_booking_customer(_raw, phone_required=False)
+    if _errs:
+        flash('Invalid input: ' + '; '.join(_errs.values()), 'danger')
+        return redirect(request.referrer or url_for('activities.activities_home'))
+    customer_name  = _clean['customer_name']
+    customer_email = _clean['customer_email']
+    customer_phone = _clean.get('customer_phone', '')
     special_requests = request.form.get('special_requests', '').strip()
 
     if not customer_name or not customer_email:

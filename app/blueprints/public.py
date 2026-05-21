@@ -4,6 +4,7 @@ from app.models import Flight, Hotel, Booking, BookingItem, Package, PromoCode
 from app.forms import RoundTripSearchForm, HotelSearchForm, BookingForm
 from app.services.search import SearchService
 from app.services.booking import BookingService
+from app.services.sanitize import sanitize_str, sanitize_booking_customer
 from app.services.auth import login_required, get_current_user
 from app.services.chaos import (
     ChaosInjectedError, CheckoutChaosError, PaymentChaosError,
@@ -282,11 +283,21 @@ def booking():
             session['payment_fail'] = ctx
             return redirect(url_for('public.payment_failed'))
 
-        # Create booking
+        # Create booking — sanitize customer fields before storing
+        _raw = {
+            'customer_name':  form.customer_name.data or '',
+            'customer_email': form.customer_email.data or '',
+            'customer_phone': form.customer_phone.data or '',
+        }
+        _clean, _errs = sanitize_booking_customer(_raw, phone_required=False)
+        if _errs:
+            for field, msg in _errs.items():
+                flash(msg, 'danger')
+            return redirect(request.referrer or url_for('public.index'))
         customer_data = {
-            'name': form.customer_name.data,
-            'email': form.customer_email.data,
-            'phone': form.customer_phone.data
+            'name':  _clean['customer_name'],
+            'email': _clean['customer_email'],
+            'phone': _clean.get('customer_phone', ''),
         }
 
         # Add hotel-specific data if hotel is selected
@@ -499,12 +510,18 @@ def quick_book_confirm():
     if not flight:
         return jsonify({'error': 'Flight not found'}), 404
 
-    customer_name = data.get('name', '').strip()
-    customer_email = data.get('email', '').strip()
-    if not customer_name or not customer_email:
-        return jsonify({'error': 'Name and email required'}), 400
+    _raw = {
+        'customer_name':  data.get('name', ''),
+        'customer_email': data.get('email', ''),
+        'customer_phone': data.get('phone', ''),
+    }
+    _clean, _errs = sanitize_booking_customer(_raw, phone_required=False)
+    if _errs:
+        return jsonify({'error': 'Validation failed', 'fields': _errs}), 422
+    customer_name  = _clean['customer_name']
+    customer_email = _clean['customer_email']
 
-    payment_method = data.get('payment_method', 'card')
+    payment_method = sanitize_str(data.get('payment_method', 'card'), 20)
 
     booking = BookingService.create_booking(
         user_id=session['user_id'],

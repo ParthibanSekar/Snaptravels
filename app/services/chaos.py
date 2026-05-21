@@ -59,6 +59,22 @@ class PaymentChaosError(ChaosInjectedError):
 class ApiChaosError(ChaosInjectedError):
     pass
 
+# ── Section 5: Mobile-specific chaos errors ───────────────────────────────
+class MobileAuthChaosError(ChaosInjectedError):
+    pass
+
+class MobileBookingChaosError(ChaosInjectedError):
+    pass
+
+class MobileCancelChaosError(ChaosInjectedError):
+    pass
+
+class MobileTimeoutChaosError(ChaosInjectedError):
+    pass
+
+class MobileRateLimitChaosError(ChaosInjectedError):
+    pass
+
 
 # ----------------------------------------------------------------------
 # Internal helpers
@@ -213,6 +229,133 @@ def maybe_fail_api(endpoint: str = None):
         _log_event('INJECTED_ERROR', 'api_5xx', endpoint=endpoint,
                    outage_label=state.outage_label)
         raise ApiChaosError("Upstream service returned 500")
+
+
+# ── Section 5: Mobile App Chaos ───────────────────────────────────────────
+
+def _mobile_chaos_enabled():
+    """Return the FailureMode row if mobile chaos is active, else None."""
+    state = _get_state()
+    if not state:
+        return None
+    return state if getattr(state, 'mobile_chaos', False) else None
+
+
+def maybe_fail_mobile_auth():
+    """
+    Random JWT / authentication failures.
+    Call at the top of /auth/login and /auth/refresh handlers.
+    Raises MobileAuthChaosError (→ caller returns 401).
+    """
+    state = _mobile_chaos_enabled()
+    if not state:
+        return
+    rate = getattr(state, 'mobile_auth_failure_rate', 0.0) or 0.0
+    if _roll(rate):
+        _log_event('INJECTED_ERROR', 'mobile_auth_failure',
+                   outage_label=state.outage_label)
+        raise MobileAuthChaosError("Authentication service temporarily unavailable")
+
+
+def maybe_slow_mobile_search(kind: str = 'generic') -> bool:
+    """
+    Artificial search slowdown + optional empty-results injection.
+    Call at the top of every /search endpoint.
+    Returns True if the caller should return an empty result set.
+    """
+    state = _mobile_chaos_enabled()
+    if not state:
+        return False
+    delay = getattr(state, 'mobile_search_slow_ms', 0) or 0
+    _sleep(delay)
+    empty_rate = getattr(state, 'mobile_search_empty_rate', 0.0) or 0.0
+    if _roll(empty_rate):
+        _log_event('INJECTED_ERROR', f'mobile_search_empty:{kind}',
+                   outage_label=state.outage_label)
+        return True   # caller should return empty list
+    return False
+
+
+def maybe_fail_mobile_booking():
+    """
+    Random booking decline (simulates payment gateway rejection).
+    Call inside booking creation handlers before DB write.
+    Raises MobileBookingChaosError (→ caller returns 402/503).
+    """
+    state = _mobile_chaos_enabled()
+    if not state:
+        return
+    rate = getattr(state, 'mobile_booking_decline_rate', 0.0) or 0.0
+    if _roll(rate):
+        _log_event('INJECTED_ERROR', 'mobile_booking_decline',
+                   outage_label=state.outage_label)
+        raise MobileBookingChaosError("Booking declined by payment gateway. Please try again.")
+
+
+def maybe_fail_mobile_cancel():
+    """
+    Random cancel-endpoint failure.
+    Call at the top of the /bookings/<id>/cancel handler.
+    Raises MobileCancelChaosError (→ caller returns 503).
+    """
+    state = _mobile_chaos_enabled()
+    if not state:
+        return
+    rate = getattr(state, 'mobile_cancel_failure_rate', 0.0) or 0.0
+    if _roll(rate):
+        _log_event('INJECTED_ERROR', 'mobile_cancel_failure',
+                   outage_label=state.outage_label)
+        raise MobileCancelChaosError("Cancellation service temporarily unavailable")
+
+
+def maybe_mobile_timeout():
+    """
+    Deliberate response delay > client timeout (16 s).
+    Call inside the before_request hook for the mobile API.
+    Raises MobileTimeoutChaosError so APM captures it as a slow transaction.
+    """
+    state = _mobile_chaos_enabled()
+    if not state:
+        return
+    rate = getattr(state, 'mobile_timeout_rate', 0.0) or 0.0
+    if _roll(rate):
+        _log_event('INJECTED_ERROR', 'mobile_timeout',
+                   outage_label=state.outage_label)
+        _sleep(16000)   # 16 s — exceeds the 15 s Axios client timeout
+        raise MobileTimeoutChaosError("Request timed out")
+
+
+def maybe_mobile_rate_limit():
+    """
+    Simulate HTTP 429 Too Many Requests.
+    Call inside the before_request hook for the mobile API.
+    Raises MobileRateLimitChaosError (→ caller returns 429).
+    """
+    state = _mobile_chaos_enabled()
+    if not state:
+        return
+    rate = getattr(state, 'mobile_rate_limit_rate', 0.0) or 0.0
+    if _roll(rate):
+        _log_event('INJECTED_ERROR', 'mobile_rate_limit',
+                   outage_label=state.outage_label)
+        raise MobileRateLimitChaosError("Too many requests — rate limit exceeded")
+
+
+def should_mobile_malform() -> bool:
+    """
+    Returns True if the response should drop key fields (malformed JSON).
+    Call after building the response dict; if True, strip non-essential keys
+    so the mobile app receives incomplete data and has to handle it gracefully.
+    """
+    state = _mobile_chaos_enabled()
+    if not state:
+        return False
+    rate = getattr(state, 'mobile_malform_rate', 0.0) or 0.0
+    if _roll(rate):
+        _log_event('INJECTED_ERROR', 'mobile_malform',
+                   outage_label=state.outage_label)
+        return True
+    return False
 
 
 # ── Section 1: Page Load Performance Chaos ────────────────────────────────
@@ -1185,6 +1328,17 @@ def end_outage(reason: str = 'scheduled'):
     state.ab_test_search = False
     state.ab_test_booking = False
     state.ab_test_profile = False
+    # Outage window
+    # Mobile App Chaos (Section 5)
+    state.mobile_chaos                = False
+    state.mobile_auth_failure_rate    = 0.0
+    state.mobile_search_slow_ms       = 0
+    state.mobile_search_empty_rate    = 0.0
+    state.mobile_booking_decline_rate = 0.0
+    state.mobile_cancel_failure_rate  = 0.0
+    state.mobile_timeout_rate         = 0.0
+    state.mobile_rate_limit_rate      = 0.0
+    state.mobile_malform_rate         = 0.0
     # Outage window
     state.outage_label = None
     state.outage_started_at = None

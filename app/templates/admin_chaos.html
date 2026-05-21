@@ -966,6 +966,162 @@ input:checked + .snap-slider.green-on { background:#15803d; border-color:#15803d
   </div><!-- /section 4 -->
 
   <!-- ═══════════════════════════════════════════════════════════════
+       SECTION 5 — Mobile App Chaos
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="c-section mb-4" id="sec-mobile">
+    <div class="c-section-head">
+      <div class="c-sec-badge" style="background:#7c3aed;color:#fff"><i class="bi bi-phone"></i></div>
+      <div style="flex:1">
+        <div style="font-size:10px;font-weight:700;color:#7c3aed;letter-spacing:1.5px;text-transform:uppercase">Section 5</div>
+        <span class="c-section-title">Mobile App Chaos</span>
+      </div>
+      <label class="snap-switch ms-auto" title="Enable Section 5">
+        <input type="checkbox" name="mobile_chaos" id="mobileToggle" {% if state.mobile_chaos %}checked{% endif %}
+               onchange="document.getElementById('sec-mobile-body').style.opacity=this.checked?'1':'0.45';document.getElementById('sec-mobile-body').style.pointerEvents=this.checked?'auto':'none'">
+        <span class="snap-slider" style="{% if state.mobile_chaos %}background:#7c3aed;border-color:#7c3aed{% endif %}"></span>
+      </label>
+    </div>
+    <div class="c-section-body" id="sec-mobile-body" style="{{ '' if state.mobile_chaos else 'opacity:.45;pointer-events:none' }}">
+      <p class="c-section-desc">Injects failures directly into the Mobile REST API — auth errors, empty search results, booking declines, cancel failures, timeouts, rate limits, and malformed responses. Each maps to a Site24x7 Mobile APM or REST API Transaction Monitor step.</p>
+
+      <!-- Auth failure -->
+      <div class="mb-3">
+        <label class="chaos-label d-flex align-items-center gap-2">
+          <i class="bi bi-shield-lock" style="color:#7c3aed"></i>
+          Auth Failure Rate
+          <span class="badge bg-dark ms-1">POST /auth/login</span>
+        </label>
+        <div class="d-flex align-items-center gap-3">
+          <input type="range" name="mobile_auth_failure_rate" min="0" max="1" step="0.05"
+                 value="{{ state.mobile_auth_failure_rate }}"
+                 oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"
+                 class="form-range" style="flex:1;accent-color:#7c3aed">
+          <span class="chaos-rate-badge" style="min-width:44px;text-align:center">{{ (state.mobile_auth_failure_rate*100)|int }}%</span>
+        </div>
+        <div class="injection-card-desc">Returns HTTP 401 "Authentication service temporarily unavailable" — triggers login monitor failures and Mobile APM auth error rate.</div>
+      </div>
+
+      <!-- Search slow + empty -->
+      <div class="mb-3">
+        <label class="chaos-label d-flex align-items-center gap-2">
+          <i class="bi bi-hourglass-split" style="color:#7c3aed"></i>
+          Search Slow Response
+          <span class="badge bg-dark ms-1">GET /flights/search, /trains/search, /buses/search, /cabs/search</span>
+        </label>
+        <div class="d-flex align-items-center gap-3">
+          <input type="range" name="mobile_search_slow_ms" min="0" max="10000" step="250"
+                 value="{{ state.mobile_search_slow_ms }}"
+                 oninput="this.nextElementSibling.textContent=this.value+'ms'"
+                 class="form-range" style="flex:1;accent-color:#7c3aed">
+          <span class="chaos-rate-badge" style="min-width:60px;text-align:center">{{ state.mobile_search_slow_ms }}ms</span>
+        </div>
+        <div class="injection-card-desc">Adds an artificial delay to all search endpoints. Triggers slow transaction alerts in APM. Use with Site24x7 REST API Transaction Monitor step 2 (Search).</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="chaos-label d-flex align-items-center gap-2">
+          <i class="bi bi-inbox" style="color:#7c3aed"></i>
+          Empty Search Results Rate
+        </label>
+        <div class="d-flex align-items-center gap-3">
+          <input type="range" name="mobile_search_empty_rate" min="0" max="1" step="0.05"
+                 value="{{ state.mobile_search_empty_rate }}"
+                 oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"
+                 class="form-range" style="flex:1;accent-color:#7c3aed">
+          <span class="chaos-rate-badge" style="min-width:44px;text-align:center">{{ (state.mobile_search_empty_rate*100)|int }}%</span>
+        </div>
+        <div class="injection-card-desc">Returns an empty list from search endpoints. Tests app's empty-state UI and breaks the "search must return ≥1 result" assertion in Site24x7 synthetic steps.</div>
+      </div>
+
+      <!-- Booking decline -->
+      <div class="mb-3">
+        <label class="chaos-label d-flex align-items-center gap-2">
+          <i class="bi bi-x-circle" style="color:#7c3aed"></i>
+          Booking Decline Rate
+          <span class="badge bg-dark ms-1">POST /bookings, /trains/book, /buses/book …</span>
+        </label>
+        <div class="d-flex align-items-center gap-3">
+          <input type="range" name="mobile_booking_decline_rate" min="0" max="1" step="0.05"
+                 value="{{ state.mobile_booking_decline_rate }}"
+                 oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"
+                 class="form-range" style="flex:1;accent-color:#7c3aed">
+          <span class="chaos-rate-badge" style="min-width:44px;text-align:center">{{ (state.mobile_booking_decline_rate*100)|int }}%</span>
+        </div>
+        <div class="injection-card-desc">Returns HTTP 402 "Booking declined by payment gateway" — simulates payment gateway rejection. Triggers booking failure alerts and tests the Book step in the transaction monitor.</div>
+      </div>
+
+      <!-- Cancel failure -->
+      <div class="mb-3">
+        <label class="chaos-label d-flex align-items-center gap-2">
+          <i class="bi bi-arrow-counterclockwise" style="color:#7c3aed"></i>
+          Cancel Failure Rate
+          <span class="badge bg-dark ms-1">POST /bookings/&lt;id&gt;/cancel</span>
+        </label>
+        <div class="d-flex align-items-center gap-3">
+          <input type="range" name="mobile_cancel_failure_rate" min="0" max="1" step="0.05"
+                 value="{{ state.mobile_cancel_failure_rate }}"
+                 oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"
+                 class="form-range" style="flex:1;accent-color:#7c3aed">
+          <span class="chaos-rate-badge" style="min-width:44px;text-align:center">{{ (state.mobile_cancel_failure_rate*100)|int }}%</span>
+        </div>
+        <div class="injection-card-desc">Returns HTTP 503 "Cancellation service temporarily unavailable" — breaks the Cancel step of the REST API Transaction Monitor and tests app retry logic.</div>
+      </div>
+
+      <!-- Timeout -->
+      <div class="mb-3">
+        <label class="chaos-label d-flex align-items-center gap-2">
+          <i class="bi bi-clock-history" style="color:#7c3aed"></i>
+          Timeout Rate (16 s — exceeds client timeout)
+          <span class="badge bg-dark ms-1">All endpoints</span>
+        </label>
+        <div class="d-flex align-items-center gap-3">
+          <input type="range" name="mobile_timeout_rate" min="0" max="1" step="0.05"
+                 value="{{ state.mobile_timeout_rate }}"
+                 oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"
+                 class="form-range" style="flex:1;accent-color:#7c3aed">
+          <span class="chaos-rate-badge" style="min-width:44px;text-align:center">{{ (state.mobile_timeout_rate*100)|int }}%</span>
+        </div>
+        <div class="injection-card-desc">Deliberate 16 s sleep — exceeds the app's 15 s Axios timeout. APM records a slow transaction; the app shows its loading spinner timeout. Returns HTTP 504.</div>
+      </div>
+
+      <!-- Rate limit -->
+      <div class="mb-3">
+        <label class="chaos-label d-flex align-items-center gap-2">
+          <i class="bi bi-speedometer2" style="color:#7c3aed"></i>
+          Rate Limit Rate (429)
+          <span class="badge bg-dark ms-1">All endpoints</span>
+        </label>
+        <div class="d-flex align-items-center gap-3">
+          <input type="range" name="mobile_rate_limit_rate" min="0" max="1" step="0.05"
+                 value="{{ state.mobile_rate_limit_rate }}"
+                 oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"
+                 class="form-range" style="flex:1;accent-color:#7c3aed">
+          <span class="chaos-rate-badge" style="min-width:44px;text-align:center">{{ (state.mobile_rate_limit_rate*100)|int }}%</span>
+        </div>
+        <div class="injection-card-desc">Returns HTTP 429 Too Many Requests with a Retry-After header. Tests the app's retry logic and triggers rate-limit error alerts in Mobile APM dashboards.</div>
+      </div>
+
+      <!-- Malformed response -->
+      <div class="mb-3">
+        <label class="chaos-label d-flex align-items-center gap-2">
+          <i class="bi bi-file-earmark-break" style="color:#7c3aed"></i>
+          Malformed Response Rate
+          <span class="badge bg-dark ms-1">POST /bookings</span>
+        </label>
+        <div class="d-flex align-items-center gap-3">
+          <input type="range" name="mobile_malform_rate" min="0" max="1" step="0.05"
+                 value="{{ state.mobile_malform_rate }}"
+                 oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'"
+                 class="form-range" style="flex:1;accent-color:#7c3aed">
+          <span class="chaos-rate-badge" style="min-width:44px;text-align:center">{{ (state.mobile_malform_rate*100)|int }}%</span>
+        </div>
+        <div class="injection-card-desc">Strips <code>booking_code</code> and <code>total_amount</code> from booking responses. Tests crash-free rate in Mobile APM — app must handle missing fields gracefully.</div>
+      </div>
+
+    </div><!-- /section 5 body -->
+  </div><!-- /section 5 -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
        ENGINE SETTINGS — Intensity + Webhook
   ════════════════════════════════════════════════════════════════ -->
   <div class="c-section mb-4" style="border-left:3px solid #374151">

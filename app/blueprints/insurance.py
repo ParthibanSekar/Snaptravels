@@ -8,6 +8,7 @@ from app.services.auth import login_required, get_current_user
 from app import db
 from datetime import datetime
 import uuid
+from app.services.sanitize import sanitize_str, sanitize_booking_customer
 
 insurance_bp = Blueprint('insurance', __name__, url_prefix='/insurance')
 
@@ -47,9 +48,18 @@ def buy(plan_id):
     premium = round(plan.price_per_person_per_day * trip_days * persons, 2)
 
     if request.method == 'POST':
-        customer_name = request.form.get('customer_name', '').strip()
-        customer_email = request.form.get('customer_email', '').strip()
-        customer_phone = request.form.get('customer_phone', '').strip()
+        _raw = {
+            'customer_name':  request.form.get('customer_name', ''),
+            'customer_email': request.form.get('customer_email', ''),
+            'customer_phone': request.form.get('customer_phone', ''),
+        }
+        _clean, _errs = sanitize_booking_customer(_raw, phone_required=False)
+        if _errs:
+            flash('Invalid input: ' + '; '.join(_errs.values()), 'danger')
+            return redirect(request.referrer or url_for('insurance.insurance_home'))
+        customer_name  = _clean['customer_name']
+        customer_email = _clean['customer_email']
+        customer_phone = _clean.get('customer_phone', '')
         start_date = request.form.get('start_date', '')
         end_date = request.form.get('end_date', '')
         destination = request.form.get('destination', '').strip()

@@ -282,6 +282,26 @@ class FailureMode(db.Model):
     # JSON list of excluded chaos types: ["ab_test","component_chaos"]
     auto_chaos_excluded_json = db.Column(db.Text,       nullable=True)
 
+    # ── Section 5: Mobile App Chaos ──────────────────────────────────────
+    # Master toggle — all mobile chaos is off unless this is True
+    mobile_chaos               = db.Column(db.Boolean, default=False, nullable=False)
+    # Auth: random JWT / login failures (0.0–1.0 probability)
+    mobile_auth_failure_rate   = db.Column(db.Float,   default=0.0,  nullable=False)
+    # Search: extra artificial delay on search endpoints (ms)
+    mobile_search_slow_ms      = db.Column(db.Integer, default=0,    nullable=False)
+    # Search: probability of returning an empty result set
+    mobile_search_empty_rate   = db.Column(db.Float,   default=0.0,  nullable=False)
+    # Booking: probability of a booking being declined by the "gateway"
+    mobile_booking_decline_rate = db.Column(db.Float,  default=0.0,  nullable=False)
+    # Cancel: probability that the cancel endpoint returns a 503
+    mobile_cancel_failure_rate  = db.Column(db.Float,  default=0.0,  nullable=False)
+    # Timeout: probability of a response deliberately exceeding client timeout (16 s)
+    mobile_timeout_rate        = db.Column(db.Float,   default=0.0,  nullable=False)
+    # Rate-limit: probability of returning HTTP 429 Too Many Requests
+    mobile_rate_limit_rate     = db.Column(db.Float,   default=0.0,  nullable=False)
+    # Malformed: probability of stripping key fields from a JSON response
+    mobile_malform_rate        = db.Column(db.Float,   default=0.0,  nullable=False)
+
     # Audit
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_by = db.Column(db.String(120), nullable=True)

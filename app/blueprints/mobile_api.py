@@ -16,21 +16,39 @@ import jwt
 from datetime import datetime, timedelta
 import os
 import json
+from app.services.sanitize import sanitize_str, sanitize_booking_customer
 
 mobile_api = Blueprint('mobile_api', __name__, url_prefix='/mobile-api/v1')
 
 
-# Chaos hook — applies to every mobile API endpoint automatically.
-# We avoid the /config endpoint so Site24x7 REST API monitor can still
-# poll a ground-truth check even during a scripted outage.
+# ── Global chaos hook — runs before every mobile API request ─────────────
+# Exempts /config so Site24x7 REST API monitors can poll a ground-truth
+# check even during a scripted outage.
 @mobile_api.before_request
 def _inject_mobile_api_chaos():
     from flask import request as _req
     if _req.endpoint and _req.endpoint.endswith('.mobile_config'):
         return None
     try:
-        from app.services.chaos import maybe_fail_api, ApiChaosError
+        from app.services.chaos import (
+            maybe_fail_api, ApiChaosError,
+            maybe_mobile_timeout, MobileTimeoutChaosError,
+            maybe_mobile_rate_limit, MobileRateLimitChaosError,
+        )
+        # Global API chaos (existing) — random 5xx + slowdown
         maybe_fail_api(endpoint=_req.endpoint)
+        # Mobile-specific: timeout simulation (must run before rate-limit)
+        maybe_mobile_timeout()
+        # Mobile-specific: rate-limit simulation
+        maybe_mobile_rate_limit()
+    except MobileTimeoutChaosError as e:
+        return jsonify({'success': False, 'error': str(e), 'chaos': 'timeout'}), 504
+    except MobileRateLimitChaosError as e:
+        return jsonify({
+            'success': False, 'error': str(e),
+            'chaos': 'rate_limit',
+            'retry_after': 60
+        }), 429
     except ApiChaosError as e:
         return jsonify({'success': False, 'error': str(e)}), 503
     return None
@@ -90,6 +108,13 @@ def mobile_register():
 @mobile_api.route('/auth/login', methods=['POST'])
 @limiter.exempt
 def mobile_login():
+    # Mobile chaos: auth failure injection
+    try:
+        from app.services.chaos import maybe_fail_mobile_auth, MobileAuthChaosError
+        maybe_fail_mobile_auth()
+    except MobileAuthChaosError as e:
+        return jsonify({'error': str(e), 'chaos': 'auth_failure'}), 401
+
     data = request.get_json()
 
     if not data or not data.get('email') or not data.get('password'):
@@ -139,6 +164,14 @@ def mobile_refresh_token(current_user):
 
 @mobile_api.route('/flights/search', methods=['GET'])
 def mobile_search_flights():
+    # Mobile chaos: search slowdown + empty results injection
+    try:
+        from app.services.chaos import maybe_slow_mobile_search
+        _force_empty = maybe_slow_mobile_search(kind='flight')
+    except Exception:
+        _force_empty = False
+    if _force_empty:
+        return jsonify({'success': True, 'flights': [], 'total': 0})
     flights = SearchService.search_flights(
         origin=request.args.get('origin'),
         destination=request.args.get('destination'),
@@ -238,13 +271,18 @@ def mobile_create_booking(current_user):
             nights = int(data.get('nights', 1)) or 1
             amount = item.price_per_night * nights
 
+        # Server-side sanitization — runs regardless of what the client sent
+        clean, s_errors = sanitize_booking_customer(data)
+        if s_errors:
+            return jsonify({'error': 'Validation failed', 'fields': s_errors}), 422
+
         customer_data = {
-            'name': data.get('customer_name', current_user.email),
-            'email': data.get('customer_email', current_user.email),
-            'phone': data.get('customer_phone', ''),
+            'name': clean['customer_name'],
+            'email': clean['customer_email'],
+            'phone': clean['customer_phone'],
             'nights': data.get('nights', 1),
-            'checkin': data.get('checkin'),
-            'checkout': data.get('checkout'),
+            'checkin': sanitize_str(data.get('checkin', ''), 20),
+            'checkout': sanitize_str(data.get('checkout', ''), 20),
         }
 
         try:
@@ -704,6 +742,13 @@ def mobile_get_booking(current_user, booking_id):
 @mobile_api.route('/bookings/<int:booking_id>/cancel', methods=['POST', 'PUT'])
 @mobile_auth_required
 def mobile_cancel_booking(current_user, booking_id):
+    # Mobile chaos: cancel failure injection
+    try:
+        from app.services.chaos import maybe_fail_mobile_cancel, MobileCancelChaosError
+        maybe_fail_mobile_cancel()
+    except MobileCancelChaosError as e:
+        return jsonify({'error': str(e), 'chaos': 'cancel_failure'}), 503
+
     booking = Booking.query.filter_by(id=booking_id, user_id=current_user.id).first()
     if not booking:
         return jsonify({'error': 'Booking not found'}), 404
@@ -730,6 +775,14 @@ def mobile_resend_confirmation(current_user, booking_id):
 
 @mobile_api.route('/buses/search', methods=['GET'])
 def mobile_search_buses():
+    # Mobile chaos: search slowdown + empty results injection
+    try:
+        from app.services.chaos import maybe_slow_mobile_search
+        _force_empty = maybe_slow_mobile_search(kind='bus')
+    except Exception:
+        _force_empty = False
+    if _force_empty:
+        return jsonify({'success': True, 'buses': [], 'total': 0, 'date': ''})
     origin = request.args.get('origin', '').strip()
     destination = request.args.get('destination', '').strip()
     travel_date = request.args.get('date', '').strip()
@@ -769,6 +822,14 @@ def mobile_search_buses():
 
 @mobile_api.route('/trains/search', methods=['GET'])
 def mobile_search_trains():
+    # Mobile chaos: search slowdown + empty results injection
+    try:
+        from app.services.chaos import maybe_slow_mobile_search
+        _force_empty = maybe_slow_mobile_search(kind='train')
+    except Exception:
+        _force_empty = False
+    if _force_empty:
+        return jsonify({'success': True, 'trains': [], 'total': 0, 'date': ''})
     origin = request.args.get('origin', '').strip()
     destination = request.args.get('destination', '').strip()
     travel_date = request.args.get('date', '').strip()
@@ -827,6 +888,14 @@ def mobile_search_trains():
 
 @mobile_api.route('/cabs/search', methods=['GET'])
 def mobile_search_cabs():
+    # Mobile chaos: search slowdown + empty results injection
+    try:
+        from app.services.chaos import maybe_slow_mobile_search
+        _force_empty = maybe_slow_mobile_search(kind='cab')
+    except Exception:
+        _force_empty = False
+    if _force_empty:
+        return jsonify({'success': True, 'cabs': [], 'total': 0})
     pickup = request.args.get('pickup', '').strip()
     drop = request.args.get('drop', '').strip()
     distance_km = request.args.get('distance_km', 20, type=float)
@@ -1602,11 +1671,21 @@ def _create_non_flight_booking(current_user, booking_type, data):
     except (ValueError, TypeError):
         return jsonify({'error': f'{booking_type.lower()}_id must be a valid integer'}), 400
 
+    # ── server-side sanitization (runs even if client bypassed the app) ────
+    clean, s_errors = sanitize_booking_customer(data)
+    if s_errors:
+        return jsonify({'error': 'Validation failed', 'fields': s_errors}), 422
+
     # ── chaos hooks ────────────────────────────────────────────────────────
     try:
+        from app.services.chaos import maybe_fail_mobile_booking, MobileBookingChaosError
+        maybe_fail_mobile_booking()          # mobile-specific: payment gateway decline
         maybe_fail_db('create_booking')
         maybe_fail_checkout(booking_type=booking_type, amount=amount)
         maybe_fail_payment(amount=amount)
+    except MobileBookingChaosError as ce:
+        logger.exception("Mobile booking decline: %s", ce)
+        return jsonify({'error': str(ce), 'chaos': 'booking_decline'}), 402
     except (CheckoutChaosError, PaymentChaosError, DatabaseChaosError) as ce:
         logger.exception("Chaos-induced %s booking failure: %s", booking_type, ce)
         return jsonify({'error': 'Booking failed, please try again'}), 503
@@ -1617,10 +1696,10 @@ def _create_non_flight_booking(current_user, booking_type, data):
             user_id=current_user.id,
             booking_code=generate_booking_code(),
             total_amount=amount,
-            customer_name=data.get('customer_name', current_user.email),
-            customer_email=data.get('customer_email', current_user.email),
-            customer_phone=data.get('customer_phone', ''),
-            payment_method=data.get('payment_method', 'card'),
+            customer_name=clean['customer_name'],
+            customer_email=clean['customer_email'],
+            customer_phone=clean['customer_phone'],
+            payment_method=sanitize_str(data.get('payment_method', 'card'), 20),
         )
         db.session.add(booking)
         db.session.flush()
@@ -1639,17 +1718,22 @@ def _create_non_flight_booking(current_user, booking_type, data):
         logger.info('BOOKING_CREATED code=%s user_id=%d type=%s amount=%.2f item_id=%d',
                     booking.booking_code, current_user.id, booking_type, amount, item_id)
 
-        return jsonify({
-            'success': True,
-            'booking': {
-                'id': booking.id,
-                'booking_code': booking.booking_code,
-                'status': booking.status,
-                'total_amount': float(booking.total_amount),
-                'currency': booking.currency,
-                'created_at': booking.created_at.isoformat(),
-            }
-        }), 201
+        # ── malformed response chaos ──────────────────────────────────────
+        from app.services.chaos import should_mobile_malform
+        booking_payload = {
+            'id': booking.id,
+            'booking_code': booking.booking_code,
+            'status': booking.status,
+            'total_amount': float(booking.total_amount),
+            'currency': booking.currency,
+            'created_at': booking.created_at.isoformat(),
+        }
+        if should_mobile_malform():
+            # Strip key fields so mobile app must handle incomplete data
+            booking_payload.pop('booking_code', None)
+            booking_payload.pop('total_amount', None)
+
+        return jsonify({'success': True, 'booking': booking_payload}), 201
 
     except Exception as e:
         db.session.rollback()
