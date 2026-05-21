@@ -135,6 +135,14 @@ cmd_update() {
 
     success "Code updated to latest version"
 
+    # Run DB migrations — adds new columns safely, skips if already present
+    if [ -f "$INSTALL_DIR/migrate_mobile_chaos.py" ]; then
+        info "Running DB migration..."
+        python3 "$INSTALL_DIR/migrate_mobile_chaos.py" \
+            && success "Migration complete" \
+            || warn "Migration had warnings — check output above"
+    fi
+
     # Restart
     info "Restarting app..."
     PORT=$FLASK_PORT bash snaptravels.sh start
