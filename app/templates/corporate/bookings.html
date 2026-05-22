@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Bookings — SnapTravels Corporate</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --corp-bg:#0b1120;--corp-card:#111827;--corp-border:#1e2d45;
+      --corp-accent:#2563eb;--corp-text:#e2e8f0;--corp-muted:#64748b;
+      --corp-green:#10b981;--corp-red:#ef4444;--corp-yellow:#f59e0b;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--corp-bg);color:var(--corp-text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
+    .corp-topbar{background:#060d1a;border-bottom:1px solid var(--corp-border);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+    .corp-logo{display:flex;align-items:center;gap:10px;}
+    .corp-logo-icon{width:32px;height:32px;background:var(--corp-accent);border-radius:7px;display:flex;align-items:center;justify-content:center;}
+    .corp-logo-icon i{color:#fff;font-size:.9rem;}
+    .corp-logo-title{font-size:.95rem;font-weight:700;color:#fff;}
+    .corp-logo-sub{font-size:.65rem;color:var(--corp-muted);letter-spacing:1.5px;text-transform:uppercase;}
+    .corp-user-badge{background:#1e2d45;border:1px solid var(--corp-border);border-radius:20px;padding:4px 12px;font-size:.75rem;color:var(--corp-text);display:flex;align-items:center;gap:6px;}
+    .corp-nav{background:var(--corp-card);border-bottom:1px solid var(--corp-border);padding:0 32px;display:flex;gap:4px;}
+    .corp-nav a{display:flex;align-items:center;gap:6px;padding:12px 16px;font-size:.82rem;font-weight:600;color:var(--corp-muted);text-decoration:none;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
+    .corp-nav a:hover{color:var(--corp-text);}
+    .corp-nav a.active{color:var(--corp-accent);border-bottom-color:var(--corp-accent);}
+    .corp-body{padding:28px 32px;max-width:1200px;margin:0 auto;}
+    .corp-page-title{font-size:1.35rem;font-weight:700;color:#fff;margin-bottom:4px;}
+    .corp-page-sub{font-size:.8rem;color:var(--corp-muted);margin-bottom:24px;}
+
+    /* Filter bar */
+    .filter-bar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+    .filter-btn{padding:6px 14px;border-radius:6px;font-size:.78rem;font-weight:600;border:1px solid var(--corp-border);background:transparent;color:var(--corp-muted);cursor:pointer;text-decoration:none;transition:all .15s;}
+    .filter-btn:hover{color:var(--corp-text);}
+    .filter-btn.active{background:var(--corp-accent);border-color:var(--corp-accent);color:#fff;}
+    .filter-btn.f-confirmed.active{background:#0d2e1e;border-color:#1a4a30;color:var(--corp-green);}
+    .filter-btn.f-cancelled.active{background:#2c1010;border-color:#4a1a1a;color:var(--corp-red);}
+
+    /* Summary chips */
+    .summary-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+    .s-chip{background:var(--corp-card);border:1px solid var(--corp-border);border-radius:7px;padding:10px 16px;font-size:.78rem;}
+    .s-chip-val{font-size:1.1rem;font-weight:800;color:#fff;display:block;}
+    .s-chip-label{color:var(--corp-muted);font-size:.68rem;}
+
+    /* Table */
+    .corp-card{background:var(--corp-card);border:1px solid var(--corp-border);border-radius:10px;margin-bottom:20px;}
+    .corp-card-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--corp-border);}
+    .corp-card-title{font-size:.88rem;font-weight:700;color:var(--corp-text);display:flex;align-items:center;gap:8px;}
+    .corp-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+    .corp-table th{padding:10px 14px;text-align:left;font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--corp-muted);border-bottom:1px solid var(--corp-border);}
+    .corp-table td{padding:11px 14px;border-bottom:1px solid #0f1929;color:var(--corp-text);vertical-align:middle;}
+    .corp-table tr:last-child td{border-bottom:none;}
+    .corp-table tr:hover td{background:#0f1929;}
+    .badge-confirmed{background:#0d2e1e;color:var(--corp-green);border:1px solid #1a4a30;border-radius:4px;padding:2px 8px;font-size:.68rem;font-weight:700;}
+    .badge-cancelled{background:#2c1010;color:var(--corp-red);border:1px solid #4a1a1a;border-radius:4px;padding:2px 8px;font-size:.68rem;font-weight:700;}
+    .badge-pending{background:#2a2000;color:var(--corp-yellow);border:1px solid #4a3800;border-radius:4px;padding:2px 8px;font-size:.68rem;font-weight:700;}
+    .booking-code{font-family:'SF Mono','Fira Code',monospace;font-size:.75rem;color:#93c5fd;}
+    .amount{font-weight:700;color:#fff;}
+    .pay-badge{background:#1e2d45;border:1px solid var(--corp-border);border-radius:3px;padding:1px 7px;font-size:.65rem;color:#94a3b8;font-weight:600;text-transform:uppercase;}
+
+    /* Pagination */
+    .pag-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--corp-border);font-size:.78rem;color:var(--corp-muted);}
+    .pag-links{display:flex;gap:4px;}
+    .pag-btn{padding:5px 12px;border-radius:5px;border:1px solid var(--corp-border);background:transparent;color:var(--corp-muted);text-decoration:none;font-size:.78rem;transition:all .15s;}
+    .pag-btn:hover{color:var(--corp-text);}
+    .pag-btn.active{background:var(--corp-accent);border-color:var(--corp-accent);color:#fff;}
+    .pag-btn.disabled{opacity:.3;pointer-events:none;}
+
+    .corp-footer{text-align:center;padding:20px 32px;font-size:.72rem;color:#2d4060;border-top:1px solid var(--corp-border);margin-top:20px;}
+    @media(max-width:768px){.corp-body{padding:16px;}.summary-chips{flex-direction:column;}}
+  </style>
+</head>
+<body>
+
+<div class="corp-topbar">
+  <div class="corp-logo">
+    <div class="corp-logo-icon"><i class="bi bi-briefcase-fill"></i></div>
+    <div>
+      <div class="corp-logo-title">SnapTravels Corporate</div>
+      <div class="corp-logo-sub">Business Travel Portal</div>
+    </div>
+  </div>
+  <div class="corp-user-badge">
+    <i class="bi bi-person-fill" style="color:#60a5fa"></i>
+    {{ corp_user }}
+  </div>
+</div>
+
+<nav class="corp-nav">
+  <a href="{{ url_for('corporate.index') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+  <a href="{{ url_for('corporate.search') }}"><i class="bi bi-search"></i> Search & Book</a>
+  <a href="{{ url_for('corporate.bookings') }}" class="active"><i class="bi bi-journal-text"></i> All Bookings</a>
+</nav>
+
+<div class="corp-body">
+  <div class="corp-page-title">All Bookings</div>
+  <div class="corp-page-sub">Complete corporate travel history</div>
+
+  <!-- Summary -->
+  <div class="summary-chips">
+    <div class="s-chip">
+      <span class="s-chip-val">{{ stats.total_bookings }}</span>
+      <span class="s-chip-label">Total Bookings</span>
+    </div>
+    <div class="s-chip">
+      <span class="s-chip-val" style="color:#10b981">{{ stats.confirmed }}</span>
+      <span class="s-chip-label">Confirmed</span>
+    </div>
+    <div class="s-chip">
+      <span class="s-chip-val" style="color:#ef4444">{{ stats.cancelled }}</span>
+      <span class="s-chip-label">Cancelled</span>
+    </div>
+    <div class="s-chip">
+      <span class="s-chip-val">₹{{ '{:,.0f}'.format(stats.total_spend) }}</span>
+      <span class="s-chip-label">Total Spend</span>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-bar">
+    <span style="font-size:.75rem;color:var(--corp-muted);font-weight:600">Filter:</span>
+    <a href="{{ url_for('corporate.bookings', status='ALL') }}"
+       class="filter-btn {% if status_filter == 'ALL' %}active{% endif %}">All</a>
+    <a href="{{ url_for('corporate.bookings', status='CONFIRMED') }}"
+       class="filter-btn f-confirmed {% if status_filter == 'CONFIRMED' %}active{% endif %}">Confirmed</a>
+    <a href="{{ url_for('corporate.bookings', status='CANCELLED') }}"
+       class="filter-btn f-cancelled {% if status_filter == 'CANCELLED' %}active{% endif %}">Cancelled</a>
+  </div>
+
+  <!-- Table -->
+  <div class="corp-card">
+    <div class="corp-card-head">
+      <div class="corp-card-title">
+        <i class="bi bi-journal-text" style="color:#60a5fa"></i> Booking Records
+        {% if status_filter != 'ALL' %}
+        <span style="font-size:.7rem;font-weight:400;color:var(--corp-muted)">— {{ status_filter }}</span>
+        {% endif %}
+      </div>
+      {% if pagination %}
+      <span style="font-size:.75rem;color:var(--corp-muted)">
+        {{ pagination.total }} record{{ 's' if pagination.total != 1 }}
+      </span>
+      {% endif %}
+    </div>
+
+    {% if pagination and pagination.items %}
+    <table class="corp-table">
+      <thead>
+        <tr>
+          <th>Booking Code</th>
+          <th>Traveller</th>
+          <th>Trip</th>
+          <th>Amount</th>
+          <th>Payment</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in pagination.items %}
+        <tr>
+          <td><span class="booking-code">{{ b.booking_code }}</span></td>
+          <td>
+            <div style="font-size:.82rem;color:#e2e8f0">{{ b.customer_name or '—' }}</div>
+            <div style="font-size:.7rem;color:#64748b">{{ b.customer_email }}</div>
+          </td>
+          <td style="color:#94a3b8;font-size:.78rem">{{ b.booking_type }}</td>
+          <td><span class="amount">₹{{ '{:,.0f}'.format(b.total_amount) }}</span></td>
+          <td><span class="pay-badge">{{ b.payment_method or 'card' }}</span></td>
+          <td>
+            {% if b.status == 'CONFIRMED' %}<span class="badge-confirmed"><i class="bi bi-check2"></i> Confirmed</span>
+            {% elif b.status == 'CANCELLED' %}<span class="badge-cancelled"><i class="bi bi-x"></i> Cancelled</span>
+            {% else %}<span class="badge-pending">{{ b.status }}</span>{% endif %}
+          </td>
+          <td style="color:#64748b;font-size:.78rem;white-space:nowrap">{{ b.created_at.strftime('%d %b %Y') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="pag-bar">
+      <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+      <div class="pag-links">
+        <a href="{{ url_for('corporate.bookings', page=pagination.prev_num, status=status_filter) }}"
+           class="pag-btn {% if not pagination.has_prev %}disabled{% endif %}">
+          <i class="bi bi-chevron-left"></i> Prev
+        </a>
+        {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+          {% if p %}
+            <a href="{{ url_for('corporate.bookings', page=p, status=status_filter) }}"
+               class="pag-btn {% if p == pagination.page %}active{% endif %}">{{ p }}</a>
+          {% else %}
+            <span class="pag-btn" style="pointer-events:none">…</span>
+          {% endif %}
+        {% endfor %}
+        <a href="{{ url_for('corporate.bookings', page=pagination.next_num, status=status_filter) }}"
+           class="pag-btn {% if not pagination.has_next %}disabled{% endif %}">
+          Next <i class="bi bi-chevron-right"></i>
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div style="text-align:center;padding:40px;color:#3d5070;font-size:.85rem">
+      <i class="bi bi-journal" style="font-size:2rem;display:block;margin-bottom:8px;color:#1e2d45"></i>
+      No bookings found{% if status_filter != 'ALL' %} with status "{{ status_filter }}"{% endif %}.
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<div class="corp-footer">SnapTravels Corporate Portal &nbsp;·&nbsp; Protected by HTTP Basic Authentication &nbsp;·&nbsp; For authorised personnel only</div>
+
+</body>
+</html>

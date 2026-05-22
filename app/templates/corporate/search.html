@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search & Book — SnapTravels Corporate</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --corp-bg:      #0b1120; --corp-card:   #111827;
+      --corp-border:  #1e2d45; --corp-accent: #2563eb;
+      --corp-text:    #e2e8f0; --corp-muted:  #64748b;
+      --corp-green:   #10b981; --corp-yellow: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--corp-bg); color: var(--corp-text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+    .corp-topbar { background:#060d1a; border-bottom:1px solid var(--corp-border); padding:0 32px; height:56px; display:flex; align-items:center; justify-content:space-between; }
+    .corp-logo { display:flex; align-items:center; gap:10px; }
+    .corp-logo-icon { width:32px;height:32px;background:var(--corp-accent);border-radius:7px;display:flex;align-items:center;justify-content:center; }
+    .corp-logo-icon i { color:#fff;font-size:.9rem; }
+    .corp-logo-title { font-size:.95rem;font-weight:700;color:#fff; }
+    .corp-logo-sub { font-size:.65rem;color:var(--corp-muted);letter-spacing:1.5px;text-transform:uppercase; }
+    .corp-user-badge { background:#1e2d45;border:1px solid var(--corp-border);border-radius:20px;padding:4px 12px;font-size:.75rem;color:var(--corp-text);display:flex;align-items:center;gap:6px; }
+    .corp-nav { background:var(--corp-card);border-bottom:1px solid var(--corp-border);padding:0 32px;display:flex;gap:4px; }
+    .corp-nav a { display:flex;align-items:center;gap:6px;padding:12px 16px;font-size:.82rem;font-weight:600;color:var(--corp-muted);text-decoration:none;border-bottom:2px solid transparent;transition:color .15s,border-color .15s; }
+    .corp-nav a:hover { color:var(--corp-text); }
+    .corp-nav a.active { color:var(--corp-accent);border-bottom-color:var(--corp-accent); }
+    .corp-body { padding:28px 32px;max-width:1200px;margin:0 auto; }
+    .corp-page-title { font-size:1.35rem;font-weight:700;color:#fff;margin-bottom:4px; }
+    .corp-page-sub { font-size:.8rem;color:var(--corp-muted);margin-bottom:24px; }
+    .corp-card { background:var(--corp-card);border:1px solid var(--corp-border);border-radius:10px;margin-bottom:20px; }
+    .corp-card-head { display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--corp-border); }
+    .corp-card-title { font-size:.88rem;font-weight:700;color:var(--corp-text);display:flex;align-items:center;gap:8px; }
+    .corp-card-body { padding:16px 20px; }
+    .tab-bar { display:flex;gap:4px;margin-bottom:18px; }
+    .tab-btn { padding:7px 16px;border-radius:7px;font-size:.8rem;font-weight:600;border:1px solid var(--corp-border);background:transparent;color:var(--corp-muted);cursor:pointer;transition:all .15s; }
+    .tab-btn.active { background:var(--corp-accent);border-color:var(--corp-accent);color:#fff; }
+    .corp-input { width:100%;background:#0d1526;border:1px solid var(--corp-border);border-radius:7px;color:var(--corp-text);padding:9px 12px;font-size:.83rem;outline:none;transition:border-color .15s; }
+    .corp-input:focus { border-color:var(--corp-accent); }
+    .corp-input::placeholder { color:#3d5070; }
+    .corp-btn { background:var(--corp-accent);color:#fff;border:none;border-radius:7px;padding:9px 22px;font-size:.83rem;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap; }
+    .corp-btn:hover { background:#1d4ed8; }
+    label.fl { font-size:.7rem;font-weight:600;color:var(--corp-muted);display:block;margin-bottom:4px;letter-spacing:.05em;text-transform:uppercase; }
+    .fg4 { display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;align-items:end; }
+    .fg3 { display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end; }
+
+    /* Results */
+    .results-grid { display:grid;grid-template-columns:repeat(auto-fill, minmax(310px,1fr));gap:14px;margin-top:4px; }
+    .result-card { background:#0d1526;border:1px solid var(--corp-border);border-radius:8px;padding:16px; }
+    .result-card:hover { border-color:#2563eb; }
+    .rc-airline { font-size:.72rem;font-weight:700;color:var(--corp-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px; }
+    .rc-route { display:flex;align-items:center;gap:12px;margin-bottom:12px; }
+    .rc-city { font-size:1.1rem;font-weight:800;color:#fff; }
+    .rc-time { font-size:.78rem;color:var(--corp-muted);margin-top:2px; }
+    .rc-arrow { color:#3d5070;flex:1;text-align:center;font-size:.75rem; }
+    .rc-meta { display:flex;align-items:center;justify-content:space-between; }
+    .rc-price { font-size:1.1rem;font-weight:800;color:#34d399; }
+    .rc-seats { font-size:.72rem;color:var(--corp-muted); }
+    .rc-class-badge { background:#1e2d45;border:1px solid var(--corp-border);border-radius:4px;padding:2px 8px;font-size:.68rem;color:#93c5fd;font-weight:600; }
+
+    .hotel-card { background:#0d1526;border:1px solid var(--corp-border);border-radius:8px;padding:16px; }
+    .hotel-card:hover { border-color:#2563eb; }
+    .hc-name { font-size:.95rem;font-weight:700;color:#fff;margin-bottom:4px; }
+    .hc-city { font-size:.75rem;color:var(--corp-muted);margin-bottom:10px; }
+    .hc-stars { color:#f59e0b;font-size:.8rem;margin-bottom:10px; }
+    .hc-meta { display:flex;align-items:center;justify-content:space-between; }
+    .hc-price { font-size:1rem;font-weight:800;color:#34d399; }
+    .hc-night { font-size:.7rem;color:var(--corp-muted); }
+    .hc-amenities { font-size:.7rem;color:#64748b;margin-top:6px; }
+
+    .no-results { text-align:center;padding:40px;color:#3d5070;font-size:.85rem; }
+    .corp-footer { text-align:center;padding:20px 32px;font-size:.72rem;color:#2d4060;border-top:1px solid var(--corp-border);margin-top:20px; }
+    @media(max-width:768px) { .corp-body{padding:16px;} .fg4,.fg3{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+
+<div class="corp-topbar">
+  <div class="corp-logo">
+    <div class="corp-logo-icon"><i class="bi bi-briefcase-fill"></i></div>
+    <div>
+      <div class="corp-logo-title">SnapTravels Corporate</div>
+      <div class="corp-logo-sub">Business Travel Portal</div>
+    </div>
+  </div>
+  <div class="corp-user-badge">
+    <i class="bi bi-person-fill" style="color:#60a5fa"></i>
+    {{ corp_user }}
+  </div>
+</div>
+
+<nav class="corp-nav">
+  <a href="{{ url_for('corporate.index') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+  <a href="{{ url_for('corporate.search') }}" class="active"><i class="bi bi-search"></i> Search & Book</a>
+  <a href="{{ url_for('corporate.bookings') }}"><i class="bi bi-journal-text"></i> All Bookings</a>
+</nav>
+
+<div class="corp-body">
+  <div class="corp-page-title">Search & Book</div>
+  <div class="corp-page-sub">Find flights and hotels for your team</div>
+
+  <!-- Search Form -->
+  <div class="corp-card">
+    <div class="corp-card-head">
+      <div class="corp-card-title"><i class="bi bi-funnel" style="color:#60a5fa"></i> Search</div>
+    </div>
+    <div class="corp-card-body">
+      <div class="tab-bar">
+        <button class="tab-btn {% if not query.search_type or query.search_type == 'flight' %}active{% endif %}"
+                onclick="switchTab(this,'flight')"><i class="bi bi-airplane me-1"></i>Flights</button>
+        <button class="tab-btn {% if query.search_type == 'hotel' %}active{% endif %}"
+                onclick="switchTab(this,'hotel')"><i class="bi bi-building me-1"></i>Hotels</button>
+      </div>
+
+      <form method="POST">
+        <!-- Flight -->
+        <div id="form-flight" {% if query.search_type == 'hotel' %}style="display:none"{% endif %}>
+          <div class="fg4">
+            <div><label class="fl">From</label>
+              <input class="corp-input" name="origin" placeholder="Delhi, BOM…"
+                     value="{{ query.origin or '' }}"></div>
+            <div><label class="fl">To</label>
+              <input class="corp-input" name="destination" placeholder="Mumbai, DEL…"
+                     value="{{ query.destination or '' }}"></div>
+            <div><label class="fl">Date</label>
+              <input class="corp-input" type="date" name="travel_date"
+                     value="{{ query.travel_date or today }}" min="{{ today }}"></div>
+            <div><label class="fl">Passengers</label>
+              <input class="corp-input" type="number" name="passengers"
+                     value="{{ query.passengers or 1 }}" min="1" max="9"></div>
+            <div><label class="fl" style="opacity:0">.</label>
+              <button class="corp-btn" type="submit" name="search_type" value="flight">
+                <i class="bi bi-search me-1"></i>Search
+              </button></div>
+          </div>
+        </div>
+
+        <!-- Hotel -->
+        <div id="form-hotel" {% if query.search_type != 'hotel' %}style="display:none"{% endif %}>
+          <div class="fg3">
+            <div><label class="fl">City</label>
+              <input class="corp-input" name="city" placeholder="Mumbai, Goa…"
+                     value="{{ query.city or '' }}"></div>
+            <div><label class="fl">Check-in</label>
+              <input class="corp-input" type="date" name="checkin"
+                     value="{{ query.checkin or today }}" min="{{ today }}"></div>
+            <div><label class="fl">Check-out</label>
+              <input class="corp-input" type="date" name="checkout"
+                     value="{{ query.checkout or '' }}"></div>
+            <div><label class="fl" style="opacity:0">.</label>
+              <button class="corp-btn" type="submit" name="search_type" value="hotel">
+                <i class="bi bi-search me-1"></i>Search
+              </button></div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results -->
+  {% if searched %}
+  <div class="corp-card">
+    <div class="corp-card-head">
+      <div class="corp-card-title">
+        {% if query.search_type == 'hotel' %}
+          <i class="bi bi-building" style="color:#60a5fa"></i>
+          Hotel Results
+          {% if query.city %}<span style="font-weight:400;color:#64748b">— {{ query.city }}</span>{% endif %}
+        {% else %}
+          <i class="bi bi-airplane" style="color:#60a5fa"></i>
+          Flight Results
+          {% if query.origin and query.destination %}
+            <span style="font-weight:400;color:#64748b">— {{ query.origin }} → {{ query.destination }}</span>
+          {% endif %}
+        {% endif %}
+      </div>
+      <span style="font-size:.75rem;color:#64748b">
+        {% if query.search_type == 'hotel' %}{{ hotels|length }}{% else %}{{ flights|length }}{% endif %} results
+      </span>
+    </div>
+    <div class="corp-card-body">
+
+      {% if query.search_type == 'hotel' %}
+        {% if hotels %}
+        <div class="results-grid">
+          {% for h in hotels %}
+          <div class="hotel-card">
+            <div class="hc-name">{{ h.name }}</div>
+            <div class="hc-city"><i class="bi bi-geo-alt" style="font-size:.7rem"></i> {{ h.city }}</div>
+            <div class="hc-stars">
+              {% for i in range(h.rating|int) %}<i class="bi bi-star-fill"></i>{% endfor %}
+              {% if h.rating % 1 >= 0.5 %}<i class="bi bi-star-half"></i>{% endif %}
+              <span style="color:#64748b;font-size:.72rem;margin-left:4px">{{ h.rating }}</span>
+            </div>
+            {% if h.amenities %}
+            <div class="hc-amenities">{{ h.amenities[:3]|join(' · ') }}</div>
+            {% endif %}
+            <div class="hc-meta" style="margin-top:10px">
+              <div>
+                <span class="hc-price">₹{{ '{:,.0f}'.format(h.price_per_night) }}</span>
+                <span class="hc-night"> / night</span>
+              </div>
+              <span style="font-size:.7rem;background:#1e2d45;border:1px solid #1e2d45;border-radius:4px;padding:2px 8px;color:#93c5fd;font-weight:600">Book</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-results"><i class="bi bi-building" style="font-size:2rem;display:block;margin-bottom:8px;color:#1e2d45"></i>No hotels found for "{{ query.city }}".</div>
+        {% endif %}
+
+      {% else %}
+        {% if flights %}
+        <div class="results-grid">
+          {% for f in flights %}
+          <div class="result-card">
+            <div class="rc-airline">
+              <i class="bi bi-airplane me-1"></i>{{ f.airline }}
+              <span style="margin-left:6px;color:#3d5070">{{ f.flight_no }}</span>
+            </div>
+            <div class="rc-route">
+              <div>
+                <div class="rc-city">{{ f.origin }}</div>
+                <div class="rc-time">{{ f.depart_time }}</div>
+              </div>
+              <div class="rc-arrow">
+                ──── <i class="bi bi-airplane" style="font-size:.7rem"></i> ────<br>
+                <span style="font-size:.65rem">{{ f.duration_mins // 60 }}h {{ f.duration_mins % 60 }}m</span>
+              </div>
+              <div style="text-align:right">
+                <div class="rc-city">{{ f.destination }}</div>
+                <div class="rc-time">{{ f.arrive_time }}</div>
+              </div>
+            </div>
+            <div class="rc-meta">
+              <div>
+                <span class="rc-price">₹{{ '{:,.0f}'.format(f.price) }}</span>
+                <span style="font-size:.7rem;color:#64748b"> / person</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="rc-class-badge">{{ f.cabin_class }}</span>
+                <span class="rc-seats">{{ f.seats_left }} seats</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-results"><i class="bi bi-airplane" style="font-size:2rem;display:block;margin-bottom:8px;color:#1e2d45"></i>No flights found for "{{ query.origin }} → {{ query.destination }}".</div>
+        {% endif %}
+      {% endif %}
+
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<div class="corp-footer">SnapTravels Corporate Portal &nbsp;·&nbsp; Protected by HTTP Basic Authentication</div>
+
+<script>
+function switchTab(btn, type) {
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('form-flight').style.display = type === 'flight' ? '' : 'none';
+  document.getElementById('form-hotel').style.display  = type === 'hotel'  ? '' : 'none';
+}
+</script>
+
+</body>
+</html>

@@ -50,6 +50,7 @@ def create_app():
     from app.blueprints.user_dashboard import user_bp
     from app.blueprints.admin_extended import admin_ext_bp
     from app.blueprints.two_factor import twofa_bp
+    from app.blueprints.corporate import corporate_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(public_bp)
@@ -69,6 +70,7 @@ def create_app():
     app.register_blueprint(user_bp)
     app.register_blueprint(admin_ext_bp)
     app.register_blueprint(twofa_bp)
+    app.register_blueprint(corporate_bp)
 
     # Register CLI seed commands
     from app.commands import seed_bp
@@ -115,8 +117,10 @@ def create_app():
             app.logger.error(f"[CHAOS HOOK ERROR] {e}", exc_info=True)
 
     # Exempt mobile API and PWA endpoints from CSRF (they use JWT auth)
+    # Exempt corporate portal from CSRF (it uses HTTP Basic Auth)
     csrf.exempt(mobile_api)
     csrf.exempt(pwa_bp)
+    csrf.exempt(corporate_bp)
     # Allow Site24x7 REST API monitor to poll the chaos state.json without CSRF
     csrf.exempt(chaos_admin_bp)
     # Wishlist toggle and promo validate are JSON AJAX calls from the browser
