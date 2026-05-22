@@ -1041,6 +1041,91 @@ input:checked + .snap-slider.green-on { background:#15803d; border-color:#15803d
   </div><!-- /section 5 -->
 
   <!-- ═══════════════════════════════════════════════════════════════
+       SECTION 6 — Corporate Portal Chaos
+  ════════════════════════════════════════════════════════════════ -->
+  <div class="c-section mb-4" id="sec-corp" style="border-left:3px solid #0891b2">
+    <div class="c-section-head">
+      <div class="c-sec-badge" style="background:#082030;color:#22d3ee"><i class="bi bi-briefcase"></i></div>
+      <div style="flex:1">
+        <div style="font-size:10px;font-weight:700;color:#0891b2;letter-spacing:1.5px;text-transform:uppercase">Section 6</div>
+        <span class="c-section-title">Corporate Portal Chaos</span>
+        <div class="c-section-sub">Injects failures into Basic Auth flows at <code style="font-size:.7rem;color:#67e8f9">/corporate/</code></div>
+      </div>
+      <label class="snap-switch ms-auto" title="Enable Section 6">
+        <input type="checkbox" name="corp_chaos" id="corpToggle" {% if state.corp_chaos %}checked{% endif %}
+               onchange="document.getElementById('sec-corp-body').style.opacity=this.checked?'1':'0.45';document.getElementById('sec-corp-body').style.pointerEvents=this.checked?'auto':'none'">
+        <span class="snap-slider" style="{% if state.corp_chaos %}background:#0891b2;border-color:#0891b2{% endif %}"></span>
+      </label>
+    </div>
+    <div class="c-section-body" id="sec-corp-body" style="{{ '' if state.corp_chaos else 'opacity:.45;pointer-events:none' }}">
+
+      <div style="background:#051520;border:1px solid #0e3a4a;border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:.76rem;color:#67e8f9;line-height:1.7">
+        <i class="bi bi-info-circle me-2" style="color:#22d3ee"></i>
+        <strong style="color:#a5f3fc">How it works:</strong>
+        All three scenarios fire <em>after</em> Basic Auth credentials are validated — so your synthetic monitor supplies the correct username/password, but the portal still returns errors. Ideal for testing how your monitor handles auth proxy failures and maintenance windows.
+      </div>
+
+      <div class="cat-label"><i class="bi bi-briefcase" style="color:#22d3ee"></i> Basic Auth &amp; Response Chaos — targets <code style="font-size:.7rem;color:#67e8f9">/corporate/*</code></div>
+
+      <!-- Auth Failure Rate -->
+      <div style="margin-bottom:14px;padding:12px 14px;background:#0a0d14;border:1px solid #151c28;border-radius:6px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <i class="bi bi-shield-x" style="color:#22d3ee;font-size:.85rem"></i>
+          <span style="font-size:.78rem;font-weight:700;color:#c8d6e8">Auth Failure Rate</span>
+          <code style="font-size:.63rem;color:#6b7280;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:1px 6px;margin-left:auto">POST /corporate/* (after valid credentials)</code>
+        </div>
+        <div class="knob-row">
+          <input type="range" name="corp_auth_failure_rate" class="chaos-range" style="flex:1;accent-color:#0891b2"
+                 min="0" max="1" step="0.05" value="{{ state.corp_auth_failure_rate }}"
+                 oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'">
+          <span class="pct-badge">{{ (state.corp_auth_failure_rate * 100)|int }}%</span>
+        </div>
+        <div style="font-size:.68rem;color:#6b7280;margin-top:4px">Valid credentials still get <code style="font-size:.62rem;color:#22d3ee">HTTP 401</code> — simulates auth proxy / SSO service going down intermittently.</div>
+      </div>
+
+      <!-- Slow Response -->
+      <div style="margin-bottom:14px;padding:12px 14px;background:#0a0d14;border:1px solid #151c28;border-radius:6px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <i class="bi bi-hourglass-split" style="color:#22d3ee;font-size:.85rem"></i>
+          <span style="font-size:.78rem;font-weight:700;color:#c8d6e8">Slow Response</span>
+          <code style="font-size:.63rem;color:#6b7280;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:1px 6px;margin-left:auto">All /corporate/* routes</code>
+        </div>
+        <div class="knob-row">
+          <input type="range" name="corp_slow_ms" class="chaos-range" style="flex:1;accent-color:#0891b2"
+                 min="0" max="10000" step="250" value="{{ state.corp_slow_ms }}"
+                 oninput="this.nextElementSibling.textContent=this.value+'ms'">
+          <span class="ms-badge">{{ state.corp_slow_ms }}ms</span>
+        </div>
+        <div style="font-size:.68rem;color:#6b7280;margin-top:4px">Adds artificial delay before every portal page renders — ideal for triggering page-load SLA breaches in Synthetic monitors.</div>
+      </div>
+
+      <!-- Maintenance Rate -->
+      <div style="margin-bottom:14px;padding:12px 14px;background:#0a0d14;border:1px solid #151c28;border-radius:6px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <i class="bi bi-tools" style="color:#22d3ee;font-size:.85rem"></i>
+          <span style="font-size:.78rem;font-weight:700;color:#c8d6e8">Maintenance Mode Rate</span>
+          <code style="font-size:.63rem;color:#6b7280;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:1px 6px;margin-left:auto">All /corporate/* routes</code>
+        </div>
+        <div class="knob-row">
+          <input type="range" name="corp_maintenance_rate" class="chaos-range" style="flex:1;accent-color:#0891b2"
+                 min="0" max="1" step="0.05" value="{{ state.corp_maintenance_rate }}"
+                 oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'">
+          <span class="pct-badge">{{ (state.corp_maintenance_rate * 100)|int }}%</span>
+        </div>
+        <div style="font-size:.68rem;color:#6b7280;margin-top:4px">Portal returns <code style="font-size:.62rem;color:#22d3ee">HTTP 503</code> with a maintenance message — tests how Synthetic monitors handle unexpected service-down responses.</div>
+      </div>
+
+      <!-- HTTP code reference -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+        {% for code,color,label in [('401','#ef4444','Auth proxy failure'),('503','#fb923c','Maintenance mode'),('Slow','#22d3ee','Latency injection')] %}
+        <span style="font-size:.63rem;font-weight:700;font-family:monospace;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:2px 7px;color:{{ color }}">{{ code }} — {{ label }}</span>
+        {% endfor %}
+      </div>
+
+    </div><!-- /section 6 body -->
+  </div><!-- /section 6 -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
        ENGINE SETTINGS — Intensity + Webhook
   ════════════════════════════════════════════════════════════════ -->
   <div class="c-section mb-4" style="border-left:3px solid #374151">
@@ -1212,6 +1297,21 @@ input:checked + .snap-slider.green-on { background:#15803d; border-color:#15803d
       {{ flag('ab_search', state.ab_test_search) }}
       {{ flag('ab_booking', state.ab_test_booking) }}
       {{ flag('ab_profile', state.ab_test_profile) }}
+      <div class="cat-label" style="margin-top:12px;margin-bottom:8px">§5 — Mobile App</div>
+      {{ flag('mobile_chaos', state.mobile_chaos) }}
+      {{ flag('auth_failure', (state.mobile_auth_failure_rate*100)|int|string + '%' if state.mobile_auth_failure_rate else false) }}
+      {{ flag('search_slow', (state.mobile_search_slow_ms|string + 'ms') if state.mobile_search_slow_ms else false) }}
+      {{ flag('search_empty', (state.mobile_search_empty_rate*100)|int|string + '%' if state.mobile_search_empty_rate else false) }}
+      {{ flag('booking_decline', (state.mobile_booking_decline_rate*100)|int|string + '%' if state.mobile_booking_decline_rate else false) }}
+      {{ flag('cancel_fail', (state.mobile_cancel_failure_rate*100)|int|string + '%' if state.mobile_cancel_failure_rate else false) }}
+      {{ flag('timeout', (state.mobile_timeout_rate*100)|int|string + '%' if state.mobile_timeout_rate else false) }}
+      {{ flag('rate_limit', (state.mobile_rate_limit_rate*100)|int|string + '%' if state.mobile_rate_limit_rate else false) }}
+      {{ flag('malform', (state.mobile_malform_rate*100)|int|string + '%' if state.mobile_malform_rate else false) }}
+      <div class="cat-label" style="margin-top:12px;margin-bottom:8px">§6 — Corporate Portal</div>
+      {{ flag('corp_chaos', state.corp_chaos) }}
+      {{ flag('corp_auth_fail', (state.corp_auth_failure_rate*100)|int|string + '%' if state.corp_auth_failure_rate else false) }}
+      {{ flag('corp_slow', (state.corp_slow_ms|string + 'ms') if state.corp_slow_ms else false) }}
+      {{ flag('corp_maintenance', (state.corp_maintenance_rate*100)|int|string + '%' if state.corp_maintenance_rate else false) }}
       <div class="cat-label" style="margin-top:12px;margin-bottom:8px">Engine</div>
       {% set intensity_labels = ['Low','Medium','High','Critical'] %}
       {{ flag('intensity', intensity_labels[state.chaos_intensity] if state.chaos_intensity is not none else 'Medium') }}

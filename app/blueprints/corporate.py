@@ -28,6 +28,10 @@ from sqlalchemy import func
 
 from app import db
 from app.models import Flight, Hotel
+from app.services.chaos import (
+    maybe_fail_corp_auth, maybe_slow_corp_response, maybe_corp_maintenance,
+    CorpAuthChaosError, CorpMaintenanceChaosError,
+)
 
 logger = logging.getLogger('snaptravels.corporate')
 
@@ -56,7 +60,8 @@ def _unauthorized():
     )
 
 def requires_basic_auth(f):
-    """Decorator that enforces HTTP Basic Auth on any route."""
+    """Decorator that enforces HTTP Basic Auth on any route.
+    After credentials pass, chaos may still inject a 401 (auth proxy failure)."""
     @wraps(f)
     def decorated(*args, **kwargs):
         auth_header = request.headers.get('Authorization', '')
@@ -66,11 +71,36 @@ def requires_basic_auth(f):
                 username, password = decoded.split(':', 1)
                 if _check_auth(username, password):
                     g.corp_user = username
+                    # Chaos hook: valid creds but auth proxy chaos fires → 401
+                    try:
+                        maybe_fail_corp_auth()
+                    except CorpAuthChaosError as e:
+                        return Response(str(e), 401,
+                                        {'WWW-Authenticate': 'Basic realm="SnapTravels Corporate Portal"',
+                                         'Content-Type': 'text/plain'})
                     return f(*args, **kwargs)
+            except (CorpAuthChaosError, CorpMaintenanceChaosError):
+                raise
             except Exception:
                 pass
         return _unauthorized()
     return decorated
+
+
+def _corp_chaos_check():
+    """Call at the top of each route — injects slow response or maintenance 503."""
+    try:
+        maybe_slow_corp_response()
+        maybe_corp_maintenance()
+    except CorpMaintenanceChaosError as e:
+        from flask import abort, make_response
+        resp = make_response(
+            f'<h1>503 — Scheduled Maintenance</h1><p>{e}</p>', 503
+        )
+        resp.headers['Content-Type'] = 'text/html'
+        from werkzeug.exceptions import abort as _abort
+        return resp
+    return None
 
 
 # ── Sample Data ────────────────────────────────────────────────────────────────
@@ -188,6 +218,9 @@ def _paginated_sample(page=1, per_page=20, status_filter='ALL'):
 @requires_basic_auth
 def index():
     """Corporate travel dashboard — sample stats + recent bookings + quick search."""
+    err = _corp_chaos_check()
+    if err:
+        return err
     return render_template(
         'corporate/index.html',
         stats=_sample_stats(),
@@ -201,6 +234,9 @@ def index():
 @requires_basic_auth
 def search():
     """Flight and hotel search — queries real catalogue (not user data)."""
+    err = _corp_chaos_check()
+    if err:
+        return err
     flights  = []
     hotels   = []
     query    = {}
@@ -247,6 +283,9 @@ def search():
 @requires_basic_auth
 def bookings():
     """Full paginated sample booking history."""
+    err = _corp_chaos_check()
+    if err:
+        return err
     page          = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', 'ALL')
     pagination    = _paginated_sample(page=page, per_page=10, status_filter=status_filter)

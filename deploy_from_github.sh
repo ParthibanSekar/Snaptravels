@@ -137,9 +137,15 @@ cmd_update() {
 
     # Run DB migrations — adds new columns safely, skips if already present
     if [ -f "$INSTALL_DIR/migrate_mobile_chaos.py" ]; then
-        info "Running DB migration..."
+        info "Running mobile chaos migration..."
         python3 "$INSTALL_DIR/migrate_mobile_chaos.py" \
-            && success "Migration complete" \
+            && success "Mobile chaos migration complete" \
+            || warn "Migration had warnings — check output above"
+    fi
+    if [ -f "$INSTALL_DIR/migrate_corp_chaos.py" ]; then
+        info "Running corporate chaos migration..."
+        python3 "$INSTALL_DIR/migrate_corp_chaos.py" \
+            && success "Corporate chaos migration complete" \
             || warn "Migration had warnings — check output above"
     fi
 

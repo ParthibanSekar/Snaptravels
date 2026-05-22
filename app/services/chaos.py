@@ -59,6 +59,15 @@ class PaymentChaosError(ChaosInjectedError):
 class ApiChaosError(ChaosInjectedError):
     pass
 
+# ── Section 6: Corporate Portal chaos errors ──────────────────────────────
+class CorpAuthChaosError(ChaosInjectedError):
+    """Returned as 401 even when correct Basic Auth credentials are supplied."""
+    pass
+
+class CorpMaintenanceChaosError(ChaosInjectedError):
+    """Returned as 503 to simulate the corporate portal going into maintenance."""
+    pass
+
 # ── Section 5: Mobile-specific chaos errors ───────────────────────────────
 class MobileAuthChaosError(ChaosInjectedError):
     pass
@@ -356,6 +365,64 @@ def should_mobile_malform() -> bool:
                    outage_label=state.outage_label)
         return True
     return False
+
+
+# ── Section 6: Corporate Portal Chaos ────────────────────────────────────
+
+def _corp_chaos_enabled():
+    """Return the FailureMode row if corporate chaos is active, else None."""
+    state = _get_state_raw()
+    if not state:
+        return None
+    return state if getattr(state, 'corp_chaos', False) else None
+
+
+def maybe_fail_corp_auth():
+    """
+    Intermittent Basic Auth failure — valid credentials still get 401.
+    Simulates an auth proxy / SSO service going down.
+    Call inside requires_basic_auth AFTER credential check passes.
+    Raises CorpAuthChaosError (→ caller returns 401).
+    """
+    state = _corp_chaos_enabled()
+    if not state:
+        return
+    rate = getattr(state, 'corp_auth_failure_rate', 0.0) or 0.0
+    if _roll(rate):
+        _log_event('INJECTED_ERROR', 'corp_auth_failure',
+                   outage_label=getattr(state, 'outage_label', None))
+        raise CorpAuthChaosError("Corporate SSO service temporarily unavailable")
+
+
+def maybe_slow_corp_response():
+    """
+    Artificial response delay on corporate portal pages.
+    Call at the top of every corporate route handler.
+    """
+    state = _corp_chaos_enabled()
+    if not state:
+        return
+    delay = getattr(state, 'corp_slow_ms', 0) or 0
+    if delay > 0:
+        _log_event('INJECTED_LATENCY', 'corp_slow_response', delay_ms=delay,
+                   outage_label=getattr(state, 'outage_label', None))
+        _sleep(delay)
+
+
+def maybe_corp_maintenance():
+    """
+    Simulate the corporate portal returning a 503 maintenance response.
+    Call at the top of every corporate route handler.
+    Raises CorpMaintenanceChaosError (→ caller returns 503).
+    """
+    state = _corp_chaos_enabled()
+    if not state:
+        return
+    rate = getattr(state, 'corp_maintenance_rate', 0.0) or 0.0
+    if _roll(rate):
+        _log_event('INJECTED_ERROR', 'corp_maintenance',
+                   outage_label=getattr(state, 'outage_label', None))
+        raise CorpMaintenanceChaosError("Corporate portal is under scheduled maintenance")
 
 
 # ── Section 1: Page Load Performance Chaos ────────────────────────────────

@@ -28,6 +28,8 @@ FLOAT_FIELDS = {
     'mobile_auth_failure_rate', 'mobile_search_empty_rate',
     'mobile_booking_decline_rate', 'mobile_cancel_failure_rate',
     'mobile_timeout_rate', 'mobile_rate_limit_rate', 'mobile_malform_rate',
+    # Section 6 — Corporate Portal Chaos
+    'corp_auth_failure_rate', 'corp_maintenance_rate',
 }
 INT_FIELDS = {
     'login_slowdown_ms', 'db_slowdown_ms', 'search_slowdown_ms',
@@ -40,6 +42,8 @@ INT_FIELDS = {
     'chaos_intensity',
     # Section 5 — Mobile App Chaos
     'mobile_search_slow_ms',
+    # Section 6 — Corporate Portal Chaos
+    'corp_slow_ms',
 }
 BOOL_FIELDS = {
     'enabled', 'db_down', 'payment_gateway_down',
@@ -66,6 +70,8 @@ BOOL_FIELDS = {
     'ab_test_chaos', 'ab_test_login', 'ab_test_search', 'ab_test_booking', 'ab_test_profile',
     # Section 5 — Mobile App Chaos
     'mobile_chaos',
+    # Section 6 — Corporate Portal Chaos
+    'corp_chaos',
 }
 
 PAGE_TARGETS = ['all', 'flights', 'hotels', 'buses', 'trains',

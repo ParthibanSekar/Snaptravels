@@ -302,6 +302,16 @@ class FailureMode(db.Model):
     # Malformed: probability of stripping key fields from a JSON response
     mobile_malform_rate        = db.Column(db.Float,   default=0.0,  nullable=False)
 
+    # ── Section 6: Corporate Portal Chaos ───────────────────────────────
+    # Master toggle — all corporate chaos is off unless this is True
+    corp_chaos              = db.Column(db.Boolean, default=False, nullable=False)
+    # Auth: % chance valid credentials still get 401 (simulates auth proxy failure)
+    corp_auth_failure_rate  = db.Column(db.Float,   default=0.0,  nullable=False)
+    # Slow: extra delay on all corporate portal responses (ms)
+    corp_slow_ms            = db.Column(db.Integer, default=0,    nullable=False)
+    # Maintenance: % chance any corporate route returns 503 maintenance page
+    corp_maintenance_rate   = db.Column(db.Float,   default=0.0,  nullable=False)
+
     # Audit
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_by = db.Column(db.String(120), nullable=True)
