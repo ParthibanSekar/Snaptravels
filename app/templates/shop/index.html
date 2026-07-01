@@ -1,0 +1,133 @@
+{% extends "layouts/base.html" %}
+{% block title %}Travel Shop — SnapTravels{% endblock %}
+
+{% block extra_head %}
+<style>
+  body, main { background: #f8fafc; }
+  .shop-hero { background: linear-gradient(135deg, #1e4a8c 0%, #e63950 100%); padding: 48px 0 32px; }
+  .cat-pill { display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:30px;font-size:.8rem;font-weight:600;border:1px solid #e5e7eb;color:#374151;background:#fff;text-decoration:none;transition:all .2s;cursor:pointer; }
+  .cat-pill:hover,.cat-pill.active { background:#e63950;border-color:#e63950;color:#fff; }
+  .cat-pill .cnt { background:rgba(0,0,0,.08);border-radius:10px;padding:1px 7px;font-size:.7rem; }
+  .cat-pill.active .cnt { background:rgba(255,255,255,.25); }
+  .sort-select { background:#fff;border:1px solid #e5e7eb;color:#374151;padding:7px 12px;border-radius:8px;font-size:.8rem;outline:none;cursor:pointer; }
+  .sort-select:focus { border-color:#e63950; }
+  .prod-card { background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .prod-card:hover { transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.12); }
+  .prod-img { width:100%;height:220px;object-fit:cover;background:#f3f4f6; }
+  .prod-body { padding:14px 16px;flex:1;display:flex;flex-direction:column; }
+  .prod-cat { font-size:.67rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e63950;margin-bottom:4px; }
+  .prod-name { font-size:.92rem;font-weight:700;color:#111827;margin-bottom:4px;line-height:1.35; }
+  .prod-sub { font-size:.75rem;color:#6b7280;margin-bottom:10px;flex:1; }
+  .prod-rating { display:flex;align-items:center;gap:5px;font-size:.72rem;color:#f59e0b;margin-bottom:10px; }
+  .prod-rating span { color:#6b7280; }
+  .prod-price { display:flex;align-items:baseline;gap:8px; }
+  .prod-price .now { font-size:1.05rem;font-weight:800;color:#e63950; }
+  .prod-price .was { font-size:.78rem;color:#9ca3af;text-decoration:line-through; }
+  .prod-price .off { font-size:.68rem;font-weight:700;color:#16a34a;background:#dcfce7;border-radius:4px;padding:2px 6px; }
+  .badge-pill { font-size:.63rem;font-weight:700;padding:2px 8px;border-radius:10px;position:absolute;top:10px;left:10px; }
+  .badge-new  { background:#2563eb;color:#fff; }
+  .badge-sale { background:#dc2626;color:#fff; }
+  .badge-best { background:#d97706;color:#fff; }
+  .prod-wrap  { position:relative; }
+  .btn-add    { display:block;width:100%;padding:10px;border:none;border-radius:10px;background:#e63950;color:#fff;font-weight:700;font-size:.83rem;cursor:pointer;text-align:center;text-decoration:none;margin-top:10px;transition:background .2s; }
+  .btn-add:hover { background:#c0303f;color:#fff; }
+  .empty-state { text-align:center;padding:80px 20px;color:#6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="shop-hero">
+  <div class="container">
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <i class="bi bi-bag-heart-fill" style="font-size:1.8rem;color:#fff"></i>
+      <div>
+        <h1 style="font-size:1.6rem;font-weight:900;color:#fff;margin:0">Travel Shop</h1>
+        <p style="color:rgba(255,255,255,.8);font-size:.85rem;margin:0">Gear up for your next adventure</p>
+      </div>
+    </div>
+
+    <!-- Category filters -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <a href="{{ url_for('shop.index', category='all', sort=active_sort) }}"
+         class="cat-pill {% if active_category=='all' %}active{% endif %}">
+        <i class="bi bi-grid-3x3-gap"></i> All
+        <span class="cnt">{{ total_count }}</span>
+      </a>
+      {% for cat_key, cat_label, cat_icon in categories %}
+      <a href="{{ url_for('shop.index', category=cat_key, sort=active_sort) }}"
+         class="cat-pill {% if active_category==cat_key %}active{% endif %}">
+        <i class="bi {{ cat_icon }}"></i> {{ cat_label }}
+        <span class="cnt">{{ cat_counts.get(cat_key, 0) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+
+    <!-- Sort + count -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <span style="font-size:.8rem;color:rgba(255,255,255,.7)">{{ products|length }} product{{ 's' if products|length != 1 }}</span>
+      <select class="sort-select" onchange="window.location=this.value">
+        <option value="{{ url_for('shop.index', category=active_category, sort='popular') }}"  {% if active_sort=='popular'    %}selected{% endif %}>Most Popular</option>
+        <option value="{{ url_for('shop.index', category=active_category, sort='newest') }}"   {% if active_sort=='newest'     %}selected{% endif %}>Newest First</option>
+        <option value="{{ url_for('shop.index', category=active_category, sort='price_asc') }}" {% if active_sort=='price_asc' %}selected{% endif %}>Price: Low → High</option>
+        <option value="{{ url_for('shop.index', category=active_category, sort='price_desc') }}" {% if active_sort=='price_desc' %}selected{% endif %}>Price: High → Low</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Flash messages -->
+<div class="container mt-3">
+</div>
+
+<!-- Product Grid -->
+<div class="container py-4">
+  {% if products %}
+  <div class="row g-3">
+    {% for p in products %}
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="prod-card h-100">
+        <div class="prod-wrap">
+          <a href="{{ url_for('shop.product', product_id=p.id) }}">
+            <img src="{{ p.image_url }}" alt="{{ p.name }}" class="prod-img" loading="lazy"
+                 onerror="this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&q=80'">
+          </a>
+          {% if p.badge %}
+          <span class="badge-pill {% if p.badge=='New' %}badge-new{% elif p.badge=='Sale' %}badge-sale{% else %}badge-best{% endif %}">
+            {{ p.badge }}
+          </span>
+          {% endif %}
+        </div>
+        <div class="prod-body">
+          <div class="prod-cat">{{ p.subcategory or p.category }}</div>
+          <a href="{{ url_for('shop.product', product_id=p.id) }}" style="text-decoration:none">
+            <div class="prod-name">{{ p.name }}</div>
+          </a>
+          <div class="prod-sub">{{ p.description[:70] }}{% if p.description|length > 70 %}…{% endif %}</div>
+          <div class="prod-rating">
+            {% for i in range(p.rating|int) %}<i class="bi bi-star-fill"></i>{% endfor %}
+            {% if p.rating % 1 >= 0.5 %}<i class="bi bi-star-half"></i>{% endif %}
+            <span>({{ p.review_count }})</span>
+          </div>
+          <div class="prod-price">
+            <span class="now">₹{{ '{:,.0f}'.format(p.price) }}</span>
+            {% if p.original_price %}<span class="was">₹{{ '{:,.0f}'.format(p.original_price) }}</span>{% endif %}
+            {% if p.discount_pct %}<span class="off">{{ p.discount_pct }}% off</span>{% endif %}
+          </div>
+          <a href="{{ url_for('shop.product', product_id=p.id) }}" class="btn-add mt-auto">
+            <i class="bi bi-bag-plus me-1"></i>View & Add to Cart
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-bag-x" style="font-size:3rem;display:block;margin-bottom:12px;color:#d1d5db"></i>
+    <div style="font-size:.95rem;font-weight:600;color:#374151;margin-bottom:6px">No products found in this category.</div>
+    <a href="{{ url_for('shop.index') }}" style="color:#e63950;text-decoration:none;font-weight:600">View all products →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

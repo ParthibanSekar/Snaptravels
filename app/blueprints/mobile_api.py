@@ -76,7 +76,7 @@ def mobile_auth_required(f):
     return decorated
 
 @mobile_api.route('/auth/register', methods=['POST'])
-@limiter.exempt
+@limiter.limit("10 per minute; 30 per hour")
 def mobile_register():
     data = request.get_json()
 
@@ -106,7 +106,7 @@ def mobile_register():
         return jsonify({'error': result['error']}), 400
 
 @mobile_api.route('/auth/login', methods=['POST'])
-@limiter.exempt
+@limiter.limit("10 per minute; 50 per hour")
 def mobile_login():
     # Mobile chaos: auth failure injection
     try:
@@ -1817,3 +1817,174 @@ def mobile_buy_insurance(current_user):
     data = request.get_json() or {}
     data['type'] = 'INSURANCE'
     return _create_non_flight_booking(current_user, 'INSURANCE', data)
+
+
+# ===========================================================================
+#  SHOP — Products, Cart, Orders
+# ===========================================================================
+
+@mobile_api.route('/shop/products', methods=['GET'])
+@mobile_auth_required
+def mobile_shop_products(current_user):
+    """List products. Optional ?category=clothing|bags|accessories|footwear"""
+    from app.models import Product
+    category = request.args.get('category')
+    sort     = request.args.get('sort', 'popular')
+    q = Product.query.filter_by(in_stock=True)
+    if category:
+        q = q.filter_by(category=category)
+    if sort == 'price_asc':
+        q = q.order_by(Product.price.asc())
+    elif sort == 'price_desc':
+        q = q.order_by(Product.price.desc())
+    elif sort == 'newest':
+        q = q.order_by(Product.created_at.desc())
+    else:
+        q = q.order_by(Product.review_count.desc())
+    return jsonify(products=[p.to_dict() for p in q.all()])
+
+
+@mobile_api.route('/shop/products/<int:product_id>', methods=['GET'])
+@mobile_auth_required
+def mobile_shop_product_detail(current_user, product_id):
+    from app.models import Product
+    p = Product.query.get_or_404(product_id)
+    return jsonify(product=p.to_dict())
+
+
+@mobile_api.route('/shop/cart', methods=['GET'])
+@mobile_auth_required
+def mobile_shop_cart_get(current_user):
+    from app.models import CartItem, Product
+    items = CartItem.query.filter_by(user_id=current_user.id).all()
+    result = []
+    total = 0.0
+    for ci in items:
+        p = Product.query.get(ci.product_id)
+        if p:
+            subtotal = p.price * ci.quantity
+            total += subtotal
+            result.append({
+                'cart_item_id': ci.id,
+                'product': p.to_dict(),
+                'size': ci.size,
+                'quantity': ci.quantity,
+                'subtotal': round(subtotal, 2),
+            })
+    shipping = 0 if total >= 999 else 99
+    return jsonify(items=result, subtotal=round(total, 2),
+                   shipping=shipping, grand_total=round(total + shipping, 2))
+
+
+@mobile_api.route('/shop/cart', methods=['POST'])
+@mobile_auth_required
+def mobile_shop_cart_add(current_user):
+    from app.models import CartItem, Product
+    data       = request.get_json() or {}
+    product_id = data.get('product_id')
+    size       = data.get('size')
+    quantity   = max(1, int(data.get('quantity', 1)))
+
+    p = Product.query.get(product_id)
+    if not p:
+        return jsonify(error='Product not found'), 404
+    if p.category in ('clothing', 'footwear') and not size:
+        return jsonify(error='Size is required for this product'), 422
+
+    existing = CartItem.query.filter_by(
+        user_id=current_user.id, product_id=product_id, size=size).first()
+    if existing:
+        existing.quantity = min(existing.quantity + quantity, 10)
+    else:
+        db.session.add(CartItem(user_id=current_user.id,
+                                product_id=product_id, size=size, quantity=quantity))
+    db.session.commit()
+    return jsonify(message='Added to cart'), 201
+
+
+@mobile_api.route('/shop/cart/<int:item_id>', methods=['PUT'])
+@mobile_auth_required
+def mobile_shop_cart_update(current_user, item_id):
+    from app.models import CartItem
+    ci = CartItem.query.filter_by(id=item_id, user_id=current_user.id).first_or_404()
+    data = request.get_json() or {}
+    qty  = int(data.get('quantity', ci.quantity))
+    if qty < 1:
+        db.session.delete(ci)
+    else:
+        ci.quantity = min(qty, 10)
+    db.session.commit()
+    return jsonify(message='Cart updated')
+
+
+@mobile_api.route('/shop/cart/<int:item_id>', methods=['DELETE'])
+@mobile_auth_required
+def mobile_shop_cart_remove(current_user, item_id):
+    from app.models import CartItem
+    ci = CartItem.query.filter_by(id=item_id, user_id=current_user.id).first_or_404()
+    db.session.delete(ci)
+    db.session.commit()
+    return jsonify(message='Removed from cart')
+
+
+@mobile_api.route('/shop/checkout', methods=['POST'])
+@mobile_auth_required
+def mobile_shop_checkout(current_user):
+    from app.models import CartItem, Product, ShopOrder, ShopOrderItem
+    import uuid
+    data = request.get_json() or {}
+
+    items = CartItem.query.filter_by(user_id=current_user.id).all()
+    if not items:
+        return jsonify(error='Cart is empty'), 400
+
+    name    = data.get('name', '').strip()
+    email   = data.get('email', '').strip() or current_user.email
+    phone   = data.get('phone', '').strip()
+    address = data.get('address', '').strip()
+    payment = data.get('payment_method', 'card')
+
+    if not name or not address:
+        return jsonify(error='name and address are required',
+                       fields={'name': 'Required', 'address': 'Required'}), 422
+
+    total = 0.0
+    order = ShopOrder(
+        order_code       = 'SH-' + uuid.uuid4().hex[:8].upper(),
+        user_id          = current_user.id,
+        customer_name    = name,
+        customer_email   = email,
+        customer_phone   = phone or None,
+        shipping_address = address,
+        total_amount     = 0,
+        payment_method   = payment,
+        status           = 'CONFIRMED',
+    )
+    db.session.add(order)
+    db.session.flush()
+
+    for ci in items:
+        p = Product.query.get(ci.product_id)
+        if p:
+            subtotal = p.price * ci.quantity
+            total += subtotal
+            db.session.add(ShopOrderItem(
+                order_id=order.id, product_id=p.id,
+                product_name=p.name, size=ci.size,
+                quantity=ci.quantity, unit_price=p.price,
+            ))
+        db.session.delete(ci)
+
+    shipping = 0 if total >= 999 else 99
+    order.total_amount = round(total + shipping, 2)
+    db.session.commit()
+    return jsonify(message='Order placed', order=order.to_dict()), 201
+
+
+@mobile_api.route('/shop/orders', methods=['GET'])
+@mobile_auth_required
+def mobile_shop_orders(current_user):
+    from app.models import ShopOrder
+    orders = (ShopOrder.query.filter_by(user_id=current_user.id)
+              .order_by(ShopOrder.created_at.desc()).all())
+    return jsonify(orders=[o.to_dict() for o in orders])

@@ -1,0 +1,167 @@
+{% extends "layouts/base.html" %}
+{% block title %}My Orders — Travel Shop{% endblock %}
+{% block extra_head %}
+<style>
+  body, main { background: #f8fafc; }
+  .order-card { background:#fff;border:1px solid #e5e7eb;border-radius:14px;margin-bottom:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .order-card.status-confirmed-card { border-left:4px solid #16a34a; }
+  .order-card.status-cancelled-card { border-left:4px solid #dc2626; }
+  .order-card.status-return-card { border-left:4px solid #7c3aed; }
+  .order-head { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:14px 20px;border-bottom:1px solid #f3f4f6; }
+  .order-code { font-family:'SF Mono','Fira Code',monospace;font-size:.82rem;font-weight:700;color:#1e4a8c; }
+  .order-date { font-size:.75rem;color:#6b7280; }
+  .status-confirmed { background:#dcfce7;color:#16a34a;border-radius:20px;padding:3px 12px;font-size:.7rem;font-weight:700;display:inline-flex;align-items:center;gap:4px; }
+  .status-cancelled { background:#fee2e2;color:#dc2626;border-radius:20px;padding:3px 12px;font-size:.7rem;font-weight:700;display:inline-flex;align-items:center;gap:4px; }
+  .status-return { background:#ede9fe;color:#7c3aed;border-radius:20px;padding:3px 12px;font-size:.7rem;font-weight:700;display:inline-flex;align-items:center;gap:4px; }
+  .status-returned { background:#ede9fe;color:#7c3aed;border-radius:20px;padding:3px 12px;font-size:.7rem;font-weight:700;display:inline-flex;align-items:center;gap:4px; }
+  .order-body { padding:14px 20px; }
+  .order-item { display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f3f4f6; }
+  .order-item:last-child { border-bottom:none; }
+  .oi-img { width:44px;height:44px;border-radius:7px;object-fit:cover;flex-shrink:0;border:1px solid #e5e7eb; }
+  .oi-name { font-size:.83rem;color:#111827;font-weight:600; }
+  .oi-meta { font-size:.72rem;color:#6b7280; }
+  .order-footer { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:12px 20px;background:#f8fafc;border-top:1px solid #e5e7eb; }
+  .total-label { font-size:.8rem;color:#6b7280; }
+  .total-val { font-size:1rem;font-weight:800;color:#e63950; }
+  .action-row { display:flex;gap:8px;flex-wrap:wrap; }
+  .btn-cancel { padding:7px 16px;border:1.5px solid #fca5a5;border-radius:8px;background:#fff;color:#dc2626;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s; }
+  .btn-cancel:hover { background:#fee2e2;border-color:#dc2626; }
+  .btn-return { padding:7px 16px;border:1.5px solid #c4b5fd;border-radius:8px;background:#fff;color:#7c3aed;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s; }
+  .btn-return:hover { background:#ede9fe;border-color:#7c3aed; }
+  .reason-input { width:100%;background:#f8fafc;border:1.5px solid #e5e7eb;border-radius:7px;color:#111827;padding:8px 12px;font-size:.8rem;outline:none;margin-top:8px;resize:none;transition:border-color .2s; }
+  .reason-input:focus { border-color:#e63950; }
+  .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal-box { background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.15); }
+  .modal-title { font-size:1rem;font-weight:800;color:#111827;margin-bottom:8px; }
+  .modal-sub { font-size:.82rem;color:#6b7280;margin-bottom:16px;line-height:1.6; }
+  .empty-state { text-align:center;padding:80px 20px;color:#6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:800px">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+      <i class="bi bi-receipt" style="font-size:1.5rem;color:#e63950"></i>
+      <h1 style="font-size:1.4rem;font-weight:900;color:#111827;margin:0">My Orders</h1>
+    </div>
+    <a href="{{ url_for('shop.index') }}" style="font-size:.82rem;color:#6b7280;text-decoration:none">
+      <i class="bi bi-bag me-1"></i>Continue Shopping
+    </a>
+  </div>
+
+  {% if orders %}
+  {% for order in orders %}
+  <div class="order-card {% if order.status == 'CONFIRMED' %}status-confirmed-card{% elif order.status == 'CANCELLED' %}status-cancelled-card{% elif order.status in ('RETURN_REQUESTED','RETURNED') %}status-return-card{% endif %}">
+    <!-- Header -->
+    <div class="order-head">
+      <div>
+        <div class="order-code">{{ order.order_code }}</div>
+        <div class="order-date">Placed on {{ order.created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+      </div>
+      <div>
+        {% if order.status == 'CONFIRMED' %}<span class="status-confirmed"><i class="bi bi-check2 me-1"></i>Confirmed</span>
+        {% elif order.status == 'CANCELLED' %}<span class="status-cancelled"><i class="bi bi-x me-1"></i>Cancelled</span>
+        {% elif order.status == 'RETURN_REQUESTED' %}<span class="status-return"><i class="bi bi-arrow-return-left me-1"></i>Return Requested</span>
+        {% elif order.status == 'RETURNED' %}<span class="status-returned"><i class="bi bi-check-circle me-1"></i>Returned</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="order-body">
+      {% for item in order.items %}
+      <div class="order-item">
+        {% if item.product and item.product.image_url %}
+        <img src="{{ item.product.image_url }}" alt="{{ item.product_name }}" class="oi-img"
+             onerror="this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=200&q=80'">
+        {% endif %}
+        <div style="flex:1">
+          <div class="oi-name">{{ item.product_name }}</div>
+          <div class="oi-meta">{% if item.size %}Size: {{ item.size }} · {% endif %}Qty: {{ item.quantity }} · ₹{{ '{:,.0f}'.format(item.unit_price) }} each</div>
+        </div>
+        <div style="font-size:.87rem;font-weight:700;color:#374151">₹{{ '{:,.0f}'.format(item.unit_price * item.quantity) }}</div>
+      </div>
+      {% endfor %}
+      {% if order.cancel_reason %}
+      <div style="margin-top:8px;font-size:.75rem;color:#6b7280"><i class="bi bi-info-circle me-1"></i>Reason: {{ order.cancel_reason }}</div>
+      {% endif %}
+      {% if order.return_reason %}
+      <div style="margin-top:8px;font-size:.75rem;color:#7c3aed"><i class="bi bi-info-circle me-1"></i>Return reason: {{ order.return_reason }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <div class="order-footer">
+      <div>
+        <div class="total-label">Total Paid · {{ order.payment_method | title }}</div>
+        <div class="total-val">₹{{ '{:,.0f}'.format(order.total_amount) }}</div>
+      </div>
+      {% if order.status == 'CONFIRMED' %}
+      <div class="action-row">
+        <button class="btn-cancel" onclick="openModal('cancel-{{ order.order_code }}')">
+          <i class="bi bi-x-circle me-1"></i>Cancel Order
+        </button>
+        <button class="btn-return" onclick="openModal('return-{{ order.order_code }}')">
+          <i class="bi bi-arrow-return-left me-1"></i>Return
+        </button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Cancel Modal -->
+  <div class="modal-overlay" id="modal-cancel-{{ order.order_code }}">
+    <div class="modal-box">
+      <div class="modal-title"><i class="bi bi-x-circle me-2" style="color:#dc2626"></i>Cancel Order</div>
+      <div class="modal-sub">Are you sure you want to cancel <strong style="color:#1e4a8c">{{ order.order_code }}</strong>? This action cannot be undone.</div>
+      <form method="POST" action="{{ url_for('shop.cancel_order', code=order.order_code) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <textarea name="reason" class="reason-input" rows="2" placeholder="Reason for cancellation (optional)"></textarea>
+        <div class="d-flex gap-2 mt-3">
+          <button type="submit" class="btn-cancel" style="flex:1">Yes, Cancel</button>
+          <button type="button" style="flex:1;padding:7px 16px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;color:#374151;font-size:.78rem;font-weight:700;cursor:pointer" onclick="closeModal('cancel-{{ order.order_code }}')">Keep Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Return Modal -->
+  <div class="modal-overlay" id="modal-return-{{ order.order_code }}">
+    <div class="modal-box">
+      <div class="modal-title"><i class="bi bi-arrow-return-left me-2" style="color:#7c3aed"></i>Request Return</div>
+      <div class="modal-sub">Submit a return request for <strong style="color:#1e4a8c">{{ order.order_code }}</strong>. We will process it within 3–5 working days.</div>
+      <form method="POST" action="{{ url_for('shop.return_order', code=order.order_code) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <textarea name="reason" class="reason-input" rows="2" placeholder="Reason for return (e.g. wrong size, damaged item)"></textarea>
+        <div class="d-flex gap-2 mt-3">
+          <button type="submit" class="btn-return" style="flex:1">Submit Return</button>
+          <button type="button" style="flex:1;padding:7px 16px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;color:#374151;font-size:.78rem;font-weight:700;cursor:pointer" onclick="closeModal('return-{{ order.order_code }}')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-receipt" style="font-size:3rem;display:block;margin-bottom:12px;color:#d1d5db"></i>
+    <div style="font-size:1rem;font-weight:700;color:#374151;margin-bottom:8px">No orders yet</div>
+    <a href="{{ url_for('shop.index') }}" style="color:#e63950;text-decoration:none;font-weight:700">
+      <i class="bi bi-bag-heart me-1"></i>Start Shopping
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function openModal(id) { document.getElementById('modal-' + id).classList.add('open'); }
+function closeModal(id) { document.getElementById('modal-' + id).classList.remove('open'); }
+// Close on outside click
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+</script>
+{% endblock %}

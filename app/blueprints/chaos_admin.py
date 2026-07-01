@@ -9,6 +9,9 @@ Gives the site owner a live control panel at /admin/chaos to:
   - View the last N ChaosEvent audit rows
 """
 
+import ipaddress
+import urllib.parse
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from app import db
 from app.models import FailureMode, ChaosEvent
@@ -17,6 +20,38 @@ from app.services import chaos as chaos_engine
 from app.services.audit import log_audit
 
 chaos_admin_bp = Blueprint('chaos_admin', __name__, url_prefix='/admin/chaos')
+
+
+def _validate_webhook_url(url: str) -> str | None:
+    """
+    Validate a webhook URL to prevent Server-Side Request Forgery (SSRF).
+    - Only http:// and https:// schemes are allowed.
+    - Loopback, link-local, and RFC-1918 private IPs are blocked.
+    Returns the URL if valid, None otherwise (and flashes a warning).
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme not in ('http', 'https'):
+            flash('Webhook URL must use http:// or https://.', 'warning')
+            return None
+        hostname = parsed.hostname or ''
+        if not hostname:
+            flash('Webhook URL must have a valid hostname.', 'warning')
+            return None
+        # Block numeric IPs that resolve to internal/private ranges
+        try:
+            addr = ipaddress.ip_address(hostname)
+            if (addr.is_loopback or addr.is_private or
+                    addr.is_link_local or addr.is_multicast or addr.is_reserved):
+                flash('Webhook URL cannot point to an internal or private IP address.', 'warning')
+                return None
+        except ValueError:
+            # hostname is a domain name — allow it (DNS resolution is out of scope here)
+            pass
+        return url
+    except Exception:
+        flash('Invalid webhook URL.', 'warning')
+        return None
 
 
 FLOAT_FIELDS = {
@@ -30,6 +65,8 @@ FLOAT_FIELDS = {
     'mobile_timeout_rate', 'mobile_rate_limit_rate', 'mobile_malform_rate',
     # Section 6 — Corporate Portal Chaos
     'corp_auth_failure_rate', 'corp_maintenance_rate',
+    # Section 7 — Ad Popup Chaos
+    'ad_popup_rate',
 }
 INT_FIELDS = {
     'login_slowdown_ms', 'db_slowdown_ms', 'search_slowdown_ms',
@@ -44,6 +81,8 @@ INT_FIELDS = {
     'mobile_search_slow_ms',
     # Section 6 — Corporate Portal Chaos
     'corp_slow_ms',
+    # Section 7 — Ad Popup Chaos
+    'ad_popup_delay_ms', 'ad_popup_close_delay_ms',
 }
 BOOL_FIELDS = {
     'enabled', 'db_down', 'payment_gateway_down',
@@ -72,6 +111,8 @@ BOOL_FIELDS = {
     'mobile_chaos',
     # Section 6 — Corporate Portal Chaos
     'corp_chaos',
+    # Section 7 — Ad Popup Chaos
+    'ad_popup_chaos',
 }
 
 PAGE_TARGETS = ['all', 'flights', 'hotels', 'buses', 'trains',
@@ -84,7 +125,19 @@ PAGE_TARGETS = ['all', 'flights', 'hotels', 'buses', 'trains',
 def dashboard():
     import json
     from datetime import datetime
-    state = FailureMode.current()
+    from sqlalchemy.exc import OperationalError
+    try:
+        state = FailureMode.current()
+    except OperationalError as e:
+        # DB schema is out of date — pending migrations
+        col = str(e).split('column:')[-1].strip() if 'column:' in str(e) else str(e)[:80]
+        flash(
+            f'⚠️ Database schema is out of date (missing column: {col}). '
+            f'Run: python3 migrate_ad_popup_chaos.py — then restart the app.',
+            'warning'
+        )
+        from flask import redirect
+        return redirect(url_for('admin.dashboard'))
     recent_events = (ChaosEvent.query
                      .order_by(ChaosEvent.created_at.desc())
                      .limit(100).all())
@@ -102,6 +155,28 @@ def dashboard():
             component_pages = ['all']
     except Exception:
         component_pages = ['all']
+
+    # Ad popup target pages — Section 7 (column may not exist until migration runs)
+    try:
+        raw_ad = getattr(state, 'ad_popup_target_pages', None)
+        ad_popup_pages = json.loads(raw_ad) if raw_ad else ['all']
+        if not ad_popup_pages:
+            ad_popup_pages = ['all']
+        # Patch state so template can safely read it
+        if not hasattr(state, 'ad_popup_target_pages') or state.ad_popup_target_pages is None:
+            state.ad_popup_target_pages = '["all"]'
+    except Exception:
+        ad_popup_pages = ['all']
+        state.ad_popup_target_pages = '["all"]'
+
+    # Ensure all Section 7 fields have safe defaults if columns missing
+    for attr, default in [('ad_popup_chaos', False), ('ad_popup_rate', 0.3),
+                           ('ad_popup_delay_ms', 1500), ('ad_popup_close_delay_ms', 0)]:
+        try:
+            if getattr(state, attr, None) is None:
+                setattr(state, attr, default)
+        except Exception:
+            pass
 
     # ── Build enriched schedule windows for the timeline UI ─────────────────
     # Each window gets a 'status': 'past' | 'running' | 'upcoming'
@@ -147,6 +222,7 @@ def dashboard():
         from datetime import timedelta
         next_midnight_utc += timedelta(days=1)
 
+    from app.services.chaos import AD_POPUP_TRANSACTION_BUNDLES
     return render_template('admin_chaos.html',
                            state=state,
                            events=recent_events,
@@ -155,6 +231,7 @@ def dashboard():
                            target_pages=target_pages,
                            component_pages=component_pages,
                            page_targets=PAGE_TARGETS,
+                           ad_popup_bundles=AD_POPUP_TRANSACTION_BUNDLES,
                            next_reshuffle_utc=next_midnight_utc.isoformat(),
                            profiles=['db_slowdown', 'payment_gateway_down', 'checkout_exceptions',
                                      'search_upstream_timeout', 'api_5xx_storm', 'db_unavailable',
@@ -191,9 +268,13 @@ def update():
     for f in BOOL_FIELDS:
         setattr(state, f, form.get(f) in ('on', 'true', '1', 'yes'))
 
-    # Webhook URL (free text)
+    # Webhook URL — validate to prevent SSRF
     if 'webhook_url' in form:
-        state.webhook_url = form.get('webhook_url', '').strip() or None
+        raw_url = form.get('webhook_url', '').strip()
+        if not raw_url:
+            state.webhook_url = None
+        else:
+            state.webhook_url = _validate_webhook_url(raw_url)
 
     # Intensity (0-3)
     if 'chaos_intensity' in form:
@@ -213,6 +294,15 @@ def update():
     if not component_targets:
         component_targets = ['all']
     state.component_target_pages = json.dumps(component_targets)
+
+    # Handle ad popup target pages — Section 7 (safe — column may not exist yet)
+    try:
+        ad_popup_targets = form.getlist('ad_popup_target_pages')
+        if not ad_popup_targets:
+            ad_popup_targets = ['all']
+        state.ad_popup_target_pages = json.dumps(ad_popup_targets)
+    except Exception:
+        pass
 
     user = get_current_user()
     state.updated_by = user.email if user else 'admin'
@@ -480,8 +570,13 @@ def state_json():
     """
     Unauthenticated read-only JSON endpoint for Site24x7 REST API
     monitor — lets you alert on chaos-induced outages vs real ones.
+    Sensitive fields (webhook_url, updated_by) are stripped from the response.
     """
-    return jsonify(FailureMode.current().to_dict())
+    data = FailureMode.current().to_dict()
+    # Strip fields that could expose internal infrastructure or admin emails
+    data.pop('webhook_url', None)
+    data.pop('updated_by', None)
+    return jsonify(data)
 
 
 @chaos_admin_bp.route('/docs', methods=['GET'])
@@ -493,6 +588,7 @@ def docs():
 
 
 @chaos_admin_bp.route('/debug', methods=['GET'])
+@roles_required('admin')
 def chaos_debug():
     """Diagnostic endpoint — shows exactly why chaos might not fire."""
     import json, traceback

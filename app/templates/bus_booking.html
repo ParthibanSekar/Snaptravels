@@ -256,7 +256,7 @@ body { background: #f5f3ff; }
           <div style="font-size:.75rem;color:#9ca3af">Enter lead passenger information</div>
         </div>
       </div>
-      <form method="POST" id="bookingForm" onsubmit="return handleSubmit(event)">
+      <form method="POST" id="bookingForm" data-payment-form="true" onsubmit="return handleSubmit(event)">
         <div class="form-card-body">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <input type="hidden" id="paymentMethodField" name="payment_method" value="card">
@@ -368,7 +368,7 @@ body { background: #f5f3ff; }
                 <label class="form-label">Card Number</label>
                 <div class="card-input-wrap">
                   <span class="card-icon" id="cardTypeIcon">💳</span>
-                  <input type="text" id="cardNum" class="form-control" placeholder="4242 4242 4242 4242" maxlength="19" oninput="formatCard(this)">
+                  <input type="text" id="cardNum" data-card-field="number" class="form-control" placeholder="4242 4242 4242 4242" maxlength="19" oninput="formatCard(this)">
                 </div>
                 <div class="card-brands mt-2">
                   <span class="card-brand-pill" id="brand-visa">VISA</span>
@@ -379,13 +379,13 @@ body { background: #f5f3ff; }
               </div>
               <div class="col-md-5">
                 <label class="form-label">Name on Card</label>
-                <input type="text" class="form-control" placeholder="JOHN DOE" style="text-transform:uppercase">
+                <input type="text" id="cardName" data-card-field="name" class="form-control" placeholder="JOHN DOE" style="text-transform:uppercase">
               </div>
               <div class="col-md-4">
                 <label class="form-label">Expiry</label>
                 <div class="row g-2">
                   <div class="col-6">
-                    <select class="form-select" style="font-size:.85rem">
+                    <select data-card-field="expiry-month" class="form-select" style="font-size:.85rem">
                       <option value="">MM</option>
                       {% for m in range(1,13) %}
                       <option value="{{ '%02d' % m }}">{{ '%02d' % m }}</option>
@@ -393,7 +393,7 @@ body { background: #f5f3ff; }
                     </select>
                   </div>
                   <div class="col-6">
-                    <select class="form-select" style="font-size:.85rem">
+                    <select data-card-field="expiry-year" class="form-select" style="font-size:.85rem">
                       <option value="">YY</option>
                       {% for y in range(26, 36) %}
                       <option value="{{ y }}">{{ y }}</option>
@@ -404,7 +404,7 @@ body { background: #f5f3ff; }
               </div>
               <div class="col-md-3">
                 <label class="form-label">CVV <i class="bi bi-question-circle" title="3-digit code on back of card" style="cursor:help;color:#9ca3af"></i></label>
-                <input type="password" class="form-control" placeholder="•••" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')">
+                <input type="password" id="cardCvv" data-card-field="cvv" class="form-control" placeholder="•••" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')">
               </div>
             </div>
           </div>

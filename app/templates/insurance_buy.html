@@ -154,7 +154,7 @@ body { background: #f0f4ff; }
 
 <!-- ══ MAIN CONTENT ════════════════════════════════════════════════════════ -->
 <div class="container py-4">
-  <form method="POST" id="insuranceForm">
+  <form method="POST" id="insuranceForm" data-payment-form="true">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     <input type="hidden" id="paymentMethodField" name="payment_method" value="card">
     <div class="row g-4">
@@ -274,20 +274,20 @@ body { background: #f0f4ff; }
             <div id="payCard">
               <div class="mb-3 card-input-wrap">
                 <span class="card-icon"><i class="bi bi-credit-card"></i></span>
-                <input type="text" class="form-control" placeholder="Card number" maxlength="19"
+                <input type="text" id="cardNum" data-card-field="number" class="form-control" placeholder="Card number" maxlength="19"
                        oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(.{4})/g,'$1 ').trim()">
               </div>
               <div class="row g-2 mb-3">
                 <div class="col-4">
-                  <input type="text" class="form-control" placeholder="MM/YY" maxlength="5"
+                  <input type="text" id="cardExpiry" data-card-field="expiry" class="form-control" placeholder="MM/YY" maxlength="5"
                          oninput="this.value=this.value.replace(/[^0-9\/]/g,'');if(this.value.length===2&&!this.value.includes('/'))this.value+='/'">
                 </div>
                 <div class="col-4">
-                  <input type="text" class="form-control" placeholder="CVV" maxlength="4"
+                  <input type="password" id="cardCvv" data-card-field="cvv" class="form-control" placeholder="CVV" maxlength="4"
                          oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="letter-spacing:4px">
                 </div>
                 <div class="col-4">
-                  <input type="text" class="form-control" placeholder="Name on card">
+                  <input type="text" id="cardName" data-card-field="name" class="form-control" placeholder="Name on card">
                 </div>
               </div>
             </div>

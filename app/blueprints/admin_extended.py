@@ -381,3 +381,67 @@ def blog_list():
     user = get_current_user()
     posts = BlogPost.query.order_by(BlogPost.created_at.desc()).all()
     return render_template('admin_blog.html', user=user, posts=posts)
+
+
+# ── Shop Admin ────────────────────────────────────────────────────────────────
+
+@admin_ext_bp.route('/shop')
+@roles_required('admin')
+def shop_admin():
+    from app.models import Product, ShopOrder
+    user     = get_current_user()
+    products = Product.query.order_by(Product.category, Product.name).all()
+    orders   = ShopOrder.query.order_by(ShopOrder.created_at.desc()).limit(200).all()
+    return_requests = ShopOrder.query.filter_by(status='RETURN_REQUESTED').all()
+    stats = {
+        'total_products': Product.query.count(),
+        'in_stock':       Product.query.filter_by(in_stock=True).count(),
+        'out_of_stock':   Product.query.filter_by(in_stock=False).count(),
+        'total_orders':   ShopOrder.query.count(),
+        'confirmed':      ShopOrder.query.filter_by(status='CONFIRMED').count(),
+        'cancelled':      ShopOrder.query.filter_by(status='CANCELLED').count(),
+        'returns':        ShopOrder.query.filter_by(status='RETURN_REQUESTED').count(),
+        'revenue':        db.session.query(db.func.sum(ShopOrder.total_amount)).filter_by(status='CONFIRMED').scalar() or 0,
+    }
+    return render_template('shop_admin.html', user=user, products=products,
+                           orders=orders, return_requests=return_requests, stats=stats)
+
+
+@admin_ext_bp.route('/shop/product/<int:product_id>/toggle-stock', methods=['POST'])
+@roles_required('admin')
+def shop_toggle_stock(product_id):
+    from app.models import Product
+    p = Product.query.get_or_404(product_id)
+    p.in_stock = not p.in_stock
+    db.session.commit()
+    flash(f'"{p.name}" marked {"In Stock" if p.in_stock else "Out of Stock"}.', 'success')
+    return redirect(url_for('admin_ext.shop_admin'))
+
+
+@admin_ext_bp.route('/shop/product/<int:product_id>/update-stock', methods=['POST'])
+@roles_required('admin')
+def shop_update_stock(product_id):
+    from app.models import Product
+    p = Product.query.get_or_404(product_id)
+    qty = request.form.get('stock_qty', type=int)
+    if qty is not None and qty >= 0:
+        p.stock_qty = qty
+        p.in_stock  = qty > 0
+        db.session.commit()
+        flash(f'Stock updated for "{p.name}": {qty} units.', 'success')
+    return redirect(url_for('admin_ext.shop_admin'))
+
+
+@admin_ext_bp.route('/shop/order/<int:order_id>/status', methods=['POST'])
+@roles_required('admin')
+def shop_update_order_status(order_id):
+    from app.models import ShopOrder
+    order  = ShopOrder.query.get_or_404(order_id)
+    status = request.form.get('status')
+    allowed = ('CONFIRMED', 'CANCELLED', 'RETURN_REQUESTED', 'RETURNED')
+    if status in allowed:
+        order.status      = status
+        order.actioned_at = datetime.utcnow()
+        db.session.commit()
+        flash(f'Order {order.order_code} status updated to {status}.', 'success')
+    return redirect(url_for('admin_ext.shop_admin'))

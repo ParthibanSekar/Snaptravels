@@ -45,7 +45,7 @@ def _is_token_expired(sent_at):
 # ── Login ──────────────────────────────────────────────────────────────────
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@limiter.exempt
+@limiter.limit("20 per minute; 100 per hour")
 def login():
     if 'user_id' in session:
         return redirect(url_for('public.home'))
@@ -113,7 +113,7 @@ def login():
 # ── Signup ─────────────────────────────────────────────────────────────────
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
-@limiter.exempt
+@limiter.limit("10 per minute; 30 per hour")
 def signup():
     if 'user_id' in session:
         return redirect(url_for('public.home'))
@@ -208,7 +208,7 @@ def check_email():
 # ── Resend verification email ─────────────────────────────────────────────
 
 @auth_bp.route('/resend-confirmation', methods=['POST'])
-@limiter.exempt
+@limiter.limit("5 per minute; 20 per hour")
 def resend_confirmation():
     """Resend the verification email with a fresh token."""
     email = request.form.get('email', '').strip()

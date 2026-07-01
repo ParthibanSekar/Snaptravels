@@ -220,7 +220,7 @@ body { background: {{ bg_page }}; }
 
   <!-- ── Left column ── -->
   <div class="col-lg-8">
-    <form method="POST" id="bookingForm" novalidate>
+    <form method="POST" id="bookingForm" data-payment-form="true" novalidate>
       {{ form.hidden_tag() }}
       <input type="hidden" id="finalAmount" name="final_amount" value="{{ total_amount }}">
       <input type="hidden" id="appliedCode" name="promo_code" value="">
@@ -386,7 +386,7 @@ body { background: {{ bg_page }}; }
                 <label class="form-label">Card Number</label>
                 <div class="card-input-wrap">
                   <span class="card-icon" id="cardTypeIcon">💳</span>
-                  {{ form.card_number(class="form-control", placeholder="4242 4242 4242 4242", maxlength="19", id="cardNum") }}
+                  {{ form.card_number(class="form-control", placeholder="4242 4242 4242 4242", maxlength="19", id="cardNum", data_card_field="number") }}
                 </div>
                 <div class="card-brands mt-1">
                   <div class="card-brand" style="color:#1a1f71;font-size:.7rem;font-weight:800">VISA</div>
@@ -397,18 +397,18 @@ body { background: {{ bg_page }}; }
               </div>
               <div class="col-md-5">
                 <label class="form-label">Name on Card</label>
-                {{ form.card_name(class="form-control", placeholder="JOHN DOE") }}
+                {{ form.card_name(class="form-control", placeholder="JOHN DOE", id="cardName", data_card_field="name") }}
               </div>
               <div class="col-md-4">
                 <label class="form-label">Expiry</label>
                 <div class="d-flex gap-2">
-                  {{ form.expiry_month(class="form-select") }}
-                  {{ form.expiry_year(class="form-select") }}
+                  {{ form.expiry_month(class="form-select", id="cardExpiryMonth", data_card_field="expiry-month") }}
+                  {{ form.expiry_year(class="form-select", id="cardExpiryYear", data_card_field="expiry-year") }}
                 </div>
               </div>
               <div class="col-md-3">
                 <label class="form-label">CVV <i class="bi bi-question-circle text-muted" title="3-4 digits on back of card"></i></label>
-                {{ form.cvv(class="form-control", placeholder="•••", maxlength="4", id="cvvInput", type="password") }}
+                {{ form.cvv(class="form-control", placeholder="•••", maxlength="4", id="cvvInput", type="password", data_card_field="cvv") }}
               </div>
             </div>
             <div class="mt-3 d-flex align-items-center gap-2" style="font-size:.75rem;color:#6b7280">

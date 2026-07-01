@@ -1126,6 +1126,326 @@ input:checked + .snap-slider.green-on { background:#15803d; border-color:#15803d
   </div><!-- /section 6 -->
 
   <!-- ═══════════════════════════════════════════════════════════════
+       SECTION 7 — Ad Popup Chaos
+  ════════════════════════════════════════════════════════════════ -->
+  {% set ad_popup_pages_selected = state.ad_popup_target_pages | from_json if state.ad_popup_target_pages else ['all'] %}
+  <div class="c-section mb-4" id="sec-adpopup" style="border-left:3px solid #d97706">
+    <div class="c-section-head">
+      <div class="c-sec-badge" style="background:#1c1207;color:#fbbf24"><i class="bi bi-megaphone-fill"></i></div>
+      <div style="flex:1">
+        <div style="font-size:10px;font-weight:700;color:#d97706;letter-spacing:1.5px;text-transform:uppercase">Section 7</div>
+        <span class="c-section-title">Ad Popup Chaos</span>
+        <div class="c-section-sub">Injects a blocking promotional popup — breaks Selenium / Synthetic monitors that don't handle unexpected overlays</div>
+      </div>
+      <label class="snap-switch ms-auto" title="Enable Section 7">
+        <input type="checkbox" name="ad_popup_chaos" id="adPopupToggle" {% if state.ad_popup_chaos %}checked{% endif %}
+               onchange="document.getElementById('sec-adpopup-body').style.opacity=this.checked?'1':'0.45';document.getElementById('sec-adpopup-body').style.pointerEvents=this.checked?'auto':'none'">
+        <span class="snap-slider" style="{% if state.ad_popup_chaos %}background:#d97706;border-color:#d97706{% endif %}"></span>
+      </label>
+    </div>
+    <div class="c-section-body" id="sec-adpopup-body" style="{{ '' if state.ad_popup_chaos else 'opacity:.45;pointer-events:none' }}">
+
+      <div style="background:#1c1207;border:1px solid #3d2a0a;border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:.76rem;color:#fde68a;line-height:1.7">
+        <i class="bi bi-info-circle me-2" style="color:#fbbf24"></i>
+        <strong style="color:#fef3c7">How it works:</strong>
+        A realistic promotional popup appears after a configurable delay. It covers the <strong style="color:#fef3c7">entire viewport</strong> and blocks all clicks, keyboard input (including Escape), and scroll. Only the ✕ close button dismisses it. Synthetic monitors and Selenium scripts that don't handle the overlay will time out or fail to interact with the page.
+        <div style="margin-top:6px;color:#d97706">
+          <i class="bi bi-code-slash me-1"></i>Monitors can detect it via: <code style="color:#fbbf24;font-size:.68rem">data-chaos-popup="ad-promo"</code> on the overlay element.
+        </div>
+      </div>
+
+      <!-- Step 1 -->
+      <div class="cat-label"><span style="background:#d97706;color:#fff;border-radius:12px;padding:1px 8px;font-size:.65rem;font-weight:800;margin-right:6px">Step 1</span> Set how often the popup fires</div>
+      <!-- Rate slider -->
+      <div style="margin-bottom:14px;padding:12px 14px;background:#0a0d14;border:1px solid #151c28;border-radius:6px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <i class="bi bi-percent" style="color:#fbbf24;font-size:.85rem"></i>
+          <span style="font-size:.78rem;font-weight:700;color:#c8d6e8">Popup Trigger Rate</span>
+          <code style="font-size:.63rem;color:#6b7280;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:1px 6px;margin-left:auto">% chance per page load</code>
+        </div>
+        <div class="knob-row">
+          <input type="range" name="ad_popup_rate" class="chaos-range" style="flex:1;accent-color:#d97706"
+                 min="0" max="1" step="0.05" value="{{ state.ad_popup_rate }}"
+                 oninput="this.nextElementSibling.textContent=Math.round(this.value*100)+'%'">
+          <span class="pct-badge">{{ (state.ad_popup_rate * 100)|int }}%</span>
+        </div>
+        <div style="font-size:.68rem;color:#6b7280;margin-top:4px">Set to 100% to always show on targeted pages — useful for testing monitor handling reliably.</div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="cat-label" style="margin-top:4px"><span style="background:#d97706;color:#fff;border-radius:12px;padding:1px 8px;font-size:.65rem;font-weight:800;margin-right:6px">Step 2</span> Configure timing</div>
+      <!-- Appearance delay -->
+      <div style="margin-bottom:14px;padding:12px 14px;background:#0a0d14;border:1px solid #151c28;border-radius:6px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <i class="bi bi-hourglass-split" style="color:#fbbf24;font-size:.85rem"></i>
+          <span style="font-size:.78rem;font-weight:700;color:#c8d6e8">Appearance Delay</span>
+          <code style="font-size:.63rem;color:#6b7280;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:1px 6px;margin-left:auto">ms after page load</code>
+        </div>
+        <div class="knob-row">
+          <input type="range" name="ad_popup_delay_ms" class="chaos-range" style="flex:1;accent-color:#d97706"
+                 min="0" max="8000" step="250" value="{{ state.ad_popup_delay_ms }}"
+                 oninput="this.nextElementSibling.textContent=this.value+'ms'">
+          <span class="ms-badge">{{ state.ad_popup_delay_ms }}ms</span>
+        </div>
+        <div style="font-size:.68rem;color:#6b7280;margin-top:4px">0ms = popup appears instantly. 1500ms = appears mid-interaction, disrupting mid-flow actions.</div>
+      </div>
+
+      <!-- Close button delay -->
+      <div style="margin-bottom:18px;padding:12px 14px;background:#0a0d14;border:1px solid #151c28;border-radius:6px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <i class="bi bi-x-circle" style="color:#fbbf24;font-size:.85rem"></i>
+          <span style="font-size:.78rem;font-weight:700;color:#c8d6e8">Close Button Delay</span>
+          <code style="font-size:.63rem;color:#6b7280;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:1px 6px;margin-left:auto">ms before ✕ appears</code>
+        </div>
+        <div class="knob-row">
+          <input type="range" name="ad_popup_close_delay_ms" class="chaos-range" style="flex:1;accent-color:#d97706"
+                 min="0" max="10000" step="500" value="{{ state.ad_popup_close_delay_ms }}"
+                 oninput="this.nextElementSibling.textContent=this.value+'ms'">
+          <span class="ms-badge">{{ state.ad_popup_close_delay_ms }}ms</span>
+        </div>
+        <div style="font-size:.68rem;color:#6b7280;margin-top:4px">0ms = close button always visible. Set to 5000ms = monitor must wait 5 seconds before it can dismiss — harder to handle.</div>
+      </div>
+
+      <!-- STEP 3: Select Journey -->
+      <div class="cat-label"><i class="bi bi-signpost-2" style="color:#fbbf24"></i> Step 3 — Select Transaction Journey(s)</div>
+      <div style="font-size:.72rem;color:#6b7280;margin-bottom:14px;line-height:1.6">
+        Choose which transaction flows the popup should interrupt. You can select <strong style="color:#c8d6e8">multiple journeys</strong> — the popup fires randomly at any step within those flows. Click a selected journey again to deselect it.
+      </div>
+
+      <!-- Journey cards — hidden checkboxes track selection -->
+      {% set journey_steps = {
+        'flight':    ['Login','Flights Search','Select Flight','Booking & Payment','My Bookings'],
+        'train':     ['Login','Trains Search','Select Train','Booking & Payment','My Bookings'],
+        'bus':       ['Login','Buses Search','Select Bus','Booking & Payment','My Bookings'],
+        'cab':       ['Login','Cabs Search','Select Cab','Booking & Payment','My Bookings'],
+        'hotel':     ['Login','Hotels Search','Select Hotel','Booking & Payment','My Bookings'],
+        'shop':      ['Login','Shop Listing','Product → Cart','Checkout','My Orders / Confirm'],
+        'corporate': ['Basic Auth','Dashboard','Search','Bookings'],
+      } %}
+
+      {% if ad_popup_bundles %}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="journeyGrid">
+        {% for key, bundle in ad_popup_bundles.items() %}
+        {% set steps = journey_steps.get(key, []) %}
+        {% set is_active = ad_popup_pages_selected and bundle.pages | select('in', ad_popup_pages_selected) | list | length > 0 %}
+        <div class="journey-card {% if is_active %}journey-active{% endif %}"
+             id="journey-{{ key }}"
+             data-pages="{{ bundle.pages | tojson }}"
+             data-color="{{ bundle.color }}"
+             onclick="toggleJourney('{{ key }}')"
+             style="background:#0a0d14;border:2px solid {% if is_active %}{{ bundle.color }}{% else %}#1e2d45{% endif %};border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .2s;position:relative">
+          <!-- Selected tick -->
+          <div class="journey-tick" style="position:absolute;top:8px;right:10px;width:20px;height:20px;border-radius:50%;background:{{ bundle.color }};display:{% if is_active %}flex{% else %}none{% endif %};align-items:center;justify-content:center">
+            <i class="bi bi-check" style="color:#fff;font-size:.7rem;font-weight:900"></i>
+          </div>
+          <div style="font-size:.82rem;font-weight:800;color:{{ bundle.color }};margin-bottom:8px">{{ bundle.label }}</div>
+          <!-- Journey steps flow -->
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:4px">
+            {% for step in steps %}
+            <span style="font-size:.62rem;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:2px 6px;color:#94a3b8;font-weight:600;white-space:nowrap">{{ step }}</span>
+            {% if not loop.last %}<i class="bi bi-arrow-right" style="font-size:.55rem;color:#374151"></i>{% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- All Journeys card -->
+        <div class="journey-card"
+             id="journey-all"
+             data-pages="all"
+             onclick="toggleJourney('all')"
+             style="background:#0a0d14;border:2px solid #374151;border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:80px">
+          <div style="font-size:1.3rem;margin-bottom:4px">🌐</div>
+          <div style="font-size:.78rem;font-weight:700;color:#64748b">All Pages</div>
+          <div style="font-size:.65rem;color:#374151;margin-top:2px">Popup fires everywhere</div>
+        </div>
+      </div>
+
+      <!-- Selection summary -->
+      <div id="journeySummary" style="font-size:.72rem;color:#6b7280;margin-bottom:12px;min-height:18px"></div>
+      {% endif %}
+
+      <!-- Individual page selector (also synced by journey card selection) -->
+      <details style="margin-top:8px">
+        <summary style="cursor:pointer;font-size:.72rem;font-weight:700;color:#6b7280;letter-spacing:.06em;text-transform:uppercase;user-select:none;list-style:none;display:flex;align-items:center;gap:6px;padding:8px 0">
+          <i class="bi bi-chevron-right" id="indivChevron" style="font-size:.65rem;transition:transform .2s"></i>
+          Advanced — select individual pages
+          <span style="font-size:.65rem;font-weight:600;color:#374151;margin-left:4px">(optional — overrides journey selection)</span>
+        </summary>
+        <div style="margin-top:10px;padding:12px 14px;background:#060a12;border:1px solid #151c28;border-radius:8px">
+          <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+            <label style="font-size:.72rem;color:#64748b;cursor:pointer;display:flex;align-items:center;gap:6px">
+              <input type="checkbox" id="adPopupAllToggle"
+                     {% if 'all' in ad_popup_pages_selected %}checked{% endif %}
+                     onchange="document.querySelectorAll('.ad-page-cb').forEach(cb=>cb.checked=this.checked);updateSummary()">
+              Select All Pages
+            </label>
+            <button type="button" onclick="document.querySelectorAll('.ad-page-cb').forEach(cb=>cb.checked=false);document.querySelectorAll('#journeyGrid .journey-card').forEach(c=>{c.classList.remove('journey-active');c.style.borderColor='#1e2d45';var t=c.querySelector('.journey-tick');if(t)t.style.display='none'});updateSummary()"
+                    style="font-size:.68rem;color:#475569;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .15s"
+                    onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#475569'">
+              <i class="bi bi-x-circle me-1"></i>Clear all
+            </button>
+          </div>
+          {% set ad_page_list = [
+            ('home',            'Home',               'bi-house'),
+            ('login',           'Login',              'bi-box-arrow-in-right'),
+            ('signup',          'Sign Up',            'bi-person-plus'),
+            ('flights',         'Flights Search',     'bi-airplane'),
+            ('hotels',          'Hotels Search',      'bi-building'),
+            ('trains',          'Trains Search',      'bi-train-front'),
+            ('buses',           'Buses Search',       'bi-bus-front'),
+            ('cabs',            'Cabs Search',        'bi-car-front'),
+            ('packages',        'Packages',           'bi-suitcase-lg'),
+            ('activities',      'Activities',         'bi-lightning'),
+            ('insurance',       'Insurance',          'bi-shield-check'),
+            ('booking',         'Booking / Payment',  'bi-credit-card'),
+            ('payment',         'Checkout',           'bi-lock'),
+            ('my-bookings',     'My Bookings',        'bi-receipt'),
+            ('shop',            'Shop Listing',       'bi-bag-heart'),
+            ('cart',            'Cart',               'bi-bag'),
+            ('shop-checkout',   'Shop Checkout',      'bi-lock-fill'),
+            ('shop-orders',     'Shop My Orders',     'bi-receipt-cutoff'),
+            ('shop-confirm',    'Order Confirmation', 'bi-check-circle'),
+            ('corporate',       'Corporate Portal',   'bi-briefcase'),
+            ('trip-planner',    'Trip Planner',       'bi-signpost-split'),
+            ('travel-dashboard','Travel Dashboard',   'bi-grid-1x2'),
+            ('dashboard',       'User Dashboard',     'bi-person-circle'),
+          ] %}
+          <div class="injection-grid">
+            {% for slug, label, icon in ad_page_list %}
+            {% set is_sel = slug in ad_popup_pages_selected or 'all' in ad_popup_pages_selected %}
+            <label class="injection-card {% if is_sel %}ic-active{% endif %}"
+                   style="border-color:{% if is_sel %}#d97706{% else %}#151c28{% endif %};cursor:pointer"
+                   onclick="setTimeout(updateSummary,50)">
+              <input type="checkbox" name="ad_popup_target_pages" value="{{ slug }}"
+                     class="ad-page-cb" {% if is_sel %}checked{% endif %}>
+              <div>
+                <div class="injection-card-title" style="color:#fde68a">
+                  <i class="bi {{ icon }} me-1"></i>{{ label }}
+                </div>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </details>
+      <script>
+      // Rotate chevron when details opens/closes
+      document.addEventListener('DOMContentLoaded', function() {
+        var det = document.querySelector('details');
+        if (det) det.addEventListener('toggle', function() {
+          var ch = document.getElementById('indivChevron');
+          if (ch) ch.style.transform = det.open ? 'rotate(90deg)' : 'rotate(0deg)';
+        });
+      });
+      </script>
+
+      <!-- Popup behaviour chips -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+        <span style="font-size:.63rem;font-weight:700;font-family:monospace;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:2px 7px;color:#fbbf24">Blocks: clicks</span>
+        <span style="font-size:.63rem;font-weight:700;font-family:monospace;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:2px 7px;color:#fbbf24">Blocks: Escape key</span>
+        <span style="font-size:.63rem;font-weight:700;font-family:monospace;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:2px 7px;color:#fbbf24">Blocks: scroll</span>
+        <span style="font-size:.63rem;font-weight:700;font-family:monospace;background:#0d1117;border:1px solid #1a2235;border-radius:3px;padding:2px 7px;color:#10b981">Detectable: data-chaos-popup="ad-promo"</span>
+      </div>
+
+      <style>
+      .journey-card:hover { opacity:.9; transform:translateY(-1px); }
+      .journey-active { box-shadow:0 0 0 1px currentColor; }
+      </style>
+
+      <script>
+      // Bundle page map from server
+      var AD_BUNDLES = {{ ad_popup_bundles | tojson if ad_popup_bundles else '{}' }};
+
+      function toggleJourney(key) {
+        var card = document.getElementById('journey-' + key);
+        if (!card) return;
+        var isActive = card.classList.contains('journey-active');
+        var color = card.dataset.color || '#6b7280';
+        var tick = card.querySelector('.journey-tick');
+
+        if (isActive) {
+          card.classList.remove('journey-active');
+          card.style.borderColor = (key === 'all') ? '#374151' : '#1e2d45';
+          if (tick) tick.style.display = 'none';
+        } else {
+          card.classList.add('journey-active');
+          card.style.borderColor = color;
+          if (tick) { tick.style.display = 'flex'; tick.style.background = color; }
+        }
+
+        rebuildCheckedPages();
+        updateSummary();
+      }
+
+      function rebuildCheckedPages() {
+        // Collect all pages from active journey cards
+        var needed = new Set();
+        var allActive = false;
+
+        document.querySelectorAll('#journeyGrid .journey-card.journey-active').forEach(function(card) {
+          var rawPages = card.dataset.pages;
+          if (rawPages === 'all') { allActive = true; return; }
+          try {
+            JSON.parse(rawPages).forEach(function(p) { needed.add(p); });
+          } catch(e) {}
+        });
+
+        // Update hidden checkboxes
+        document.querySelectorAll('.ad-page-cb').forEach(function(cb) {
+          cb.checked = allActive || needed.has(cb.value);
+        });
+
+        // Style all-pages card
+        var allCard = document.getElementById('journey-all');
+        if (allCard) {
+          if (allActive) {
+            allCard.classList.add('journey-active');
+            allCard.style.borderColor = '#6b7280';
+          } else {
+            allCard.classList.remove('journey-active');
+            allCard.style.borderColor = '#374151';
+          }
+        }
+      }
+
+      function updateSummary() {
+        var active = [];
+        document.querySelectorAll('#journeyGrid .journey-card.journey-active').forEach(function(card) {
+          var id = card.id.replace('journey-', '');
+          if (id === 'all') { active = ['All Pages']; return; }
+          if (AD_BUNDLES[id]) active.push(AD_BUNDLES[id].label);
+        });
+        var el = document.getElementById('journeySummary');
+        if (!el) return;
+        if (active.length === 0) {
+          el.innerHTML = '<span style="color:#ef4444"><i class="bi bi-exclamation-circle me-1"></i>No journey selected — popup will not fire. Select at least one journey above.</span>';
+        } else {
+          el.innerHTML = '<i class="bi bi-check-circle-fill me-1" style="color:#10b981"></i>Popup will fire randomly during: <strong style="color:#fde68a">' + active.join(', ') + '</strong>';
+        }
+      }
+
+      // Init summary on load
+      document.addEventListener('DOMContentLoaded', function() { updateSummary(); });
+
+      // Legacy compat — keep selectBundle for 'all' toggle checkbox
+      function selectBundle(pages, btn) {
+        var cbs = document.querySelectorAll('.ad-page-cb');
+        if (pages === 'all') {
+          cbs.forEach(cb => cb.checked = true);
+        } else if (!pages || pages.length === 0) {
+          cbs.forEach(cb => cb.checked = false);
+          btn.style.opacity = '1';
+        } else {
+          cbs.forEach(cb => { cb.checked = pages.includes(cb.value); });
+        }
+      }
+      </script>
+
+    </div><!-- /section 7 body -->
+  </div><!-- /section 7 -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
        ENGINE SETTINGS — Intensity + Webhook
   ════════════════════════════════════════════════════════════════ -->
   <div class="c-section mb-4" style="border-left:3px solid #374151">

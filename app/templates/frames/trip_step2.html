@@ -32,6 +32,7 @@ h3 { font-size:.95rem; font-weight:800; color:#0f172a; margin:0 0 4px; }
 
 <script>
 window.addEventListener('message', function(e) {
+  if (e.origin !== window.location.origin) return;
   if (e.data && e.data.type === 'flight_selected') {
     document.getElementById('result').style.display = '';
     document.getElementById('resultText').textContent = e.data.flight + ' selected from popup';

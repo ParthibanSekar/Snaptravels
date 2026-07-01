@@ -29,8 +29,13 @@ try:
     }
     def sanitize_html(html: str) -> str:
         """Strip dangerous tags/attributes from admin-submitted HTML."""
-        return bleach.clean(html, tags=_ALLOWED_TAGS, attributes=_ALLOWED_ATTRS,
-                            strip=True)
+        return bleach.clean(
+            html,
+            tags=_ALLOWED_TAGS,
+            attributes=_ALLOWED_ATTRS,
+            protocols=['http', 'https', 'mailto'],  # blocks javascript: URIs
+            strip=True,
+        )
 except ImportError:
     # bleach not installed — fall back to plain-text (no HTML rendered)
     import html as _html

@@ -149,7 +149,7 @@ body { background: #f0fdfa; }
           <div style="font-size:.75rem;color:#9ca3af">Driver will verify this on pickup</div>
         </div>
       </div>
-      <form method="POST" id="bookingForm">
+      <form method="POST" id="bookingForm" data-payment-form="true">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <input type="hidden" id="paymentMethodField" name="payment_method" value="card">
         <div class="form-card-body">
@@ -217,20 +217,20 @@ body { background: #f0fdfa; }
                 <label class="form-label">Card Number</label>
                 <div class="card-input-wrap">
                   <span class="card-icon">💳</span>
-                  <input type="text" id="cardNum" class="form-control" placeholder="4242 4242 4242 4242" maxlength="19">
+                  <input type="text" id="cardNum" data-card-field="number" class="form-control" placeholder="4242 4242 4242 4242" maxlength="19">
                 </div>
               </div>
               <div class="col-md-5">
                 <label class="form-label">Name on Card</label>
-                <input type="text" class="form-control" placeholder="JOHN DOE">
+                <input type="text" id="cardName" data-card-field="name" class="form-control" placeholder="JOHN DOE">
               </div>
               <div class="col-md-4">
                 <label class="form-label">Expiry</label>
-                <input type="text" class="form-control" placeholder="MM / YY" maxlength="7">
+                <input type="text" id="cardExpiry" data-card-field="expiry" class="form-control" placeholder="MM / YY" maxlength="7">
               </div>
               <div class="col-md-3">
                 <label class="form-label">CVV</label>
-                <input type="password" class="form-control" placeholder="•••" maxlength="4">
+                <input type="password" id="cardCvv" data-card-field="cvv" class="form-control" placeholder="•••" maxlength="4">
               </div>
             </div>
           </div>

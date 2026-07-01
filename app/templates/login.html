@@ -118,16 +118,6 @@
     <div class="auth-card-body">
 
       <!-- Flash messages -->
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mb-3" role="alert" style="border-radius:10px;font-size:.9rem">
-              <i class="bi bi-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}-fill me-2"></i>{{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
 
       <form method="POST" id="loginForm">
         {{ form.hidden_tag() }}

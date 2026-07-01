@@ -17,6 +17,7 @@ Useful for:
 """
 
 import os
+import hmac
 import base64
 import logging
 from functools import wraps
@@ -40,14 +41,17 @@ corporate_bp = Blueprint('corporate', __name__, url_prefix='/corporate')
 # ── Credentials ────────────────────────────────────────────────────────────────
 
 def _get_credentials():
-    return (
-        os.environ.get('CORP_BASIC_USER', 'corp_user'),
-        os.environ.get('CORP_BASIC_PASS', 'Corp@2024!'),
-    )
+    user = os.environ.get('CORP_BASIC_USER', 'corp_user')
+    pw   = os.environ.get('CORP_BASIC_PASS', 'Corp@2024!')
+    return user, pw
 
 def _check_auth(username: str, password: str) -> bool:
+    """Constant-time credential comparison to prevent timing attacks."""
     valid_user, valid_pass = _get_credentials()
-    return username == valid_user and password == valid_pass
+    # hmac.compare_digest is always constant-time regardless of mismatch position
+    user_ok = hmac.compare_digest(username.encode('utf-8'), valid_user.encode('utf-8'))
+    pass_ok = hmac.compare_digest(password.encode('utf-8'), valid_pass.encode('utf-8'))
+    return user_ok and pass_ok
 
 def _unauthorized():
     return Response(

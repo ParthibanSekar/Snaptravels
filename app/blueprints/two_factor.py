@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import json
 import random
+import secrets
 import string
 from datetime import datetime, timedelta
 
@@ -396,7 +397,7 @@ def login_otp():
             max_age  = REMEMBER_DEVICE_DAYS * 86400,
             httponly = True,
             samesite = 'Lax',
-            secure   = False,   # set True behind HTTPS in production
+            secure   = True,    # HTTPS only — prevents transmission over plain HTTP
         )
 
     flash(f'Welcome back, {user.name}!', 'success')
@@ -412,7 +413,7 @@ EMAIL_OTP_EXPIRY_MINUTES = 10
 
 def _generate_email_otp() -> str:
     """Generate a cryptographically random 6-digit numeric OTP."""
-    return ''.join(random.choices(string.digits, k=6))
+    return ''.join(secrets.choice(string.digits) for _ in range(6))
 
 
 def _store_email_otp(otp: str) -> None:

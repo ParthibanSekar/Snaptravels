@@ -148,6 +148,18 @@ cmd_update() {
             && success "Corporate chaos migration complete" \
             || warn "Migration had warnings — check output above"
     fi
+    if [ -f "$INSTALL_DIR/migrate_ad_popup_chaos.py" ]; then
+        info "Running ad popup chaos migration..."
+        python3 "$INSTALL_DIR/migrate_ad_popup_chaos.py" \
+            && success "Ad popup chaos migration complete" \
+            || warn "Migration had warnings — check output above"
+    fi
+    if [ -f "$INSTALL_DIR/migrate_shop.py" ]; then
+        info "Running shop migration + seed..."
+        python3 "$INSTALL_DIR/migrate_shop.py" \
+            && success "Shop migration complete" \
+            || warn "Shop migration had warnings — check output above"
+    fi
 
     # Restart
     info "Restarting app..."

@@ -67,6 +67,7 @@ try {
 
 // Listen for summary updates from parent
 window.addEventListener('message', function(e) {
+  if (e.origin !== window.location.origin) return;
   if (e.data && e.data.type === 'update_summary') {
     var d = e.data.data;
     if (d.origin && d.destination) {

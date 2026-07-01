@@ -1,0 +1,213 @@
+{% extends "layouts/base.html" %}
+{% block title %}Checkout — Travel Shop{% endblock %}
+
+{% block extra_head %}
+<style>
+  body, main { background: #f8fafc; }
+  .co-section { background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:22px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .co-title { font-size:.88rem;font-weight:800;color:#111827;margin-bottom:16px;display:flex;align-items:center;gap:8px; }
+  .co-title i { color:#e63950; }
+  .f-label { font-size:.72rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px; }
+  .f-input { width:100%;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;color:#111827;padding:10px 14px;font-size:.87rem;outline:none;transition:border-color .2s,box-shadow .2s; }
+  .f-input:focus { border-color:#e63950;box-shadow:0 0 0 3px rgba(230,57,80,.1); }
+  .f-input.error { border-color:#dc2626; }
+  .f-err { font-size:.72rem;color:#dc2626;margin-top:3px; }
+  .pay-tab { padding:10px 16px;border:1.5px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px;font-size:.83rem;color:#374151;font-weight:600;background:#fff; }
+  .pay-tab:hover { border-color:#e63950; }
+  .pay-tab.active { border-color:#e63950;color:#e63950;background:#fff5f6; }
+  .pay-tab i { font-size:1rem; }
+  .order-row { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6; }
+  .order-row:last-child { border-bottom:none; }
+  .order-img { width:52px;height:52px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid #e5e7eb; }
+  .s-row { display:flex;justify-content:space-between;font-size:.85rem;color:#6b7280;margin-bottom:8px; }
+  .s-row.total { font-size:1rem;font-weight:800;color:#111827;border-top:1px solid #e5e7eb;padding-top:12px;margin-top:4px; }
+  .btn-place { width:100%;padding:14px;background:#e63950;border:none;border-radius:12px;color:#fff;font-weight:800;font-size:.95rem;cursor:pointer;transition:background .2s;margin-top:16px;box-shadow:0 4px 14px rgba(230,57,80,.2); }
+  .btn-place:hover { background:#c0303f; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:1000px">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-lock-fill" style="font-size:1.3rem;color:#e63950"></i>
+    <h1 style="font-size:1.4rem;font-weight:900;color:#111827;margin:0">Checkout</h1>
+  </div>
+
+  <form method="POST" data-payment-form="true">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="row g-4">
+    <!-- Left: form -->
+    <div class="col-lg-7">
+
+      <!-- Delivery -->
+      <div class="co-section">
+        <div class="co-title"><i class="bi bi-geo-alt-fill"></i>Delivery Address</div>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="f-label">Full Name *</label>
+            <input class="f-input {% if errors.name %}error{% endif %}" name="name"
+                   value="{{ form.get('name', user.name if user else '') }}" placeholder="Arjun Mehta">
+            {% if errors.name %}<div class="f-err">{{ errors.name }}</div>{% endif %}
+          </div>
+          <div class="col-sm-6">
+            <label class="f-label">Email *</label>
+            <input class="f-input {% if errors.email %}error{% endif %}" name="email" type="email"
+                   value="{{ form.get('email', user.email if user else '') }}" placeholder="arjun@example.com">
+            {% if errors.email %}<div class="f-err">{{ errors.email }}</div>{% endif %}
+          </div>
+          <div class="col-sm-6">
+            <label class="f-label">Phone</label>
+            <input class="f-input" name="phone" type="tel"
+                   value="{{ form.get('phone', '') }}" placeholder="9876543210">
+          </div>
+          <div class="col-12">
+            <label class="f-label">Address Line *</label>
+            <input class="f-input {% if errors.address %}error{% endif %}" name="address"
+                   value="{{ form.get('address', '') }}" placeholder="Flat / House No, Street, Area">
+            {% if errors.address %}<div class="f-err">{{ errors.address }}</div>{% endif %}
+          </div>
+          <div class="col-sm-5">
+            <label class="f-label">City *</label>
+            <input class="f-input {% if errors.city %}error{% endif %}" name="city"
+                   value="{{ form.get('city', '') }}" placeholder="Mumbai">
+            {% if errors.city %}<div class="f-err">{{ errors.city }}</div>{% endif %}
+          </div>
+          <div class="col-sm-4">
+            <label class="f-label">State</label>
+            <input class="f-input" name="state" value="{{ form.get('state', '') }}" placeholder="Maharashtra">
+          </div>
+          <div class="col-sm-3">
+            <label class="f-label">PIN Code *</label>
+            <input class="f-input {% if errors.pincode %}error{% endif %}" name="pincode" maxlength="6"
+                   value="{{ form.get('pincode', '') }}" placeholder="400001">
+            {% if errors.pincode %}<div class="f-err">{{ errors.pincode }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment -->
+      <div class="co-section">
+        <div class="co-title"><i class="bi bi-credit-card-fill"></i>Payment Method</div>
+        <div class="d-flex flex-wrap gap-3 mb-4" id="payTabs">
+          <div class="pay-tab active" onclick="setPayment('card', this)">
+            <i class="bi bi-credit-card"></i> Card
+          </div>
+          <div class="pay-tab" onclick="setPayment('upi', this)">
+            <i class="bi bi-phone"></i> UPI
+          </div>
+          <div class="pay-tab" onclick="setPayment('netbanking', this)">
+            <i class="bi bi-bank"></i> Net Banking
+          </div>
+          <div class="pay-tab" onclick="setPayment('cod', this)">
+            <i class="bi bi-cash-coin"></i> Cash on Delivery
+          </div>
+        </div>
+        <input type="hidden" name="payment_method" id="paymentMethod" value="card">
+
+        <!-- Card fields -->
+        <div id="cardFields">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="f-label">Card Number</label>
+              <input data-card-field="number" class="f-input" placeholder="1234 5678 9012 3456" maxlength="19"
+                     oninput="this.value=this.value.replace(/\D/g,'').replace(/(.{4})/g,'$1 ').trim()">
+            </div>
+            <div class="col-12">
+              <label class="f-label">Name on Card</label>
+              <input data-card-field="name" class="f-input" placeholder="JOHN DOE" style="text-transform:uppercase">
+            </div>
+            <div class="col-sm-6">
+              <label class="f-label">Expiry (MM/YY)</label>
+              <input data-card-field="expiry" class="f-input" placeholder="08/27" maxlength="5">
+            </div>
+            <div class="col-sm-6">
+              <label class="f-label">CVV</label>
+              <input data-card-field="cvv" class="f-input" placeholder="•••" maxlength="4" type="password">
+            </div>
+          </div>
+          <div class="mt-3 d-flex align-items-center gap-2" style="font-size:.75rem;color:#6b7280">
+            <i class="bi bi-shield-lock-fill text-success"></i>Your card details are encrypted and never stored
+          </div>
+        </div>
+
+        <!-- UPI fields -->
+        <div id="upiFields" style="display:none">
+          <label class="f-label">UPI ID</label>
+          <input class="f-input" placeholder="name@upi">
+        </div>
+
+        <!-- Net banking -->
+        <div id="nbFields" style="display:none">
+          <label class="f-label">Select Bank</label>
+          <select class="f-input">
+            <option>SBI</option><option>HDFC Bank</option><option>ICICI Bank</option>
+            <option>Axis Bank</option><option>Kotak Mahindra</option>
+          </select>
+        </div>
+
+        <!-- COD note -->
+        <div id="codFields" style="display:none;font-size:.82rem;color:#374151;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px">
+          <i class="bi bi-info-circle me-2" style="color:#e63950"></i>
+          Pay ₹{{ '{:,.0f}'.format(grand_total) }} in cash when your order is delivered.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right: order summary -->
+    <div class="col-lg-5">
+      <div class="co-section" style="position:sticky;top:80px">
+        <div class="co-title"><i class="bi bi-receipt"></i>Order Summary</div>
+
+        {% for item in cart %}
+        <div class="order-row">
+          <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="order-img"
+               onerror="this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=200&q=80'">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.83rem;font-weight:600;color:#111827">{{ item.product.name }}</div>
+            <div style="font-size:.72rem;color:#6b7280">
+              {% if item.size %}{{ item.size }} · {% endif %}Qty: {{ item.quantity }}
+            </div>
+          </div>
+          <div style="font-size:.87rem;font-weight:700;color:#374151;white-space:nowrap">
+            ₹{{ '{:,.0f}'.format(item.product.price * item.quantity) }}
+          </div>
+        </div>
+        {% endfor %}
+
+        <div style="margin-top:14px">
+          <div class="s-row"><span>Subtotal</span><span style="color:#374151;font-weight:600">₹{{ '{:,.0f}'.format(subtotal) }}</span></div>
+          <div class="s-row">
+            <span>Shipping</span>
+            <span>{% if shipping == 0 %}<span style="color:#16a34a;font-weight:700;background:#dcfce7;border-radius:4px;padding:1px 7px;font-size:.72rem">FREE</span>{% else %}<span style="color:#374151;font-weight:600">₹{{ shipping }}</span>{% endif %}</span>
+          </div>
+          <div class="s-row total">
+            <span>Total</span>
+            <span style="color:#e63950">₹{{ '{:,.0f}'.format(grand_total) }}</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-place">
+          <i class="bi bi-bag-check-fill me-2"></i>Place Order — ₹{{ '{:,.0f}'.format(grand_total) }}
+        </button>
+        <div style="text-align:center;margin-top:10px;font-size:.72rem;color:#6b7280">
+          <i class="bi bi-shield-lock me-1"></i>Secure & encrypted · 30-day returns
+        </div>
+      </div>
+    </div>
+  </div>
+  </form>
+</div>
+
+<script>
+function setPayment(type, tab) {
+  document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById('paymentMethod').value = type;
+  document.getElementById('cardFields').style.display = type === 'card' ? '' : 'none';
+  document.getElementById('upiFields').style.display  = type === 'upi'  ? '' : 'none';
+  document.getElementById('nbFields').style.display   = type === 'netbanking' ? '' : 'none';
+  document.getElementById('codFields').style.display  = type === 'cod'  ? '' : 'none';
+}
+</script>
+{% endblock %}

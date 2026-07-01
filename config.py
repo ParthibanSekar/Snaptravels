@@ -4,6 +4,15 @@ from datetime import timedelta
 
 _DEFAULT_DEV_KEY = 'snaptravels-dev-key-2024'
 
+# Known weak placeholder values that operators forget to change
+_WEAK_KEY_PATTERNS = {
+    _DEFAULT_DEV_KEY,
+    'change-this-in-production',
+    'secret',
+    'your-secret-key',
+    'development',
+}
+
 
 class Config:
     # Secrets — must be provided via environment in production.
@@ -13,11 +22,14 @@ class Config:
     @staticmethod
     def validate_production(app):
         """Call this inside create_app() when APP_ENV=production."""
-        if app.config.get('SECRET_KEY') == _DEFAULT_DEV_KEY:
+        key = app.config.get('SECRET_KEY', '')
+        if key in _WEAK_KEY_PATTERNS or len(key) < 32:
             raise RuntimeError(
-                "\n\n[SECURITY] SECRET_KEY is still set to the default development value.\n"
+                "\n\n[SECURITY] SECRET_KEY is weak or set to a well-known placeholder value.\n"
                 "Set a strong random key via the SECRET_KEY environment variable before\n"
-                "running in production:  export SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_hex(32))')\n"
+                "running in production:\n"
+                "  export SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_hex(32))')\n"
+                f"Current key length: {len(key)} (minimum 32 required)\n"
             )
 
     # Database — defaults to SQLite for local dev; set DATABASE_URL for Postgres

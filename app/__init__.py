@@ -9,7 +9,7 @@ from config import Config
 
 db = SQLAlchemy()
 csrf = CSRFProtect()
-limiter = Limiter(key_func=get_remote_address, default_limits=["100000 per day", "10000 per hour"])
+limiter = Limiter(key_func=get_remote_address)  # actual limits come from RATELIMIT_DEFAULT in Config
 mail = Mail()
 
 
@@ -51,6 +51,7 @@ def create_app():
     from app.blueprints.admin_extended import admin_ext_bp
     from app.blueprints.two_factor import twofa_bp
     from app.blueprints.corporate import corporate_bp
+    from app.blueprints.shop import shop_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(public_bp)
@@ -71,6 +72,7 @@ def create_app():
     app.register_blueprint(admin_ext_bp)
     app.register_blueprint(twofa_bp)
     app.register_blueprint(corporate_bp)
+    app.register_blueprint(shop_bp)
 
     # Register CLI seed commands
     from app.commands import seed_bp
@@ -85,16 +87,26 @@ def create_app():
 
     # ── Chaos: inject JS snippets into every template context ────────────
     @app.context_processor
+    def inject_current_user():
+        """Make `user` available in every template automatically."""
+        try:
+            from app.services.auth import get_current_user
+            return {'user': get_current_user()}
+        except Exception:
+            return {'user': None}
+
+    @app.context_processor
     def inject_chaos_js():
         try:
-            from app.services.chaos import get_page_chaos_js, get_component_chaos_js, get_ab_test_js
+            from app.services.chaos import get_page_chaos_js, get_component_chaos_js, get_ab_test_js, get_ad_popup_js
             return {
                 'chaos_page_js': get_page_chaos_js(),
                 'component_chaos_js': get_component_chaos_js(),
                 'ab_test_js': get_ab_test_js(),
+                'ad_popup_js': get_ad_popup_js(),
             }
         except Exception:
-            return {'chaos_page_js': '', 'component_chaos_js': '', 'ab_test_js': ''}
+            return {'chaos_page_js': '', 'component_chaos_js': '', 'ab_test_js': '', 'ad_popup_js': ''}
 
     # ── IP Access Control ────────────────────────────────────────────────
     from app.services.ip_access import check_ip_access
@@ -121,12 +133,18 @@ def create_app():
     csrf.exempt(mobile_api)
     csrf.exempt(pwa_bp)
     csrf.exempt(corporate_bp)
-    # Allow Site24x7 REST API monitor to poll the chaos state.json without CSRF
-    csrf.exempt(chaos_admin_bp)
-    # Wishlist toggle and promo validate are JSON AJAX calls from the browser
-    # — they carry a CSRF token via the hidden form tag on pages that embed them.
-    # Only exempt the specific JSON endpoints, not the whole blueprint.
-    csrf.exempt(reviews_bp)   # /wishlist/toggle, /promo/validate are AJAX
+    # Allow Site24x7 REST API monitor to poll the chaos state.json without CSRF.
+    # Only exempt the two unauthenticated read-only endpoints — NOT the whole blueprint,
+    # so all state-changing POST routes (update, trigger-outage, etc.) retain CSRF protection.
+    from app.blueprints.chaos_admin import state_json, chaos_debug
+    csrf.exempt(state_json)
+    csrf.exempt(chaos_debug)
+    # Wishlist toggle and promo validate are JSON AJAX calls from the browser.
+    # Exempt only these two views — not the whole reviews blueprint — so the
+    # hotel review POST form retains its CSRF protection.
+    from app.blueprints.reviews import toggle_wishlist, validate_promo
+    csrf.exempt(toggle_wishlist)
+    csrf.exempt(validate_promo)
     # Notification AJAX endpoints called from the navbar dropdown (fetch() with meta CSRF)
     from app.blueprints.user_dashboard import notifications_recent, notifications_mark_all_read
     csrf.exempt(notifications_recent)
@@ -194,8 +212,9 @@ def create_app():
             db.session.execute(text('SELECT 1'))
             return jsonify({'status': 'healthy', 'db': 'up'}), 200
         except Exception as e:
+            app.logger.error(f'[HEALTH] DB check failed: {e}')
             return jsonify({'status': 'unhealthy', 'db': 'down',
-                            'error': str(e)}), 503
+                            'error': 'Database unavailable'}), 503
 
     @app.route('/metrics')
     def metrics():

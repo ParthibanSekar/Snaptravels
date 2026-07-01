@@ -1,0 +1,118 @@
+{% extends "layouts/base.html" %}
+{% block title %}Your Cart — Travel Shop{% endblock %}
+
+{% block extra_head %}
+<style>
+  body, main { background: #f8fafc; }
+  .cart-img { width:80px;height:80px;border-radius:10px;object-fit:cover;flex-shrink:0;border:1px solid #e5e7eb; }
+  .cart-row { background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 4px rgba(0,0,0,.04); }
+  .cart-name { font-size:.92rem;font-weight:700;color:#111827; }
+  .cart-meta { font-size:.75rem;color:#6b7280;margin-top:2px; }
+  .cart-price { font-size:.95rem;font-weight:800;color:#e63950; }
+  .qty-btn { width:30px;height:30px;border:1.5px solid #e5e7eb;border-radius:6px;background:#fff;color:#374151;font-size:.85rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .2s; }
+  .qty-btn:hover { border-color:#e63950;color:#e63950; }
+  .qty-num { width:36px;text-align:center;background:#f8fafc;border:1.5px solid #e5e7eb;border-radius:6px;color:#111827;font-size:.85rem;padding:4px 0; }
+  .remove-btn { background:transparent;border:none;color:#9ca3af;cursor:pointer;font-size:.8rem;transition:color .2s; }
+  .remove-btn:hover { color:#dc2626; }
+  .summary-box { background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .s-row { display:flex;justify-content:space-between;font-size:.87rem;color:#6b7280;margin-bottom:10px; }
+  .s-row.total { font-size:1.05rem;font-weight:800;color:#111827;border-top:1px solid #e5e7eb;padding-top:14px;margin-top:4px; }
+  .btn-checkout { display:block;width:100%;padding:14px;background:#e63950;border:none;border-radius:12px;color:#fff;font-weight:800;font-size:.95rem;cursor:pointer;text-align:center;text-decoration:none;transition:background .2s;margin-top:16px;box-shadow:0 4px 14px rgba(230,57,80,.2); }
+  .btn-checkout:hover { background:#c0303f;color:#fff; }
+  .empty-cart { text-align:center;padding:80px 20px;color:#6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:900px">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-bag" style="font-size:1.5rem;color:#e63950"></i>
+    <h1 style="font-size:1.4rem;font-weight:900;color:#111827;margin:0">Your Cart</h1>
+    {% if cart %}<span style="font-size:.8rem;color:#6b7280">({{ cart|length }} item{{ 's' if cart|length != 1 }})</span>{% endif %}
+  </div>
+
+  {% if cart %}
+  <div class="row g-4">
+    <!-- Cart items -->
+    <div class="col-lg-8">
+      {% for item in cart %}
+      <div class="cart-row">
+        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="cart-img"
+             onerror="this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=200&q=80'">
+        <div style="flex:1;min-width:0">
+          <div class="cart-name">{{ item.product.name }}</div>
+          <div class="cart-meta">
+            {% if item.size %}Size: <strong style="color:#374151">{{ item.size }}</strong> &nbsp;·&nbsp; {% endif %}
+            ₹{{ '{:,.0f}'.format(item.product.price) }} each
+          </div>
+        </div>
+        <!-- Qty controls -->
+        <form method="POST" action="{{ url_for('shop.cart_update') }}" class="d-flex align-items-center gap-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="product_id" value="{{ item.product.id }}">
+          <input type="hidden" name="size" value="{{ item.size or '' }}">
+          <button type="submit" class="qty-btn" name="quantity" value="{{ item.quantity - 1 }}"><i class="bi bi-dash"></i></button>
+          <span class="qty-num">{{ item.quantity }}</span>
+          <button type="submit" class="qty-btn" name="quantity" value="{{ item.quantity + 1 }}"><i class="bi bi-plus"></i></button>
+        </form>
+        <!-- Subtotal -->
+        <div style="text-align:right;min-width:70px">
+          <div class="cart-price">₹{{ '{:,.0f}'.format(item.product.price * item.quantity) }}</div>
+        </div>
+        <!-- Remove -->
+        <form method="POST" action="{{ url_for('shop.cart_remove') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="product_id" value="{{ item.product.id }}">
+          <input type="hidden" name="size" value="{{ item.size or '' }}">
+          <button class="remove-btn" type="submit" title="Remove"><i class="bi bi-x-lg"></i></button>
+        </form>
+      </div>
+      {% endfor %}
+
+      <a href="{{ url_for('shop.index') }}" style="font-size:.82rem;color:#6b7280;text-decoration:none">
+        <i class="bi bi-arrow-left me-1"></i>Continue Shopping
+      </a>
+    </div>
+
+    <!-- Summary -->
+    <div class="col-lg-4">
+      <div class="summary-box">
+        <div style="font-size:.88rem;font-weight:700;color:#111827;margin-bottom:16px">Order Summary</div>
+        <div class="s-row"><span>Subtotal</span><span style="color:#374151;font-weight:600">₹{{ '{:,.0f}'.format(subtotal) }}</span></div>
+        <div class="s-row">
+          <span>Shipping</span>
+          <span>
+            {% if shipping == 0 %}
+              <span style="color:#16a34a;font-weight:700;background:#dcfce7;border-radius:4px;padding:1px 7px;font-size:.72rem">FREE</span>
+            {% else %}
+              <span style="color:#374151;font-weight:600">₹{{ shipping }}</span>
+            {% endif %}
+          </span>
+        </div>
+        {% if shipping > 0 %}
+        <div style="font-size:.72rem;color:#6b7280;margin-bottom:10px">
+          Add ₹{{ '{:,.0f}'.format(999 - subtotal) }} more for free shipping
+        </div>
+        {% endif %}
+        <div class="s-row total"><span>Total</span><span style="color:#e63950">₹{{ '{:,.0f}'.format(grand_total) }}</span></div>
+        <a href="{{ url_for('shop.checkout') }}" class="btn-checkout">
+          <i class="bi bi-lock-fill me-2"></i>Proceed to Checkout
+        </a>
+        <div style="text-align:center;margin-top:12px;font-size:.72rem;color:#6b7280">
+          <i class="bi bi-shield-check me-1"></i>Secure checkout · 30-day returns
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="empty-cart">
+    <i class="bi bi-bag-x" style="font-size:3.5rem;display:block;margin-bottom:16px;color:#d1d5db"></i>
+    <div style="font-size:1rem;font-weight:700;color:#374151;margin-bottom:8px">Your cart is empty</div>
+    <a href="{{ url_for('shop.index') }}" style="color:#e63950;text-decoration:none;font-weight:700">
+      <i class="bi bi-bag-heart me-1"></i>Start Shopping
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "layouts/base.html" %}
+{% block title %}Checkout — Travel Shop{% endblock %}
+{% block extra_head %}
+<style>
+  body, main { background: #f8fafc; }
+  .gate-card { background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:32px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);height:100%; }
+  .gate-icon { width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.6rem; }
+  .gate-title { font-size:1.1rem;font-weight:800;color:#111827;margin-bottom:6px; }
+  .gate-sub { font-size:.83rem;color:#6b7280;margin-bottom:22px;line-height:1.6; }
+  .btn-primary-shop { display:block;width:100%;padding:13px;background:#e63950;border:none;border-radius:10px;color:#fff;font-weight:700;font-size:.9rem;cursor:pointer;text-align:center;text-decoration:none;transition:background .2s;margin-bottom:10px;box-shadow:0 4px 14px rgba(230,57,80,.2); }
+  .btn-primary-shop:hover { background:#c0303f;color:#fff; }
+  .btn-outline-shop { display:block;width:100%;padding:12px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;color:#374151;font-weight:700;font-size:.9rem;cursor:pointer;text-align:center;text-decoration:none;transition:all .2s; }
+  .btn-outline-shop:hover { border-color:#e63950;color:#e63950; }
+  .cart-mini { background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:24px;text-align:left;box-shadow:0 1px 4px rgba(0,0,0,.04); }
+  .cart-mini-item { display:flex;justify-content:space-between;font-size:.8rem;color:#6b7280;padding:4px 0; }
+  .cart-mini-total { display:flex;justify-content:space-between;font-size:.87rem;font-weight:700;color:#111827;border-top:1px solid #e5e7eb;margin-top:8px;padding-top:8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:640px">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-lock-fill" style="font-size:1.3rem;color:#e63950"></i>
+    <h1 style="font-size:1.35rem;font-weight:900;color:#111827;margin:0">Checkout</h1>
+  </div>
+
+  <!-- Cart mini summary -->
+  <div class="cart-mini">
+    <div style="font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">
+      Your Cart ({{ cart|length }} item{{ 's' if cart|length != 1 }})
+    </div>
+    {% for item in cart[:3] %}
+    <div class="cart-mini-item">
+      <span>{{ item.product.name }}{% if item.size %} · {{ item.size }}{% endif %} × {{ item.quantity }}</span>
+      <span style="font-weight:600;color:#374151">₹{{ '{:,.0f}'.format(item.product.price * item.quantity) }}</span>
+    </div>
+    {% endfor %}
+    {% if cart|length > 3 %}
+    <div style="font-size:.72rem;color:#9ca3af;padding-top:2px">+ {{ cart|length - 3 }} more item{{ 's' if cart|length - 3 != 1 }}</div>
+    {% endif %}
+    <div class="cart-mini-total">
+      <span>Total</span>
+      <span style="color:#e63950">₹{{ '{:,.0f}'.format(cart | sum(attribute=None) if false else (cart | map(attribute='product') | list | sum(attribute='price') | float * 0 + cart | map(attribute='quantity') | list | sum) * 0 + cart | map(attribute='product') | list | map(attribute='price') | list | sum) }}</span>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Sign in -->
+    <div class="col-md-6">
+      <div class="gate-card">
+        <div class="gate-icon" style="background:#fff5f6;border:1.5px solid #fecdd3">
+          <i class="bi bi-person-fill" style="color:#e63950"></i>
+        </div>
+        <div class="gate-title">Sign In</div>
+        <div class="gate-sub">Sign in to your SnapTravels account for faster checkout, order tracking and exclusive offers.</div>
+        <a href="{{ url_for('auth.login') }}?next={{ url_for('shop.checkout') }}" class="btn-primary-shop">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+        </a>
+        <a href="{{ url_for('auth.signup') }}?next={{ url_for('shop.checkout') }}" class="btn-outline-shop">
+          <i class="bi bi-person-plus me-1"></i>Create Account
+        </a>
+      </div>
+    </div>
+
+    <!-- Guest -->
+    <div class="col-md-6">
+      <div class="gate-card">
+        <div class="gate-icon" style="background:#ede9fe;border:1.5px solid #c4b5fd">
+          <i class="bi bi-person-walking" style="color:#7c3aed"></i>
+        </div>
+        <div class="gate-title">Continue as Guest</div>
+        <div class="gate-sub">No account needed. Just enter your delivery details and place your order.</div>
+        <form method="POST" action="{{ url_for('shop.checkout_as_guest') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-outline-shop" style="border-color:#c4b5fd;color:#7c3aed">
+            <i class="bi bi-arrow-right me-1"></i>Continue as Guest
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:20px">
+    <a href="{{ url_for('shop.cart') }}" style="font-size:.8rem;color:#6b7280;text-decoration:none">
+      <i class="bi bi-arrow-left me-1"></i>Back to Cart
+    </a>
+  </div>
+</div>
+{% endblock %}

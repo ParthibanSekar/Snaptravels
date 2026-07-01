@@ -727,6 +727,12 @@
           <i class="bi bi-tag-fill"></i>Offers
         </a>
       </li>
+      <li class="st-nav-item">
+        <a class="st-nav-link {% if request.endpoint and request.endpoint.startswith('shop.') %}active{% endif %}"
+           href="{{ url_for('shop.index') }}">
+          <i class="bi bi-bag-heart-fill"></i>Shop
+        </a>
+      </li>
       <!-- More dropdown -->
       <li class="st-nav-item">
         <span class="st-nav-link">
@@ -792,6 +798,7 @@
           <div class="st-user-dropdown">
             <a href="{{ url_for('user.dashboard') }}"><i class="bi bi-grid"></i>Dashboard</a>
             <a href="{{ url_for('public.my_bookings') }}"><i class="bi bi-bag-check"></i>My Bookings</a>
+            <a href="{{ url_for('shop.my_orders') }}"><i class="bi bi-receipt"></i>My Shop Orders</a>
             <a href="{{ url_for('trips.listing') }}"><i class="bi bi-geo-alt"></i>My Trips</a>
             <a href="{{ url_for('user.wishlist') }}"><i class="bi bi-heart"></i>Wishlist</a>
             <a href="{{ url_for('user.travelers') }}"><i class="bi bi-people"></i>Travellers</a>
@@ -819,19 +826,144 @@
   </div>
 </nav>
 
-<!-- Flash Messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <div class="container mt-3">
-            {% for category, message in messages %}
-                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-{% endwith %}
+<!-- ── Toast Notifications ──────────────────────────────────────────── -->
+<div id="snap-toast-container" aria-live="polite" aria-atomic="false"></div>
+
+<style>
+#snap-toast-container {
+  position: fixed;
+  top: 72px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+  width: calc(100vw - 40px);
+  pointer-events: none;
+}
+.snap-toast {
+  pointer-events: all;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #111827;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.3);
+  animation: toastIn .3s cubic-bezier(.175,.885,.32,1.1) both;
+  position: relative;
+  overflow: hidden;
+}
+.snap-toast.toast-out {
+  animation: toastOut .25s ease-in forwards;
+}
+@keyframes toastIn  { from { opacity:0; transform:translateX(120%) scale(.92); } to { opacity:1; transform:translateX(0) scale(1); } }
+@keyframes toastOut { from { opacity:1; transform:translateX(0) scale(1); max-height:120px; margin-bottom:0; } to { opacity:0; transform:translateX(80%) scale(.92); max-height:0; margin-bottom:-10px; } }
+.snap-toast-icon {
+  width: 34px; height: 34px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0; margin-top: 1px;
+}
+.snap-toast-body { flex: 1; min-width: 0; }
+.snap-toast-title { font-size: .8rem; font-weight: 700; margin-bottom: 2px; }
+.snap-toast-msg   { font-size: .8rem; line-height: 1.45; color: #94a3b8; }
+.snap-toast-close {
+  background: none; border: none; cursor: pointer;
+  color: #475569; font-size: .85rem; padding: 2px 4px;
+  flex-shrink: 0; transition: color .15s; line-height: 1;
+}
+.snap-toast-close:hover { color: #e2e8f0; }
+.snap-toast-bar {
+  position: absolute; bottom: 0; left: 0; height: 3px;
+  border-radius: 0 0 12px 12px;
+  animation: toastBar linear forwards;
+}
+@keyframes toastBar { from { width: 100%; } to { width: 0%; } }
+
+/* Type variants */
+.toast-success .snap-toast-icon { background: rgba(16,185,129,.15); color: #10b981; }
+.toast-success .snap-toast-title { color: #34d399; }
+.toast-success .snap-toast-bar   { background: #10b981; }
+.toast-success { border-left: 3px solid #10b981; }
+
+.toast-warning .snap-toast-icon { background: rgba(245,158,11,.15); color: #f59e0b; }
+.toast-warning .snap-toast-title { color: #fbbf24; }
+.toast-warning .snap-toast-bar   { background: #f59e0b; }
+.toast-warning { border-left: 3px solid #f59e0b; }
+
+.toast-danger .snap-toast-icon { background: rgba(239,68,68,.15); color: #ef4444; }
+.toast-danger .snap-toast-title { color: #f87171; }
+.toast-danger .snap-toast-bar   { background: #ef4444; }
+.toast-danger { border-left: 3px solid #ef4444; }
+
+.toast-info .snap-toast-icon { background: rgba(96,165,250,.15); color: #60a5fa; }
+.toast-info .snap-toast-title { color: #93c5fd; }
+.toast-info .snap-toast-bar   { background: #60a5fa; }
+.toast-info { border-left: 3px solid #3b82f6; }
+</style>
+
+<script>
+(function() {
+  var ICONS = {
+    success: 'bi-check-circle-fill',
+    warning: 'bi-exclamation-triangle-fill',
+    danger:  'bi-x-circle-fill',
+    error:   'bi-x-circle-fill',
+    info:    'bi-info-circle-fill',
+  };
+  var TITLES = {
+    success: 'Success',
+    warning: 'Warning',
+    danger:  'Error',
+    error:   'Error',
+    info:    'Info',
+  };
+  var DURATION = 4500;
+
+  function showToast(category, message) {
+    var type = category === 'error' ? 'danger' : category;
+    if (!['success','warning','danger','info'].includes(type)) type = 'info';
+    var icon  = ICONS[type]  || 'bi-bell-fill';
+    var title = TITLES[type] || 'Notice';
+    var id    = 'toast-' + Date.now() + Math.random();
+
+    var el = document.createElement('div');
+    el.className = 'snap-toast toast-' + type;
+    el.setAttribute('role', 'alert');
+    el.innerHTML =
+      '<div class="snap-toast-icon"><i class="bi ' + icon + '"></i></div>' +
+      '<div class="snap-toast-body">' +
+        '<div class="snap-toast-title">' + title + '</div>' +
+        '<div class="snap-toast-msg">' + message + '</div>' +
+      '</div>' +
+      '<button class="snap-toast-close" onclick="snapDismissToast(this.closest(\'.snap-toast\'))">' +
+        '<i class="bi bi-x-lg"></i>' +
+      '</button>' +
+      '<div class="snap-toast-bar" style="animation-duration:' + DURATION + 'ms"></div>';
+
+    document.getElementById('snap-toast-container').appendChild(el);
+
+    setTimeout(function() { snapDismissToast(el); }, DURATION);
+  }
+
+  window.snapDismissToast = function(el) {
+    if (!el || el.classList.contains('toast-out')) return;
+    el.classList.add('toast-out');
+    setTimeout(function() { el && el.remove(); }, 280);
+  };
+
+  // Render server-side flash messages
+  var serverMessages = {{ get_flashed_messages(with_categories=true) | tojson }};
+  document.addEventListener('DOMContentLoaded', function() {
+    serverMessages.forEach(function(m) { showToast(m[0], m[1]); });
+  });
+
+  // Expose globally for JS-triggered toasts
+  window.snapToast = showToast;
+})();
+</script>
 
 <!-- Main Content -->
 <main>
@@ -884,6 +1016,7 @@
                     <li style="margin-bottom:10px"><a href="{{ url_for('buses.search') }}" style="color:#64748b;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#64748b'"><i class="bi bi-bus-front me-2" style="font-size:.75rem"></i>Buses</a></li>
                     <li style="margin-bottom:10px"><a href="{{ url_for('cabs.search') }}" style="color:#64748b;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#64748b'"><i class="bi bi-car-front me-2" style="font-size:.75rem"></i>Cabs</a></li>
                     <li style="margin-bottom:10px"><a href="{{ url_for('packages.listing') }}" style="color:#64748b;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#64748b'"><i class="bi bi-suitcase-lg me-2" style="font-size:.75rem"></i>Packages</a></li>
+                    <li style="margin-bottom:10px"><a href="{{ url_for('shop.index') }}" style="color:#64748b;text-decoration:none;transition:color .2s" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#64748b'"><i class="bi bi-bag-heart me-2" style="font-size:.75rem"></i>Travel Shop</a></li>
                 </ul>
             </div>
 
@@ -1143,5 +1276,11 @@ function stAC(names){
 {% if ab_test_js %}
 {{ ab_test_js | safe }}
 {% endif %}
+{# ── Chaos Engineering: Ad Popup chaos (Section 7) ───────────────── #}
+{% if ad_popup_js %}
+<script>{{ ad_popup_js | safe }}</script>
+{% endif %}
+{# ── Payment form validation (card number, name, expiry, CVV) ────── #}
+<script src="{{ url_for('static', filename='js/snap-payment-validate.js') }}"></script>
 </body>
 </html>

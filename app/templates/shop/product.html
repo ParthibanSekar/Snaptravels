@@ -1,0 +1,181 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ product.name }} — Travel Shop{% endblock %}
+
+{% block extra_head %}
+<style>
+  body, main { background: #f8fafc; }
+  .pd-img { width:100%;border-radius:14px;object-fit:cover;max-height:480px;background:#f3f4f6;box-shadow:0 2px 12px rgba(0,0,0,.08); }
+  .size-btn { padding:8px 16px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;color:#374151;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s; }
+  .size-btn:hover,.size-btn.selected { border-color:#e63950;background:#e63950;color:#fff; }
+  .qty-btn { width:36px;height:36px;border:1.5px solid #e5e7eb;border-radius:8px;background:#fff;color:#374151;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s; }
+  .qty-btn:hover { border-color:#e63950;color:#e63950; }
+  .qty-input { width:50px;text-align:center;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;color:#111827;font-size:.9rem;padding:6px 0; }
+  .btn-cart { padding:14px 32px;background:#e63950;border:none;border-radius:10px;color:#fff;font-weight:800;font-size:.95rem;cursor:pointer;transition:background .2s;width:100%;box-shadow:0 4px 14px rgba(230,57,80,.25); }
+  .btn-cart:hover { background:#c0303f; }
+  .rating-stars { color:#f59e0b;font-size:.95rem; }
+  .info-row { display:flex;gap:24px;flex-wrap:wrap;margin:18px 0; }
+  .info-chip { display:flex;align-items:center;gap:8px;font-size:.8rem;color:#6b7280; }
+  .info-chip i { color:#e63950; }
+  .related-card { background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;text-decoration:none;transition:transform .2s,box-shadow .2s;display:block;box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .related-card:hover { transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.12); }
+  .related-img { width:100%;height:150px;object-fit:cover; }
+  .alert-size { display:none;font-size:.78rem;color:#dc2626;margin-top:6px; }
+  .product-detail-card { background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,.06); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- Breadcrumb -->
+  <nav style="font-size:.78rem;color:#6b7280;margin-bottom:20px">
+    <a href="{{ url_for('shop.index') }}" style="color:#6b7280;text-decoration:none">Shop</a>
+    <span class="mx-2">/</span>
+    <a href="{{ url_for('shop.index', category=product.category) }}" style="color:#6b7280;text-decoration:none">{{ product.subcategory or product.category }}</a>
+    <span class="mx-2">/</span>
+    <span style="color:#374151;font-weight:600">{{ product.name }}</span>
+  </nav>
+
+  <!-- Flash -->
+
+  <div class="row g-4 g-lg-5">
+    <!-- Image -->
+    <div class="col-lg-6">
+      <img src="{{ product.image_url }}" alt="{{ product.name }}" class="pd-img"
+           onerror="this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80'">
+
+      {% if product.discount_pct %}
+      <div style="margin-top:10px">
+        <span style="background:#dcfce7;color:#16a34a;border-radius:6px;padding:4px 12px;font-size:.78rem;font-weight:700;display:inline-block">
+          {{ product.discount_pct }}% OFF — Save ₹{{ '{:,.0f}'.format(product.original_price - product.price) }}
+        </span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Details -->
+    <div class="col-lg-6">
+      <div class="product-detail-card">
+        <div style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e63950;margin-bottom:6px">
+          {{ product.subcategory or product.category }}
+        </div>
+        <h1 style="font-size:1.55rem;font-weight:900;color:#111827;margin-bottom:10px">{{ product.name }}</h1>
+
+        <!-- Rating -->
+        <div class="d-flex align-items-center gap-8 mb-3" style="gap:10px">
+          <span class="rating-stars">
+            {% for i in range(product.rating|int) %}<i class="bi bi-star-fill"></i>{% endfor %}
+            {% if product.rating % 1 >= 0.5 %}<i class="bi bi-star-half"></i>{% endif %}
+          </span>
+          <span style="font-size:.8rem;color:#6b7280">{{ product.rating }} ({{ product.review_count }} reviews)</span>
+        </div>
+
+        <!-- Price -->
+        <div class="d-flex align-items-baseline gap-3 mb-3">
+          <span style="font-size:1.7rem;font-weight:900;color:#e63950">₹{{ '{:,.0f}'.format(product.price) }}</span>
+          {% if product.original_price %}
+          <span style="font-size:1rem;color:#9ca3af;text-decoration:line-through">₹{{ '{:,.0f}'.format(product.original_price) }}</span>
+          {% endif %}
+        </div>
+
+        <!-- Info chips -->
+        <div class="info-row">
+          <div class="info-chip"><i class="bi bi-truck"></i> Free delivery above ₹999</div>
+          <div class="info-chip"><i class="bi bi-arrow-counterclockwise"></i> 30-day returns</div>
+          <div class="info-chip"><i class="bi bi-shield-check"></i> Genuine product</div>
+        </div>
+
+        <p style="font-size:.87rem;color:#6b7280;line-height:1.7;margin-bottom:20px">{{ product.description }}</p>
+
+        <!-- Add to cart form -->
+        <form method="POST" action="{{ url_for('shop.cart_add') }}" id="addForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="product_id" value="{{ product.id }}">
+
+          <!-- Size picker -->
+          {% if product.sizes %}
+          <div style="margin-bottom:18px">
+            <div style="font-size:.78rem;font-weight:700;color:#374151;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">
+              Select Size
+            </div>
+            <div class="d-flex flex-wrap gap-2" id="sizeGroup">
+              {% for size in product.sizes %}
+              <button type="button" class="size-btn" data-size="{{ size }}"
+                      onclick="selectSize(this)">{{ size }}</button>
+              {% endfor %}
+            </div>
+            <input type="hidden" name="size" id="sizeInput" value="">
+            <div class="alert-size" id="sizeAlert"><i class="bi bi-exclamation-triangle me-1"></i>Please select a size before adding to cart.</div>
+          </div>
+          {% endif %}
+
+          <!-- Quantity -->
+          <div style="margin-bottom:20px">
+            <div style="font-size:.78rem;font-weight:700;color:#374151;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">Quantity</div>
+            <div class="d-flex align-items-center gap-3">
+              <button type="button" class="qty-btn" onclick="changeQty(-1)"><i class="bi bi-dash"></i></button>
+              <input type="number" name="quantity" id="qtyInput" class="qty-input" value="1" min="1" max="10">
+              <button type="button" class="qty-btn" onclick="changeQty(1)"><i class="bi bi-plus"></i></button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-cart" onclick="return validateForm()">
+            <i class="bi bi-bag-plus me-2"></i>Add to Cart
+          </button>
+          <a href="{{ url_for('shop.cart') }}" style="display:block;text-align:center;margin-top:12px;font-size:.82rem;color:#6b7280;text-decoration:none">
+            <i class="bi bi-bag me-1"></i>View Cart ({{ cart_count }} item{{ 's' if cart_count != 1 }})
+          </a>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Related products -->
+  {% if related %}
+  <hr style="border-color:#e5e7eb;margin:40px 0 28px">
+  <h3 style="font-size:1.1rem;font-weight:800;color:#111827;margin-bottom:20px">You might also like</h3>
+  <div class="row g-3">
+    {% for r in related %}
+    <div class="col-6 col-md-3">
+      <a href="{{ url_for('shop.product', product_id=r.id) }}" class="related-card">
+        <img src="{{ r.image_url }}" alt="{{ r.name }}" class="related-img"
+             onerror="this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&q=80'">
+        <div style="padding:10px 12px">
+          <div style="font-size:.82rem;font-weight:700;color:#111827;margin-bottom:2px">{{ r.name }}</div>
+          <div style="font-size:.8rem;color:#e63950;font-weight:700">₹{{ '{:,.0f}'.format(r.price) }}</div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function selectSize(btn) {
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('sizeInput').value = btn.dataset.size;
+  document.getElementById('sizeAlert').style.display = 'none';
+}
+
+function changeQty(delta) {
+  const inp = document.getElementById('qtyInput');
+  let val = parseInt(inp.value) + delta;
+  inp.value = Math.max(1, Math.min(10, val));
+}
+
+function validateForm() {
+  {% if product.category in ['clothing','footwear'] %}
+  const size = document.getElementById('sizeInput').value;
+  if (!size) {
+    document.getElementById('sizeAlert').style.display = 'block';
+    document.getElementById('sizeGroup').scrollIntoView({behavior:'smooth', block:'center'});
+    return false;
+  }
+  {% endif %}
+  return true;
+}
+</script>
+{% endblock %}

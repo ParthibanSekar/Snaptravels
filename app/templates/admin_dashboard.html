@@ -286,6 +286,9 @@ body { background: #0f1117; }
         <a href="{{ url_for('admin_ext.refunds') }}" class="admin-nav-link">
           <i class="bi bi-arrow-counterclockwise me-1"></i>Refunds
         </a>
+        <a href="{{ url_for('admin_ext.shop_admin') }}" class="admin-nav-link">
+          <i class="bi bi-bag-heart-fill me-1"></i>Shop
+        </a>
       </div>
 
       <!-- Chaos + actions -->
@@ -381,7 +384,8 @@ body { background: #0f1117; }
       (url_for('admin_ext.users'),     'bi-person-badge-fill',   '#f59e0b','rgba(245,158,11,.15)', 'Manage Users',    'User accounts & permissions'),
       (url_for('admin_ext.revenue'),   'bi-graph-up-arrow',      '#e63950','rgba(230,57,80,.15)',  'Revenue Report',  'Analytics & earnings'),
       (url_for('admin_ext.refunds'),   'bi-arrow-counterclockwise','#8b5cf6','rgba(139,92,246,.15)','Refunds',       'Process refund requests'),
-      (url_for('admin_ext.activities'),'bi-lightning-charge-fill','#ec4899','rgba(236,72,153,.15)','Activities',    'Manage activity listings')
+      (url_for('admin_ext.activities'),'bi-lightning-charge-fill','#ec4899','rgba(236,72,153,.15)','Activities',    'Manage activity listings'),
+      (url_for('admin_ext.shop_admin'), 'bi-bag-heart-fill',      '#f97316','rgba(249,115,22,.15)', 'Shop',           'Inventory, orders & returns')
     ] %}
     {% for url, icon, color, bg, label, sub in actions %}
     <div class="col-6 col-md-3">

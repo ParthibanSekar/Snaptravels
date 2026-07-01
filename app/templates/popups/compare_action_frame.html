@@ -48,6 +48,7 @@ body {
 var selectedFlight = '';
 
 window.addEventListener('message', function(e) {
+  if (e.origin !== window.location.origin) return;
   if (e.data && e.data.type === 'flight_hover') {
     document.getElementById('hoverText').textContent = 'Previewing: ' + e.data.flight;
   }

@@ -1,0 +1,213 @@
+{% extends "layouts/base.html" %}
+{% block title %}Shop Admin — SnapTravels{% endblock %}
+{% block extra_head %}
+<style>
+  body, main { background: #0b1120 !important; color: #e2e8f0; }
+  .sa-stat { background:#111827;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:16px 20px; }
+  .sa-stat-val { font-size:1.6rem;font-weight:800;color:#fff; }
+  .sa-stat-lbl { font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin-top:2px; }
+  .sa-card { background:#111827;border:1px solid rgba(255,255,255,.07);border-radius:12px;margin-bottom:20px;overflow:hidden; }
+  .sa-card-head { display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid rgba(255,255,255,.06); }
+  .sa-card-title { font-size:.88rem;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px; }
+  .sa-table { width:100%;border-collapse:collapse;font-size:.8rem; }
+  .sa-table th { padding:9px 14px;text-align:left;font-size:.67rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#64748b;border-bottom:1px solid rgba(255,255,255,.06); }
+  .sa-table td { padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle; }
+  .sa-table tr:last-child td { border-bottom:none; }
+  .sa-table tr:hover td { background:#0d1526; }
+  .prod-img-sm { width:38px;height:38px;border-radius:6px;object-fit:cover; }
+  .stock-badge-in  { background:#0d2e1e;color:#10b981;border:1px solid #1a4a30;border-radius:4px;padding:2px 8px;font-size:.67rem;font-weight:700; }
+  .stock-badge-out { background:#2c1010;color:#ef4444;border:1px solid #4a1a1a;border-radius:4px;padding:2px 8px;font-size:.67rem;font-weight:700; }
+  .status-confirmed { background:#0d2e1e;color:#10b981;border:1px solid #1a4a30;border-radius:4px;padding:2px 8px;font-size:.67rem;font-weight:700; }
+  .status-cancelled { background:#2c1010;color:#ef4444;border:1px solid #4a1a1a;border-radius:4px;padding:2px 8px;font-size:.67rem;font-weight:700; }
+  .status-return    { background:#2a1f40;color:#a78bfa;border:1px solid #3d2d60;border-radius:4px;padding:2px 8px;font-size:.67rem;font-weight:700; }
+  .status-returned  { background:#1e1e35;color:#818cf8;border:1px solid #2d2d50;border-radius:4px;padding:2px 8px;font-size:.67rem;font-weight:700; }
+  .qty-form { display:inline-flex;align-items:center;gap:5px; }
+  .qty-inp { width:60px;background:#0d1526;border:1px solid rgba(255,255,255,.1);border-radius:5px;color:#e2e8f0;padding:4px 7px;font-size:.75rem;outline:none; }
+  .btn-xs { padding:4px 10px;border-radius:5px;font-size:.73rem;font-weight:700;border:none;cursor:pointer;transition:all .15s; }
+  .btn-xs-green { background:#059669;color:#fff; }
+  .btn-xs-green:hover { background:#047857; }
+  .btn-xs-red { background:#dc2626;color:#fff; }
+  .btn-xs-red:hover { background:#b91c1c; }
+  .btn-xs-gray { background:#1e293b;border:1px solid rgba(255,255,255,.1);color:#94a3b8; }
+  .btn-xs-gray:hover { background:#334155;color:#fff; }
+  .status-select { background:#0d1526;border:1px solid rgba(255,255,255,.1);border-radius:5px;color:#e2e8f0;padding:4px 8px;font-size:.73rem;outline:none; }
+  .tab-btn { padding:7px 16px;border-radius:7px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#64748b;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s; }
+  .tab-btn.active { background:#e63950;border-color:#e63950;color:#fff; }
+  .return-alert { background:#2a1f40;border:1px solid #3d2d60;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.8rem;color:#a78bfa;display:flex;align-items:center;gap:8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" style="max-width:1300px">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <i class="bi bi-bag-heart-fill" style="font-size:1.5rem;color:#e63950"></i>
+    <h1 style="font-size:1.4rem;font-weight:900;color:#fff;margin:0">Shop Admin</h1>
+    <a href="{{ url_for('shop.index') }}" target="_blank" style="font-size:.75rem;color:#64748b;text-decoration:none;margin-left:auto">
+      <i class="bi bi-box-arrow-up-right me-1"></i>View Shop
+    </a>
+  </div>
+
+
+  <!-- Stats -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3 col-lg"><div class="sa-stat"><div class="sa-stat-val">{{ stats.total_products }}</div><div class="sa-stat-lbl">Products</div></div></div>
+    <div class="col-6 col-md-3 col-lg"><div class="sa-stat"><div class="sa-stat-val" style="color:#10b981">{{ stats.in_stock }}</div><div class="sa-stat-lbl">In Stock</div></div></div>
+    <div class="col-6 col-md-3 col-lg"><div class="sa-stat"><div class="sa-stat-val" style="color:#ef4444">{{ stats.out_of_stock }}</div><div class="sa-stat-lbl">Out of Stock</div></div></div>
+    <div class="col-6 col-md-3 col-lg"><div class="sa-stat"><div class="sa-stat-val">{{ stats.total_orders }}</div><div class="sa-stat-lbl">Total Orders</div></div></div>
+    <div class="col-6 col-md-3 col-lg"><div class="sa-stat"><div class="sa-stat-val" style="color:#a78bfa">{{ stats.returns }}</div><div class="sa-stat-lbl">Return Requests</div></div></div>
+    <div class="col-6 col-md-3 col-lg"><div class="sa-stat"><div class="sa-stat-val" style="color:#34d399">₹{{ '{:,.0f}'.format(stats.revenue) }}</div><div class="sa-stat-lbl">Revenue</div></div></div>
+  </div>
+
+  <!-- Return alerts -->
+  {% if return_requests %}
+  <div class="return-alert">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <strong>{{ return_requests|length }} pending return request{{ 's' if return_requests|length != 1 }}</strong> — scroll to Orders section to action them.
+  </div>
+  {% endif %}
+
+  <!-- Tabs -->
+  <div class="d-flex gap-2 mb-3">
+    <button class="tab-btn active" onclick="showTab('inventory',this)"><i class="bi bi-boxes me-1"></i>Inventory</button>
+    <button class="tab-btn" onclick="showTab('orders',this)"><i class="bi bi-receipt me-1"></i>Orders</button>
+  </div>
+
+  <!-- ── Inventory Tab ─────────────────────────────────────────────────── -->
+  <div id="tab-inventory">
+    <div class="sa-card">
+      <div class="sa-card-head">
+        <div class="sa-card-title"><i class="bi bi-boxes" style="color:#60a5fa"></i>Product Inventory</div>
+        <span style="font-size:.75rem;color:#64748b">{{ products|length }} products</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="sa-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock Qty</th>
+              <th>Status</th>
+              <th>Rating</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in products %}
+            <tr>
+              <td><img src="{{ p.image_url }}" class="prod-img-sm"
+                   onerror="this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=100&q=60'"></td>
+              <td>
+                <div style="font-weight:600;color:#e2e8f0">{{ p.name }}</div>
+                <div style="font-size:.7rem;color:#64748b">{{ p.subcategory }}</div>
+              </td>
+              <td style="color:#94a3b8;text-transform:capitalize">{{ p.category }}</td>
+              <td>
+                <div style="font-weight:700;color:#fff">₹{{ '{:,.0f}'.format(p.price) }}</div>
+                {% if p.original_price %}<div style="font-size:.7rem;color:#475569;text-decoration:line-through">₹{{ '{:,.0f}'.format(p.original_price) }}</div>{% endif %}
+              </td>
+              <td>
+                <form method="POST" action="{{ url_for('admin_ext.shop_update_stock', product_id=p.id) }}" class="qty-form">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="number" name="stock_qty" value="{{ p.stock_qty }}" min="0" class="qty-inp">
+                  <button type="submit" class="btn-xs btn-xs-green">Save</button>
+                </form>
+              </td>
+              <td>
+                {% if p.in_stock %}<span class="stock-badge-in">In Stock</span>
+                {% else %}<span class="stock-badge-out">Out of Stock</span>{% endif %}
+              </td>
+              <td style="color:#f59e0b">{{ p.rating }} ⭐ <span style="color:#64748b">({{ p.review_count }})</span></td>
+              <td>
+                <form method="POST" action="{{ url_for('admin_ext.shop_toggle_stock', product_id=p.id) }}" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn-xs {% if p.in_stock %}btn-xs-red{% else %}btn-xs-green{% endif %}">
+                    {% if p.in_stock %}Mark Out{% else %}Mark In{% endif %}
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Orders Tab ────────────────────────────────────────────────────── -->
+  <div id="tab-orders" style="display:none">
+    <div class="sa-card">
+      <div class="sa-card-head">
+        <div class="sa-card-title"><i class="bi bi-receipt" style="color:#60a5fa"></i>All Shop Orders</div>
+        <span style="font-size:.75rem;color:#64748b">{{ orders|length }} orders</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="sa-table">
+          <thead>
+            <tr>
+              <th>Order Code</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Update Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in orders %}
+            <tr {% if o.status == 'RETURN_REQUESTED' %}style="background:rgba(167,139,250,.05)"{% endif %}>
+              <td><span style="font-family:monospace;font-size:.78rem;color:#93c5fd">{{ o.order_code }}</span></td>
+              <td>
+                <div style="font-size:.8rem;color:#e2e8f0">{{ o.customer_name }}</div>
+                <div style="font-size:.7rem;color:#64748b">{{ o.customer_email }}</div>
+              </td>
+              <td style="color:#94a3b8;font-size:.78rem">
+                {% for item in o.items[:2] %}{{ item.product_name[:20] }}{% if item.size %} ({{ item.size }}){% endif %} ×{{ item.quantity }}{% if not loop.last %}, {% endif %}{% endfor %}
+                {% if o.items|length > 2 %}<span style="color:#475569"> +{{ o.items|length - 2 }} more</span>{% endif %}
+              </td>
+              <td style="font-weight:700;color:#fff">₹{{ '{:,.0f}'.format(o.total_amount) }}</td>
+              <td style="color:#94a3b8;text-transform:capitalize;font-size:.78rem">{{ o.payment_method }}</td>
+              <td>
+                {% if o.status == 'CONFIRMED' %}<span class="status-confirmed">Confirmed</span>
+                {% elif o.status == 'CANCELLED' %}<span class="status-cancelled">Cancelled</span>
+                {% elif o.status == 'RETURN_REQUESTED' %}<span class="status-return">⚠ Return Req.</span>
+                {% elif o.status == 'RETURNED' %}<span class="status-returned">Returned</span>
+                {% endif %}
+                {% if o.return_reason %}<div style="font-size:.68rem;color:#a78bfa;margin-top:3px">{{ o.return_reason[:40] }}</div>{% endif %}
+                {% if o.cancel_reason %}<div style="font-size:.68rem;color:#ef4444;margin-top:3px">{{ o.cancel_reason[:40] }}</div>{% endif %}
+              </td>
+              <td style="color:#64748b;font-size:.75rem;white-space:nowrap">{{ o.created_at.strftime('%d %b %Y') }}</td>
+              <td>
+                <form method="POST" action="{{ url_for('admin_ext.shop_update_order_status', order_id=o.id) }}" style="display:inline-flex;gap:5px;align-items:center">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <select name="status" class="status-select">
+                    <option value="CONFIRMED"        {% if o.status=='CONFIRMED'        %}selected{% endif %}>Confirmed</option>
+                    <option value="CANCELLED"        {% if o.status=='CANCELLED'        %}selected{% endif %}>Cancelled</option>
+                    <option value="RETURN_REQUESTED" {% if o.status=='RETURN_REQUESTED' %}selected{% endif %}>Return Req.</option>
+                    <option value="RETURNED"         {% if o.status=='RETURNED'         %}selected{% endif %}>Returned</option>
+                  </select>
+                  <button type="submit" class="btn-xs btn-xs-green">Save</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-inventory').style.display = name === 'inventory' ? '' : 'none';
+  document.getElementById('tab-orders').style.display    = name === 'orders'    ? '' : 'none';
+}
+</script>
+{% endblock %}

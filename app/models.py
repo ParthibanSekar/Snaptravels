@@ -312,6 +312,19 @@ class FailureMode(db.Model):
     # Maintenance: % chance any corporate route returns 503 maintenance page
     corp_maintenance_rate   = db.Column(db.Float,   default=0.0,  nullable=False)
 
+    # ── Section 7: Ad Popup Chaos ────────────────────────────────────────
+    # A full-screen promo popup that blocks ALL interaction until dismissed.
+    # Breaks synthetic monitors and Selenium tests that don't handle it.
+    ad_popup_chaos          = db.Column(db.Boolean, default=False, nullable=False)
+    # Probability (0-1) of popup firing on any matching page load
+    ad_popup_rate           = db.Column(db.Float,   default=0.3,   nullable=False)
+    # Milliseconds before the popup appears after page load
+    ad_popup_delay_ms       = db.Column(db.Integer, default=1500,  nullable=False)
+    # Milliseconds before the close (×) button becomes visible (0 = instant)
+    ad_popup_close_delay_ms = db.Column(db.Integer, default=0,     nullable=False)
+    # JSON list of page slugs to target, e.g. '["all"]' or '["login","booking","shop"]'
+    ad_popup_target_pages   = db.Column(db.Text, default='["all"]', nullable=False)
+
     # Audit
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_by = db.Column(db.String(120), nullable=True)
@@ -989,3 +1002,135 @@ class AdminAuditLog(db.Model):
     def detail(self, value):
         import json
         self.detail_json = json.dumps(value, default=str) if value else None
+
+
+# ======================================================================
+# Shop — Products, Cart, Orders
+# ======================================================================
+
+class Product(db.Model):
+    """Travel shop product catalogue."""
+    __tablename__ = 'product'
+    id             = db.Column(db.Integer, primary_key=True)
+    name           = db.Column(db.String(200), nullable=False)
+    category       = db.Column(db.String(50),  nullable=False, index=True)
+    # clothing | bags | accessories | footwear
+    subcategory    = db.Column(db.String(100), nullable=True)
+    description    = db.Column(db.Text, nullable=True)
+    price          = db.Column(db.Float, nullable=False)
+    original_price = db.Column(db.Float, nullable=True)   # for sale badge
+    image_url      = db.Column(db.String(500), nullable=True)
+    badge          = db.Column(db.String(30),  nullable=True)   # New | Sale | Bestseller
+    sizes_json     = db.Column(db.Text, default='[]')            # JSON list of sizes
+    in_stock       = db.Column(db.Boolean, default=True,  nullable=False)
+    stock_qty      = db.Column(db.Integer, default=100,   nullable=False)
+    rating         = db.Column(db.Float,   default=4.2,   nullable=False)
+    review_count   = db.Column(db.Integer, default=0,     nullable=False)
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+
+    cart_items  = db.relationship('CartItem',      backref='product', lazy=True)
+    order_items = db.relationship('ShopOrderItem', backref='product', lazy=True)
+
+    @property
+    def sizes(self):
+        try:
+            return json.loads(self.sizes_json or '[]')
+        except Exception:
+            return []
+
+    @sizes.setter
+    def sizes(self, lst):
+        self.sizes_json = json.dumps(lst)
+
+    @property
+    def discount_pct(self):
+        if self.original_price and self.original_price > self.price:
+            return int((1 - self.price / self.original_price) * 100)
+        return 0
+
+    def to_dict(self):
+        return {
+            'id':             self.id,
+            'name':           self.name,
+            'category':       self.category,
+            'subcategory':    self.subcategory,
+            'description':    self.description,
+            'price':          self.price,
+            'original_price': self.original_price,
+            'image_url':      self.image_url,
+            'badge':          self.badge,
+            'sizes':          self.sizes,
+            'in_stock':       self.in_stock,
+            'rating':         self.rating,
+            'review_count':   self.review_count,
+            'discount_pct':   self.discount_pct,
+        }
+
+
+class CartItem(db.Model):
+    """Per-session or per-user cart item."""
+    __tablename__ = 'cart_item'
+    id         = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.String(100), nullable=True,  index=True)  # web guest
+    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)  # logged-in / mobile
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    size       = db.Column(db.String(10), nullable=True)
+    quantity   = db.Column(db.Integer, default=1, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class ShopOrder(db.Model):
+    """Completed shop order (created at checkout)."""
+    __tablename__ = 'shop_order'
+    id               = db.Column(db.Integer, primary_key=True)
+    order_code       = db.Column(db.String(20), unique=True, nullable=False)
+    user_id          = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    customer_name    = db.Column(db.String(100), nullable=False)
+    customer_email   = db.Column(db.String(120), nullable=False)
+    customer_phone   = db.Column(db.String(20),  nullable=True)
+    shipping_address = db.Column(db.Text, nullable=False)
+    total_amount     = db.Column(db.Float, nullable=False)
+    payment_method   = db.Column(db.String(20), default='card')
+    status           = db.Column(db.String(20), default='CONFIRMED')
+    # CONFIRMED | CANCELLED | RETURN_REQUESTED | RETURNED
+    cancel_reason    = db.Column(db.String(200), nullable=True)
+    return_reason    = db.Column(db.String(200), nullable=True)
+    actioned_at      = db.Column(db.DateTime, nullable=True)   # when cancelled/returned
+    created_at       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    items = db.relationship('ShopOrderItem', backref='order', lazy=True,
+                            cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id':               self.id,
+            'order_code':       self.order_code,
+            'customer_name':    self.customer_name,
+            'customer_email':   self.customer_email,
+            'total_amount':     self.total_amount,
+            'payment_method':   self.payment_method,
+            'status':           self.status,
+            'created_at':       self.created_at.isoformat(),
+            'items':            [i.to_dict() for i in self.items],
+        }
+
+
+class ShopOrderItem(db.Model):
+    __tablename__ = 'shop_order_item'
+    id           = db.Column(db.Integer, primary_key=True)
+    order_id     = db.Column(db.Integer, db.ForeignKey('shop_order.id'), nullable=False)
+    product_id   = db.Column(db.Integer, db.ForeignKey('product.id'),    nullable=False)
+    product_name = db.Column(db.String(200), nullable=False)
+    size         = db.Column(db.String(10),  nullable=True)
+    quantity     = db.Column(db.Integer, nullable=False)
+    unit_price   = db.Column(db.Float,   nullable=False)
+
+    def to_dict(self):
+        return {
+            'product_id':   self.product_id,
+            'product_name': self.product_name,
+            'size':         self.size,
+            'quantity':     self.quantity,
+            'unit_price':   self.unit_price,
+            'subtotal':     round(self.unit_price * self.quantity, 2),
+        }

@@ -1332,6 +1332,488 @@ def start_outage(label: str, duration_minutes: int, **overrides):
     return state
 
 
+# ── Section 7: Ad Popup Chaos ─────────────────────────────────────────────
+
+# Pages that can be targeted — maps slug → list of URL substrings to match
+AD_POPUP_PAGE_MAP = {
+    'home':             ['/'],
+    'login':            ['/login', '/auth/login'],
+    'signup':           ['/signup', '/register'],
+    'flights':          ['/flights', '/flight'],
+    'hotels':           ['/hotels', '/hotel'],
+    'trains':           ['/trains', '/train'],
+    'buses':            ['/buses', '/bus'],
+    'cabs':             ['/cabs', '/cab'],
+    'packages':         ['/packages'],
+    'activities':       ['/activities'],
+    'insurance':        ['/insurance'],
+    'booking':          ['/booking', '/book'],
+    'payment':          ['/payment', '/checkout', '/confirm'],
+    'my-bookings':      ['/my-bookings', '/my_bookings'],
+    'shop':             ['/shop'],
+    'cart':             ['/shop/cart'],
+    'shop-checkout':    ['/shop/checkout'],
+    'shop-orders':      ['/shop/orders'],
+    'shop-confirm':     ['/shop/confirmation'],
+    'corporate':        ['/corporate'],
+    'trip-planner':     ['/trip-planner'],
+    'travel-dashboard': ['/travel-dashboard'],
+    'dashboard':        ['/dashboard'],
+}
+
+AD_POPUP_ALL_SLUGS = list(AD_POPUP_PAGE_MAP.keys())
+
+# ── Transaction Bundles — pre-defined end-to-end flows ────────────────────
+# Each bundle is the complete set of page slugs in a transaction scenario.
+# Used by the admin UI to offer one-click selection.
+AD_POPUP_TRANSACTION_BUNDLES = {
+    'flight': {
+        'label': '✈ Flight Booking',
+        'color': '#0ea5e9',
+        'pages': ['login', 'flights', 'booking', 'payment', 'my-bookings'],
+    },
+    'train': {
+        'label': '🚂 Train Booking',
+        'color': '#8b5cf6',
+        'pages': ['login', 'trains', 'booking', 'payment', 'my-bookings'],
+    },
+    'bus': {
+        'label': '🚌 Bus Booking',
+        'color': '#f59e0b',
+        'pages': ['login', 'buses', 'booking', 'payment', 'my-bookings'],
+    },
+    'cab': {
+        'label': '🚗 Cab Booking',
+        'color': '#10b981',
+        'pages': ['login', 'cabs', 'booking', 'payment', 'my-bookings'],
+    },
+    'hotel': {
+        'label': '🏨 Hotel Booking',
+        'color': '#e63950',
+        'pages': ['login', 'hotels', 'booking', 'payment', 'my-bookings'],
+    },
+    'shop': {
+        'label': '🛍 Shop Transaction',
+        'color': '#f97316',
+        'pages': ['login', 'shop', 'cart', 'shop-checkout', 'shop-orders', 'shop-confirm'],
+    },
+    'corporate': {
+        'label': '💼 Corporate Portal',
+        'color': '#0891b2',
+        'pages': ['corporate'],
+    },
+}
+
+
+def get_ad_popup_js() -> str:
+    """
+    Returns JS that injects a full-screen blocking ad popup on targeted pages.
+    The popup cannot be dismissed by clicking the background — only via the ×
+    button. This breaks Selenium / synthetic monitors that don't handle it.
+
+    Injected HTML has data-chaos-popup="ad-promo" so monitors CAN detect
+    and dismiss it if they handle the chaos explicitly.
+    """
+    import json as _json
+    state = _get_state_raw()
+    if not state or not getattr(state, 'ad_popup_chaos', False):
+        return ''
+
+    rate            = getattr(state, 'ad_popup_rate', 0.3) or 0.3
+    delay_ms        = getattr(state, 'ad_popup_delay_ms', 1500) or 1500
+    close_delay_ms  = getattr(state, 'ad_popup_close_delay_ms', 0) or 0
+    target_raw      = getattr(state, 'ad_popup_target_pages', '["all"]') or '["all"]'
+
+    try:
+        targets = _json.loads(target_raw)
+    except Exception:
+        targets = ['all']
+
+    # Build JS page-match logic
+    if 'all' in targets:
+        page_match_js = 'true'
+    else:
+        patterns = []
+        for slug in targets:
+            urls = AD_POPUP_PAGE_MAP.get(slug, [])
+            for u in urls:
+                patterns.append(f'loc.indexOf({_json.dumps(u)}) !== -1')
+        page_match_js = ' || '.join(patterns) if patterns else 'false'
+
+    return f"""
+/* ── [SnapChaos §7] Ad Popup Chaos ──────────────────────── */
+(function(){{
+  var RATE           = {rate};
+  var DELAY_MS       = {delay_ms};
+  var CLOSE_DELAY_MS = {close_delay_ms};
+  var loc            = window.location.pathname;
+  var pageMatch      = ({page_match_js});
+  if (!pageMatch || Math.random() >= RATE) return;
+
+  // Only overlay CSS lives in the parent page — everything else goes inside the iframe srcdoc
+  var CSS = `
+    #chaos-ad-overlay {{
+      position:fixed;inset:0;z-index:2147483647;
+      background:rgba(0,0,0,.72);backdrop-filter:blur(4px);
+      display:flex;align-items:center;justify-content:center;
+      cursor:not-allowed;
+    }}
+    #chaos-ad-overlay * {{ cursor:auto; }}
+
+    /* Single iframe that contains the entire browser frame */
+    #chaos-ad-popup-iframe {{
+      max-width:520px;width:92%;
+      border:none;border-radius:10px;overflow:hidden;
+      box-shadow:0 32px 80px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.1);
+      animation:chaosPopIn .38s cubic-bezier(.175,.885,.32,1.1) both;
+      min-height:460px;display:block;
+    }}
+    @keyframes chaosPopIn{{from{{opacity:0;transform:scale(.86) translateY(24px)}}to{{opacity:1;transform:scale(1) translateY(0)}}}}
+
+    /* Tab bar (unused in parent — kept for completeness) */
+    #chaos-ad-tabbar {{
+      background:#17202b;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      padding:0 10px;
+      display:flex;align-items:flex-end;gap:4px;
+      flex-shrink:0;
+      user-select:none;
+    }}
+    #chaos-ad-tab {{
+      background:#1e2d3e;border:1px solid rgba(255,255,255,.1);border-bottom:none;
+      border-radius:6px 6px 0 0;
+      padding:7px 14px 7px 10px;
+      display:flex;align-items:center;gap:7px;
+      font-size:.72rem;color:#c8d6e8;font-weight:600;
+      max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }}
+    #chaos-ad-tab i {{ color:#e63950;font-size:.7rem;flex-shrink:0; }}
+    #chaos-ad-tab-x {{
+      background:none;border:none;color:#64748b;cursor:pointer;
+      font-size:.65rem;padding:1px 4px;border-radius:3px;
+      margin-left:4px;flex-shrink:0;line-height:1;
+      transition:all .15s;
+    }}
+    #chaos-ad-tab-x:hover {{ background:rgba(239,68,68,.25);color:#f87171; }}
+
+    /* Nav / address bar */
+    #chaos-ad-titlebar {{
+      background:#1e2530;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      padding:8px 12px;
+      display:flex;align-items:center;gap:8px;
+      flex-shrink:0;
+      user-select:none;
+    }}
+    #chaos-ad-winctrls {{
+      display:flex;gap:7px;align-items:center;flex-shrink:0;
+    }}
+    .chaos-wc {{
+      width:12px;height:12px;border-radius:50%;display:block;cursor:default;
+    }}
+    .chaos-wc-close  {{ background:#ff5f57;border:1px solid #e0443e; }}
+    .chaos-wc-min    {{ background:#ffbd2e;border:1px solid #dea123; }}
+    .chaos-wc-max    {{ background:#28c840;border:1px solid #1aab29; }}
+    #chaos-ad-navbtns {{
+      display:flex;gap:4px;flex-shrink:0;
+    }}
+    .chaos-nav-btn {{
+      background:none;border:none;color:#4b5563;cursor:not-allowed;
+      font-size:.82rem;padding:3px 5px;border-radius:4px;line-height:1;
+    }}
+    #chaos-ad-urlbar {{
+      flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+      border-radius:20px;padding:5px 12px;
+      font-size:.72rem;color:#94a3b8;font-family:monospace;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      display:flex;align-items:center;gap:6px;
+    }}
+    #chaos-ad-urlbar .chaos-lock {{ color:#10b981;font-size:.65rem;flex-shrink:0; }}
+    #chaos-ad-urlbar span {{ overflow:hidden;text-overflow:ellipsis; }}
+    #chaos-ad-tbclose {{
+      background:none;border:none;color:#64748b;cursor:pointer;
+      font-size:.85rem;padding:3px 7px;border-radius:4px;
+      transition:all .15s;flex-shrink:0;
+    }}
+    #chaos-ad-tbclose:hover {{ background:rgba(239,68,68,.2);color:#f87171; }}
+
+    /* Real iframe */
+    #chaos-ad-iframe {{
+      width:100%;border:none;display:block;flex:1;
+      min-height:340px;background:#0f172a;
+    }}
+
+    /* Ad content inside the iframe (applied via srcdoc) */
+    #chaos-ad-box {{
+      background:linear-gradient(160deg,#0f172a 0%,#1e1b4b 100%);
+      width:100%;height:100%;
+      padding:0;overflow:hidden;
+    }}
+    #chaos-ad-banner {{
+      background:linear-gradient(90deg,#7c3aed,#e63950,#f97316);
+      padding:10px 20px;
+      font-size:.72rem;font-weight:800;letter-spacing:.12em;
+      text-transform:uppercase;color:#fff;text-align:center;
+    }}
+    #chaos-ad-body {{ padding:24px 28px 18px; }}
+    #chaos-ad-emoji {{ font-size:2.4rem;text-align:center;display:block;margin-bottom:10px; }}
+    #chaos-ad-title {{
+      font-size:1.25rem;font-weight:900;color:#fff;text-align:center;
+      margin-bottom:8px;line-height:1.3;
+    }}
+    #chaos-ad-desc {{
+      font-size:.83rem;color:#94a3b8;text-align:center;
+      line-height:1.6;margin-bottom:16px;
+    }}
+    #chaos-ad-code {{
+      display:block;background:#0d1117;border:1.5px dashed rgba(139,92,246,.6);
+      border-radius:8px;padding:9px 16px;
+      font-family:'SF Mono','Fira Code',monospace;font-size:1.05rem;
+      font-weight:800;color:#a78bfa;text-align:center;
+      letter-spacing:.15em;margin-bottom:16px;
+    }}
+    #chaos-ad-cta {{
+      display:block;width:100%;padding:12px;
+      background:linear-gradient(90deg,#7c3aed,#e63950);
+      border:none;border-radius:10px;color:#fff;
+      font-size:.88rem;font-weight:800;cursor:pointer;
+      text-align:center;margin-bottom:8px;transition:opacity .15s;
+    }}
+    #chaos-ad-cta:hover {{ opacity:.9; }}
+    #chaos-ad-skip {{
+      display:block;text-align:center;font-size:.73rem;
+      color:#475569;cursor:pointer;padding:4px;
+      background:none;border:none;width:100%;transition:color .15s;
+    }}
+    #chaos-ad-skip:hover {{ color:#94a3b8; }}
+
+    /* Status bar at bottom */
+    #chaos-ad-statusbar {{
+      background:#1e2530;border-top:1px solid rgba(255,255,255,.06);
+      padding:5px 14px;display:flex;align-items:center;gap:6px;
+      font-size:.65rem;color:#374151;flex-shrink:0;
+    }}
+
+    /* Close/timer — sits in title bar now */
+    #chaos-ad-close {{
+      background:none;border:none;color:#64748b;cursor:pointer;
+      font-size:.9rem;padding:2px 6px;border-radius:4px;
+      transition:all .15s;
+    }}
+    #chaos-ad-close:hover {{ background:rgba(239,68,68,.2);color:#f87171; }}
+    #chaos-ad-timer {{
+      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+      border-radius:10px;padding:2px 9px;font-size:.68rem;font-weight:700;color:#94a3b8;
+    }}
+  `;
+
+  var OFFERS = [
+    {{
+      emoji: '🎉', title: 'Flash Sale — 30% OFF!',
+      desc: 'Book any flight or hotel today and save big. Limited time offer — grab it before it\\'s gone!',
+      code: 'SNAP30', cta: 'Claim Offer →'
+    }},
+    {{
+      emoji: '✈️', title: 'Fly More, Pay Less',
+      desc: 'Exclusive deals on domestic flights. Use the code below at checkout for an instant discount.',
+      code: 'FLYSNAP20', cta: 'Book Now →'
+    }},
+    {{
+      emoji: '🏨', title: 'Hotel Deals Up to 40% Off',
+      desc: 'Stay more, spend less. Apply code at checkout for premium hotels across India.',
+      code: 'HOTEL40', cta: 'Find Hotels →'
+    }},
+    {{
+      emoji: '🎁', title: 'Holiday Package Deal',
+      desc: 'All-inclusive holiday packages starting ₹12,999. Book now and lock in today\\'s price.',
+      code: 'HOLIDAY15', cta: 'View Packages →'
+    }},
+  ];
+  var offer = OFFERS[Math.floor(Math.random() * OFFERS.length)];
+
+  function dismiss() {{
+    var overlay = document.getElementById('chaos-ad-overlay');
+    if (overlay) {{
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity .25s';
+      setTimeout(function(){{
+        overlay.remove();
+        document.body.style.overflow = '';
+        document.body.style.pointerEvents = '';
+      }}, 260);
+    }}
+  }}
+
+  // Listen for dismiss message from the iframe — only accept same-origin messages
+  window.addEventListener('message', function(e) {{
+    if (e.origin !== window.location.origin) return;
+    if (e.data === 'chaos-ad-dismiss') {{ dismiss(); }}
+  }});
+
+  function buildPopup() {{
+    var styleEl = document.createElement('style');
+    styleEl.textContent = CSS;
+    document.head.appendChild(styleEl);
+
+    var overlay = document.createElement('div');
+    overlay.id = 'chaos-ad-overlay';
+    overlay.setAttribute('data-chaos-popup', 'ad-promo');
+    overlay.setAttribute('data-chaos-section', '7');
+
+    // Block background clicks
+    overlay.addEventListener('click', function(e) {{ e.stopPropagation(); }});
+    overlay.addEventListener('mousedown', function(e) {{ e.stopPropagation(); }});
+    overlay.addEventListener('touchstart', function(e) {{ e.stopPropagation(); }}, {{passive:false}});
+    // Block keyboard shortcut (Escape)
+    document.addEventListener('keydown', function blockKey(e) {{
+      if (e.key === 'Escape') {{
+        e.preventDefault(); e.stopPropagation();
+        // Only remove listener once popup is gone
+        if (!document.getElementById('chaos-ad-overlay')) document.removeEventListener('keydown', blockKey);
+      }}
+    }}, true);
+
+    var adUrls = ['ads.snaptravels.online','promo.snaptravels.online','offers.snaptravels.online'];
+    var adUrl  = adUrls[Math.floor(Math.random() * adUrls.length)];
+    var closeDelaySec = Math.ceil(CLOSE_DELAY_MS / 1000);
+
+    // The ENTIRE browser frame lives inside the iframe srcdoc
+    var iframeSrcdoc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SnapTravels — Special Offer</title>
+<style>
+  *{{margin:0;padding:0;box-sizing:border-box}}
+  html,body{{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif}}
+  body{{background:linear-gradient(160deg,#0f172a 0%,#1e1b4b 100%);display:flex;flex-direction:column;position:relative}}
+
+  /* Close button — top-right corner, always on top */
+  #close-btn{{
+    position:absolute;top:12px;right:14px;z-index:10;
+    width:32px;height:32px;border-radius:50%;
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+    color:#94a3b8;font-size:1rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;
+  }}
+  #close-btn:hover{{background:rgba(239,68,68,.3);color:#f87171;border-color:#ef4444}}
+  #timer-btn{{
+    position:absolute;top:14px;right:14px;z-index:10;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+    border-radius:12px;padding:4px 12px;
+    font-size:.72rem;font-weight:700;color:#94a3b8;
+  }}
+
+  /* Banner */
+  #ad-banner{{background:linear-gradient(90deg,#7c3aed,#e63950,#f97316);padding:12px 20px;font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#fff;text-align:center;flex-shrink:0}}
+
+  /* Body */
+  #ad-body{{padding:24px 28px 20px;text-align:center;flex:1}}
+  #ad-emoji{{font-size:2.4rem;display:block;margin-bottom:12px}}
+  #ad-title{{font-size:1.25rem;font-weight:900;color:#fff;margin-bottom:8px;line-height:1.3}}
+  #ad-desc{{font-size:.83rem;color:#94a3b8;line-height:1.6;margin-bottom:16px}}
+  #ad-code{{display:block;background:#0d1117;border:1.5px dashed rgba(139,92,246,.6);border-radius:8px;padding:10px 16px;font-family:'SF Mono','Fira Code',monospace;font-size:1.05rem;font-weight:800;color:#a78bfa;letter-spacing:.15em;margin-bottom:16px}}
+  #ad-cta{{display:block;width:100%;padding:13px;background:linear-gradient(90deg,#7c3aed,#e63950);border:none;border-radius:10px;color:#fff;font-size:.9rem;font-weight:800;cursor:pointer;margin-bottom:8px;transition:opacity .15s}}
+  #ad-cta:hover{{opacity:.9}}
+  #ad-skip{{display:block;width:100%;text-align:center;font-size:.74rem;color:#475569;cursor:pointer;padding:4px;background:none;border:none;transition:color .15s}}
+  #ad-skip:hover{{color:#94a3b8}}
+</style>
+</head>
+<body id="chaos-ad-frame"
+      data-chaos-popup="ad-promo"
+      data-chaos-section="7"
+      data-chaos-offer="${{offer.code}}">
+
+  <!-- Close button (always rendered; shown/hidden by JS) -->
+  <button id="close-btn" name="chaos-ad-close" data-chaos-close-btn="ready" title="Close">✕</button>
+  <div id="timer-btn" data-chaos-close-btn="pending" style="display:none">Closes in <span id="countdown">${{closeDelaySec}}</span>s</div>
+
+  <!-- Banner -->
+  <div id="ad-banner" data-chaos-element="ad-banner">⚡ Limited Time Offer — Don't Miss Out!</div>
+
+  <!-- Ad content -->
+  <div id="ad-body" data-chaos-element="ad-body">
+    <span id="ad-emoji" data-chaos-element="ad-emoji">${{offer.emoji}}</span>
+    <div id="ad-title" data-chaos-element="ad-title">${{offer.title}}</div>
+    <div id="ad-desc" data-chaos-element="ad-desc">${{offer.desc}}</div>
+    <span id="ad-code" name="chaos-promo-code" data-chaos-element="promo-code">${{offer.code}}</span>
+    <button id="ad-cta" name="chaos-ad-cta" data-chaos-element="cta-button"
+            onclick="window.parent.postMessage('chaos-ad-dismiss','*')">${{offer.cta}}</button>
+    <button id="ad-skip" name="chaos-ad-skip" data-chaos-element="skip-button"
+            onclick="window.parent.postMessage('chaos-ad-dismiss','*')">No thanks, I don't want savings</button>
+  </div>
+
+  <script>
+  (function() {{
+    var closeBtn  = document.getElementById('close-btn');
+    var timerDiv  = document.getElementById('timer-btn');
+    var countdown = document.getElementById('countdown');
+    var delay     = {close_delay_ms};
+
+    function dismiss() {{
+      window.parent.postMessage('chaos-ad-dismiss', '*');
+    }}
+
+    closeBtn.addEventListener('click', dismiss);
+
+    if (delay > 0) {{
+      // Hide close button, show timer
+      closeBtn.style.display = 'none';
+      timerDiv.style.display = '';
+      timerDiv.setAttribute('data-chaos-close-btn', 'pending');
+      closeBtn.setAttribute('data-chaos-close-btn', 'hidden');
+
+      var s = Math.ceil(delay / 1000);
+      countdown.textContent = s;
+
+      var t = setInterval(function() {{
+        s--;
+        countdown.textContent = s;
+        if (s <= 0) {{
+          clearInterval(t);
+          timerDiv.style.display = 'none';
+          closeBtn.style.display = '';
+          closeBtn.setAttribute('data-chaos-close-btn', 'ready');
+        }}
+      }}, 1000);
+    }}
+  }})();
+  <\/script>
+
+</body></html>`;
+
+    // Overlay contains ONLY the single iframe
+    overlay.innerHTML = `
+      <iframe id="chaos-ad-popup-iframe"
+              name="chaos-ad-popup"
+              title="SnapTravels — Promotional Offer"
+              data-chaos-popup="ad-promo"
+              data-chaos-section="7"
+              data-chaos-popup-iframe="true"
+              sandbox="allow-scripts allow-same-origin"
+              scrolling="no"
+              style="max-width:520px;width:92%;border:none;border-radius:10px;overflow:hidden;
+                     box-shadow:0 32px 80px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.1);
+                     min-height:460px;display:block;
+                     animation:chaosPopIn .38s cubic-bezier(.175,.885,.32,1.1) both"
+      ></iframe>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    // Write complete browser frame into the iframe
+    document.getElementById('chaos-ad-popup-iframe').srcdoc = iframeSrcdoc;
+  }}
+
+  setTimeout(buildPopup, DELAY_MS);
+}})();
+/* ── end §7 ── */
+"""
+
+
 def end_outage(reason: str = 'scheduled'):
     """Clear every failure knob and close the outage window."""
     from app.models import FailureMode
