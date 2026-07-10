@@ -11,7 +11,7 @@
 # ============================================================
 
 # ── Config ──────────────────────────────────────────────────
-PORT=${PORT:-8080}
+PORT=${PORT:-5000}
 APP_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$APP_DIR/venv"
 PID_FILE="$APP_DIR/.snaptravels.pid"
@@ -264,7 +264,7 @@ cmd_start() {
     fi
 
     # Re-read PORT in case .env overrides it
-    PORT=${PORT:-8080}
+    PORT=${PORT:-5000}
 
     # Free the port if something else is using it
     kill_port "$PORT"
