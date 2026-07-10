@@ -45,7 +45,7 @@ def _is_token_expired(sent_at):
 # ── Login ──────────────────────────────────────────────────────────────────
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
-@limiter.limit("20 per minute; 100 per hour")
+@limiter.exempt
 def login():
     if 'user_id' in session:
         return redirect(url_for('public.home'))
