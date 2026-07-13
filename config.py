@@ -44,7 +44,7 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
 
     # ---- Rate limiting (Flask-Limiter) ------------------------------------
-    RATELIMIT_DEFAULT         = '200 per day;60 per hour'
+    RATELIMIT_DEFAULT         = '2000 per day;500 per hour;100 per minute'
     RATELIMIT_STORAGE_URL     = os.environ.get('REDIS_URL', 'memory://')
     RATELIMIT_HEADERS_ENABLED = True     # X-RateLimit-* headers in responses
 
