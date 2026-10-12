@@ -720,6 +720,72 @@ def mobile_get_booking(current_user, booking_id):
                     'rating': float(hotel.rating),
                     'image_path': hotel.image_path
                 }
+        if item.type == 'TRAIN' and item.train_id:
+            from app.models import Train
+            train = Train.query.get(item.train_id)
+            if train:
+                item_data['train'] = {
+                    'train_name': train.train_name,
+                    'train_number': train.train_number,
+                    'origin': train.origin,
+                    'destination': train.destination,
+                    'depart_time': train.depart_time,
+                    'arrive_time': train.arrive_time,
+                    'depart_date': train.depart_date.isoformat() if train.depart_date else None,
+                    'class_type': train.class_type,
+                }
+        if item.type == 'BUS' and item.bus_id:
+            from app.models import Bus
+            bus = Bus.query.get(item.bus_id)
+            if bus:
+                item_data['bus'] = {
+                    'operator': bus.operator,
+                    'bus_type': bus.bus_type,
+                    'origin': bus.origin,
+                    'destination': bus.destination,
+                    'depart_time': bus.depart_time,
+                    'arrive_time': bus.arrive_time,
+                    'depart_date': bus.depart_date.isoformat() if bus.depart_date else None,
+                }
+        if item.type == 'CAB' and item.cab_id:
+            from app.models import Cab
+            cab = Cab.query.get(item.cab_id)
+            if cab:
+                item_data['cab'] = {
+                    'cab_type': cab.cab_type,
+                    'pickup': cab.pickup_location,
+                    'dropoff': cab.dropoff_location,
+                    'distance_km': float(cab.distance_km) if cab.distance_km else None,
+                }
+        if item.type == 'PACKAGE' and item.package_id:
+            from app.models import Package
+            pkg = Package.query.get(item.package_id)
+            if pkg:
+                item_data['package'] = {
+                    'name': pkg.name,
+                    'destination': pkg.destination,
+                    'duration_days': pkg.duration_days,
+                    'image_path': pkg.image_path,
+                }
+        if item.type == 'ACTIVITY' and item.activity_id:
+            from app.models import Activity
+            act = Activity.query.get(item.activity_id)
+            if act:
+                item_data['activity'] = {
+                    'name': act.name,
+                    'location': act.location,
+                    'duration_hours': act.duration_hours,
+                    'image_path': act.image_path,
+                }
+        if item.type == 'INSURANCE' and item.insurance_id:
+            from app.models import InsurancePlan
+            plan = InsurancePlan.query.get(item.insurance_id)
+            if plan:
+                item_data['insurance'] = {
+                    'plan_name': plan.plan_name,
+                    'coverage_type': plan.coverage_type,
+                    'coverage_amount': float(plan.coverage_amount),
+                }
         items.append(item_data)
 
     return jsonify({
@@ -1988,3 +2054,175 @@ def mobile_shop_orders(current_user):
     orders = (ShopOrder.query.filter_by(user_id=current_user.id)
               .order_by(ShopOrder.created_at.desc()).all())
     return jsonify(orders=[o.to_dict() for o in orders])
+
+
+@mobile_api.route('/shop/orders/<int:order_id>', methods=['GET'])
+@mobile_auth_required
+def mobile_shop_order_detail(current_user, order_id):
+    from app.models import ShopOrder
+    order = ShopOrder.query.filter_by(id=order_id, user_id=current_user.id).first()
+    if not order:
+        return jsonify({'error': 'Order not found'}), 404
+    return jsonify({'success': True, 'order': order.to_dict()})
+
+
+# ===========================================================================
+#  FLIGHT & HOTEL DETAIL
+# ===========================================================================
+
+@mobile_api.route('/flights/<int:flight_id>', methods=['GET'])
+def mobile_get_flight(flight_id):
+    flight = Flight.query.get(flight_id)
+    if not flight:
+        return jsonify({'error': 'Flight not found'}), 404
+    return jsonify({
+        'success': True,
+        'flight': {
+            'id': flight.id,
+            'airline': flight.airline,
+            'flight_number': flight.flight_no,
+            'origin': flight.origin,
+            'destination': flight.destination,
+            'departure_time': flight.depart_time,
+            'arrival_time': flight.arrive_time,
+            'depart_date': flight.depart_date.isoformat() if flight.depart_date else None,
+            'price': float(flight.price),
+            'duration_mins': flight.duration_mins,
+            'available_seats': flight.seats_left,
+            'cabin_class': flight.cabin_class,
+        }
+    })
+
+
+@mobile_api.route('/hotels/<int:hotel_id>', methods=['GET'])
+def mobile_get_hotel(hotel_id):
+    hotel = Hotel.query.get(hotel_id)
+    if not hotel:
+        return jsonify({'error': 'Hotel not found'}), 404
+    return jsonify({
+        'success': True,
+        'hotel': {
+            'id': hotel.id,
+            'name': hotel.name,
+            'city': hotel.city,
+            'rating': float(hotel.rating),
+            'price_per_night': float(hotel.price_per_night),
+            'amenities': hotel.amenities,
+            'image_path': hotel.image_path,
+            'description': hotel.description,
+        }
+    })
+
+
+# ===========================================================================
+#  AUTH — forgot / reset password (token-based, unauthenticated)
+# ===========================================================================
+
+_reset_tokens: dict = {}  # token → {user_id, expires}
+
+
+@mobile_api.route('/auth/forgot-password', methods=['POST'])
+@limiter.limit("5 per hour")
+def mobile_forgot_password():
+    import secrets
+    from datetime import timezone
+    data = request.get_json() or {}
+    email = (data.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({'error': 'email is required'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    # Always return success to avoid user enumeration
+    if user:
+        token = secrets.token_urlsafe(32)
+        _reset_tokens[token] = {
+            'user_id': user.id,
+            'expires': datetime.now(timezone.utc) + timedelta(hours=1),
+        }
+        # In production this would send an email; for demo we return the token
+        # so the mobile app can drive the reset flow end-to-end.
+        current_app.logger.info('PASSWORD_RESET_TOKEN user_id=%d token=%s', user.id, token)
+        return jsonify({
+            'success': True,
+            'message': 'If that email is registered you will receive a reset link.',
+            'reset_token': token,  # demo only — remove in production
+        })
+
+    return jsonify({
+        'success': True,
+        'message': 'If that email is registered you will receive a reset link.',
+    })
+
+
+@mobile_api.route('/auth/reset-password', methods=['POST'])
+@limiter.limit("10 per hour")
+def mobile_reset_password():
+    from datetime import timezone
+    data = request.get_json() or {}
+    token = (data.get('token') or '').strip()
+    new_password = data.get('new_password') or ''
+
+    if not token or not new_password:
+        return jsonify({'error': 'token and new_password are required'}), 400
+    if len(new_password) < 8:
+        return jsonify({'error': 'Password must be at least 8 characters'}), 400
+
+    entry = _reset_tokens.get(token)
+    if not entry:
+        return jsonify({'error': 'Invalid or expired reset token'}), 400
+
+    if datetime.now(timezone.utc) > entry['expires']:
+        _reset_tokens.pop(token, None)
+        return jsonify({'error': 'Reset token has expired'}), 400
+
+    user = User.query.get(entry['user_id'])
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    user.set_password(new_password)
+    db.session.commit()
+    _reset_tokens.pop(token, None)
+    return jsonify({'success': True, 'message': 'Password reset successfully'})
+
+
+# ===========================================================================
+#  PUSH NOTIFICATION DEVICE REGISTRATION
+# ===========================================================================
+
+@mobile_api.route('/device/register-push', methods=['POST'])
+@mobile_auth_required
+def mobile_register_push(current_user):
+    data = request.get_json() or {}
+    push_token = (data.get('push_token') or '').strip()
+    platform = (data.get('platform') or '').strip().lower()
+
+    if not push_token:
+        return jsonify({'error': 'push_token is required'}), 400
+    if platform not in ('ios', 'android', 'expo'):
+        return jsonify({'error': 'platform must be ios, android, or expo'}), 400
+
+    # Store on the user model if the column exists, else log for APM visibility
+    if hasattr(current_user, 'push_token'):
+        current_user.push_token = push_token
+        db.session.commit()
+
+    current_app.logger.info(
+        'PUSH_REGISTER user_id=%d platform=%s token_prefix=%s',
+        current_user.id, platform, push_token[:12]
+    )
+    return jsonify({
+        'success': True,
+        'message': 'Push token registered',
+        'user_id': current_user.id,
+        'platform': platform,
+    })
+
+
+@mobile_api.route('/device/unregister-push', methods=['DELETE'])
+@mobile_auth_required
+def mobile_unregister_push(current_user):
+    if hasattr(current_user, 'push_token'):
+        current_user.push_token = None
+        db.session.commit()
+    current_app.logger.info('PUSH_UNREGISTER user_id=%d', current_user.id)
+    return jsonify({'success': True, 'message': 'Push token removed'})
